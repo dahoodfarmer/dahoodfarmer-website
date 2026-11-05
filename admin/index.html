@@ -36,6 +36,7 @@ tr:hover{background:#243652}
 <div class="section"><h2 style="margin-bottom:1rem">Recent Bookings</h2><table><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Pref Date</th><th>Status</th></tr></thead><tbody id="bt"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
 </div>
 <script>
+function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 fetch('/api/admin/stats').then(r=>{if(r.status===401){window.location.href='/';return}return r.json()}).then(d=>{
 if(!d)return;
 document.getElementById('s1').textContent=d.stats.totalContacts;
@@ -45,10 +46,10 @@ document.getElementById('s4').textContent=d.stats.newBookings;
 document.getElementById('s5').textContent=d.stats.activeSubscribers;
 }).catch(()=>{});
 fetch('/api/admin/contacts').then(r=>r.json()).then(d=>{
-document.getElementById('ct').innerHTML=d.contacts.map(c=>'<tr><td>'+new Date(c.created_at).toLocaleDateString()+'</td><td>'+c.name+'</td><td>'+c.email+'</td><td>'+(c.subject||'—')+'</td><td>'+c.status+'</td></tr>').join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No contacts yet</td></tr>';
+document.getElementById('ct').innerHTML=d.contacts.map(function(c){return '<tr><td>'+esc(new Date(c.created_at).toLocaleDateString())+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+(c.subject?esc(c.subject):'—')+'</td><td>'+esc(c.status)+'</td></tr>'}).join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No contacts yet</td></tr>';
 }).catch(()=>{});
 fetch('/api/admin/bookings').then(r=>r.json()).then(d=>{
-document.getElementById('bt').innerHTML=d.bookings.map(b=>'<tr><td>'+new Date(b.created_at).toLocaleDateString()+'</td><td>'+b.name+'</td><td>'+b.inquiry_type+'</td><td>'+(b.preferred_date||'—')+'</td><td>'+b.status+'</td></tr>').join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No bookings yet</td></tr>';
+document.getElementById('bt').innerHTML=d.bookings.map(function(b){return '<tr><td>'+esc(new Date(b.created_at).toLocaleDateString())+'</td><td>'+esc(b.name)+'</td><td>'+esc(b.inquiry_type)+'</td><td>'+(b.preferred_date?esc(b.preferred_date):'—')+'</td><td>'+esc(b.status)+'</td></tr>'}).join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No bookings yet</td></tr>';
 }).catch(()=>{});
 </script>
 </body>
