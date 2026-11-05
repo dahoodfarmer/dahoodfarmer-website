@@ -1,18 +1,1 @@
-# ============================================================
-# Cloudflare Pages — _redirects for dahoodfarmer-website
-# Place in the REPOSITORY ROOT.
-# Format: [source] [destination] [code]  (code defaults to 302)
-# Redirects ALWAYS fire even if a real file exists at the source.
-# ============================================================
-
-# Canonicalize homepage: /index.html -> /  (safe, no loop)
 /index.html / 301
-
-# --- Page-specific redirects (add yours below) ---
-#   /old-page.html        /new-page.html 301
-#   /old-section/*         /new-section/:splat 301
-
-# --- Optional trailing-slash normalization ---
-# UNCOMMENT ONLY IF your site uses extensionless URLs AND you tested each path.
-# /about/   /about   301
-# /contact/ /contact 301

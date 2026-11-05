@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Da HoodFarmer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1c2e;color:#e0e6ed}
+.header{background:#1a2c42;padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:1.5rem;color:#4ade80}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-bottom:2rem}
+.stat-card{background:#1a2c42;border-radius:12px;padding:1.5rem;border:1px solid #2a3f5c}
+.stat-card .label{font-size:0.75rem;text-transform:uppercase;color:#94a3b8}
+.stat-card .value{font-size:2.5rem;font-weight:700;color:#4ade80;margin-top:0.5rem}
+.section{background:#1a2c42;border-radius:12px;padding:1.5rem;margin-bottom:2rem;border:1px solid #2a3f5c}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:0.75rem;border-bottom:1px solid #2a3f5c;color:#94a3b8;font-size:0.75rem;text-transform:uppercase}
+td{padding:0.75rem;border-bottom:1px solid #2a3f5c;font-size:0.875rem}
+tr:hover{background:#243652}
+</style>
+</head>
+<body>
+<div class="header"><h1>Da HoodFarmer — Admin</h1><span style="color:#94a3b8;font-size:0.875rem">Authenticated via Cloudflare Access</span></div>
+<div class="container">
+<div class="stats-grid" id="stats">
+<div class="stat-card"><div class="label">Total Contacts</div><div class="value" id="s1">—</div></div>
+<div class="stat-card"><div class="label">New Contacts</div><div class="value" id="s2">—</div></div>
+<div class="stat-card"><div class="label">Total Bookings</div><div class="value" id="s3">—</div></div>
+<div class="stat-card"><div class="label">New Bookings</div><div class="value" id="s4">—</div></div>
+<div class="stat-card"><div class="label">Subscribers</div><div class="value" id="s5">—</div></div>
+</div>
+<div class="section"><h2 style="margin-bottom:1rem">Recent Contacts</h2><table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Subject</th><th>Status</th></tr></thead><tbody id="ct"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
+<div class="section"><h2 style="margin-bottom:1rem">Recent Bookings</h2><table><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Pref Date</th><th>Status</th></tr></thead><tbody id="bt"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
+</div>
+<script>
+fetch('/api/admin/stats').then(r=>{if(r.status===401){window.location.href='/';return}return r.json()}).then(d=>{
+if(!d)return;
+document.getElementById('s1').textContent=d.stats.totalContacts;
+document.getElementById('s2').textContent=d.stats.newContacts;
+document.getElementById('s3').textContent=d.stats.totalBookings;
+document.getElementById('s4').textContent=d.stats.newBookings;
+document.getElementById('s5').textContent=d.stats.activeSubscribers;
+}).catch(()=>{});
+fetch('/api/admin/contacts').then(r=>r.json()).then(d=>{
+document.getElementById('ct').innerHTML=d.contacts.map(c=>'<tr><td>'+new Date(c.created_at).toLocaleDateString()+'</td><td>'+c.name+'</td><td>'+c.email+'</td><td>'+(c.subject||'—')+'</td><td>'+c.status+'</td></tr>').join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No contacts yet</td></tr>';
+}).catch(()=>{});
+fetch('/api/admin/bookings').then(r=>r.json()).then(d=>{
+document.getElementById('bt').innerHTML=d.bookings.map(b=>'<tr><td>'+new Date(b.created_at).toLocaleDateString()+'</td><td>'+b.name+'</td><td>'+b.inquiry_type+'</td><td>'+(b.preferred_date||'—')+'</td><td>'+b.status+'</td></tr>').join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No bookings yet</td></tr>';
+}).catch(()=>{});
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "dahoodfarmer-website",
+  "version": "1.0.0",
+  "description": "Da HoodFarmer — professional digital headquarters",
+  "scripts": {
+    "dev": "npx wrangler pages dev . --compatibility-date 2026-11-03",
+    "deploy": "npx wrangler pages deploy . --project-name dahoodfarmer-website"
+  },
+  "devDependencies": { "wrangler": "^4.0.0" }
+}
