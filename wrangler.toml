@@ -1,0 +1,19 @@
+name = "dahoodfarmer-website"
+compatibility_date = "2026-11-03"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dahoodfarmer-db"
+database_id = "60c66fbd-bde7-4dde-a822-aee20c42eb6b"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "ac795693406f4c1998ceb35868b6155c"
+
+[vars]
+GA4_ID = ""
+GTM_ID = ""
+ADSENSE_ID = ""
+TURNSTILE_SITE_KEY = ""
+NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
