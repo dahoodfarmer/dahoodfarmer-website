@@ -1,12 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 — Page Not Found | Da HoodFarmer</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17151b">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="The page you are looking for could not be found.">
-  <link rel="stylesheet" href="/styles.css">
+  <meta name="description" content="Page not found — Da HoodFarmer official brand headquarters.">
+  <title>404 — Page Not Found | Da HoodFarmer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <style>
     .error-wrap {
       min-height: 70vh;
@@ -15,25 +19,29 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 2rem;
+      padding: 3rem 2rem;
     }
     .error-code {
-      font-size: clamp(4rem, 15vw, 9rem);
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(5rem, 18vw, 11rem);
       font-weight: 800;
       line-height: 1;
       margin: 0;
       letter-spacing: -0.03em;
     }
     .error-msg {
+      font-family: 'DM Sans', sans-serif;
       font-size: clamp(1.1rem, 3vw, 1.5rem);
-      margin: 1rem 0 2rem;
-      opacity: 0.85;
+      margin: 1.5rem 0 2.5rem;
+      opacity: 0.8;
+      max-width: 30rem;
     }
     .error-btn {
       display: inline-block;
-      padding: 0.8rem 2rem;
+      padding: 0.85rem 2.5rem;
       border-radius: 8px;
       font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
       text-decoration: none;
       transition: opacity 0.2s ease;
     }
@@ -41,22 +49,36 @@
   </style>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/">Da HoodFarmer</a>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Da HoodFarmer home">
+      <span class="brand-mark" aria-hidden="true">♛</span>
+      <span class="brand-name">DA HOOD<span>FARMER</span></span>
+    </a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span></button>
+    <nav id="primary-nav" class="primary-nav" aria-label="Main navigation">
+      <a href="/#story">The Story</a>
+      <a href="/#media">Media</a>
+      <a href="/#ventures">Ventures</a>
+      <a href="/#partners">Work Together</a>
+      <a class="nav-cta" href="/#contact">Contact</a>
     </nav>
   </header>
 
-  <main class="error-wrap">
-    <p class="error-code">404</p>
-    <p class="error-msg">This page took a wrong turn and got lost in the field.</p>
-    <a class="error-btn" href="/">Back to Home</a>
+  <main id="main">
+    <section class="error-wrap">
+      <p class="error-code">404</p>
+      <p class="error-msg">This page took a wrong turn and got lost in the field.</p>
+      <a class="error-btn button-gold" href="/">Back to Home</a>
+    </section>
   </main>
 
-  <footer>
-    <p>&copy; <span id="year"></span> Da HoodFarmer. All rights reserved.</p>
+  <footer class="site-footer">
+    <div class="footer-top"><a class="brand brand-footer" href="/#top"><span class="brand-mark">♛</span><span class="brand-name">DA HOOD<span>FARMER</span></span></a><p>From the Hood to the Farm.</p><a class="back-top" href="/#top">BACK TO TOP ↑</a></div>
+    <div class="footer-bottom"><span>© <span id="year"></span> Da HoodFarmer. All rights reserved.</span><span>South Carolina · United States</span><span>Official brand headquarters</span></div>
+    <p class="legal-note">Da HoodFarmer is a brand identity. Names of television programs and networks are used solely to identify a past appearance; no endorsement or affiliation is implied.</p>
   </footer>
-
+  <script src="script.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
