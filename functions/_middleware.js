@@ -1,6 +1,10 @@
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
+  if (url.hostname === 'www.dahoodfarmer.com') {
+    url.hostname = 'dahoodfarmer.com';
+    return Response.redirect(url.toString(), 301);
+  }
   const securityHeaders = {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
