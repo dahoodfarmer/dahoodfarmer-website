@@ -4,7 +4,7 @@ export async function onRequest(context) {
   if (!token) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
   try {
@@ -12,21 +12,21 @@ export async function onRequest(context) {
     if (parts.length !== 3) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     const payload = JSON.parse(atob(parts[1]));
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       return new Response(JSON.stringify({ error: 'Token expired' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     return context.next();
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Auth failed' }), {
+    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
