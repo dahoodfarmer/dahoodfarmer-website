@@ -23,3 +23,16 @@ if (subjectSelect) {
     if (match) subjectSelect.value = match.value;
   }));
 }
+
+// On the contact page, pre-select the topic passed as ?topic=...
+if (subjectSelect) {
+  const topic = new URLSearchParams(window.location.search).get("topic");
+  if (topic) {
+    const match = Array.from(subjectSelect.options).find(o => o.text === topic);
+    if (match) subjectSelect.value = match.value;
+  }
+}
+
+// Old one-page links like /#contact now go to their own pages.
+const oldAnchors = { "#story": "/story", "#media": "/media", "#ventures": "/ventures", "#partners": "/work-with-me", "#contact": "/contact" };
+if (window.location.pathname === "/" && oldAnchors[window.location.hash]) window.location.replace(oldAnchors[window.location.hash]);
