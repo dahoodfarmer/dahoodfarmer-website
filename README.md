@@ -33,3 +33,10 @@ Do not change nameservers or DNS records blindly. Keep a copy of the current DNS
 - Supply the official business inquiry email and the final approved logo.
 - Add individual social links, shop/checkout, booking form and sponsorship form only when the destinations and terms are ready.
 - Obtain permission for any third-party photographs, show stills, network logos or music before adding them.
+
+## Adding photos
+Photo spots are already built into `index.html` as commented-out `<figure class="photo-slot">` blocks. Add the file, then uncomment its block:
+- `/images/hero.jpg`: portrait of Da HoodFarmer, about 1200x1500 (hides the decorative seal when enabled)
+- `/images/farm.jpg`: farm or livestock, landscape, about 1600x1000
+- `/images/tv-still.jpg`: still from the Lifetime appearance, about 1200x1500 (only with permission); replaces the media graphic
+Keep each JPG under about 300 KB.

@@ -13,3 +13,13 @@ if (toggle && nav) {
   }));
 }
 document.getElementById("year").textContent = new Date().getFullYear();
+
+// Pre-select the inquiry topic when a visitor clicks a "work together" link.
+const subjectSelect = document.getElementById("cf-subject");
+if (subjectSelect) {
+  document.querySelectorAll("a[data-subject]").forEach(link => link.addEventListener("click", () => {
+    const wanted = link.getAttribute("data-subject");
+    const match = Array.from(subjectSelect.options).find(o => o.text === wanted);
+    if (match) subjectSelect.value = match.value;
+  }));
+}
