@@ -34,7 +34,6 @@ export async function onRequest(context) {
   if (contentType.includes('text/html')) {
     const turnstileKey = env.TURNSTILE_SITE_KEY || '';
     const ga4Id = env.GA4_ID || '';
-    const adsenseId = env.ADSENSE_ID || '';
     let headInjections = '';
     if (turnstileKey) {
       headInjections += '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
@@ -42,9 +41,6 @@ export async function onRequest(context) {
     if (ga4Id) {
       headInjections += '<script async src="https://www.googletagmanager.com/gtag/js?id=' + ga4Id + '"></script>';
       headInjections += '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","' + ga4Id + '");</script>';
-    }
-    if (adsenseId) {
-      headInjections += '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + adsenseId + '" crossorigin="anonymous"></script>';
     }
     const formScript = '<script>window.TURNSTILE_SITE_KEY="' + turnstileKey + '";</script><script src="/forms.js" defer></script>';
     const rewriter = new HTMLRewriter()
