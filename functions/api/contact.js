@@ -1,21 +1,17 @@
-import { validateContact, sanitize } from '../lib/validation.js';
+import { validateContact, getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { insertContact } from '../lib/db.js';
-
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
 export async function onRequestPost({ request, env }) {
-  let data;
-  try { data = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-  const errors = validateContact(data);
-  if (errors.length) return json({ error: errors.join(', ') }, 400);
-  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, request.headers.get('CF-Connecting-IP'));
+  const ip = getClientIP(request);
+  const allowed = await checkRateLimit(env.SESSIONS, ip, 'contact', 5, 60);
+  if (!allowed) return json({ error: 'Too many requests. Please try again in a minute.' }, 429);
+  let data; try { data = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  if (!isValidPayload(data)) return json({ error: 'Invalid request body' }, 400);
+  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, 'dahoodfarmer.com');
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
-  await insertContact(env.DB, {
-    name: sanitize(data.name, 100), email: sanitize(data.email, 254),
-    subject: sanitize(data.subject, 200), message: sanitize(data.message, 5000),
-    ip: request.headers.get('CF-Connecting-IP'),
-  });
-  return json({ success: true, message: 'Thank you for reaching out!' });
-}
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+  const validation = validateContact(data);
+  if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
+  try { await insertContact(env.DB, { ...validation.sanitized, ip }); return json({ success: true, message: 'Thank you for reaching out!' }); }
+  catch (err) { return json({ error: 'Failed to save your message' }, 500); }
 }

@@ -1,26 +1,11 @@
-export function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
-}
-export function sanitize(str, maxLen = 2000) {
-  if (typeof str !== 'string') return '';
-  return str.trim().slice(0, maxLen).replace(/<script[^>]*>.*?<\/script>/gi, '');
-}
-export function validateContact(data) {
-  const errors = [];
-  if (!data.name || data.name.trim().length < 2) errors.push('Name is required');
-  if (!data.email || !validateEmail(data.email)) errors.push('Valid email is required');
-  if (!data.message || data.message.trim().length < 10) errors.push('Message must be at least 10 characters');
-  return errors;
-}
-export function validateBooking(data) {
-  const errors = [];
-  if (!data.name || data.name.trim().length < 2) errors.push('Name is required');
-  if (!data.email || !validateEmail(data.email)) errors.push('Valid email is required');
-  if (!data.inquiry_type) errors.push('Inquiry type is required');
-  return errors;
-}
-export function validateNewsletter(data) {
-  const errors = [];
-  if (!data.email || !validateEmail(data.email)) errors.push('Valid email is required');
-  return errors;
-}
+export function sanitizeString(input, maxLength = 5000) { if (typeof input !== 'string') return ''; return input.trim().slice(0, maxLength); }
+export const sanitize = sanitizeString;
+export function isValidPayload(body) { return body !== null && typeof body === 'object' && !Array.isArray(body); }
+export function isValidEmail(email) { if (typeof email !== 'string') return false; return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254; }
+export function isRequired(value) { return value !== undefined && value !== null && String(value).trim().length > 0; }
+export function isValidInquiryType(type) { return ['Speaking Engagement','TV Appearance','TV / Media Appearance','Agricultural Consulting','Wilderness Survival Instruction','Community Event','Brand Partnership','Brand Partnership / Sponsorship','Other'].includes(type); }
+export function getClientIP(request) { return request.headers.get('CF-Connecting-IP') || 'unknown'; }
+export async function checkRateLimit(kv, ip, endpoint, maxRequests = 5, windowSeconds = 60) { if (!kv) return true; const key = `rl:${ip}:${endpoint}`; try { const current = await kv.get(key); const count = current ? parseInt(current, 10) : 0; if (count >= maxRequests) return false; await kv.put(key, String(count + 1), { expirationTtl: windowSeconds }); return true; } catch (e) { return true; } }
+export function validateContact(data) { const errors = []; if (!isRequired(data.name)) errors.push('Name is required'); if (!isRequired(data.email)) errors.push('Email is required'); if (data.email && !isValidEmail(data.email)) errors.push('Invalid email address'); if (!isRequired(data.message)) errors.push('Message is required'); return { valid: errors.length === 0, errors, sanitized: { name: sanitizeString(data.name, 100), email: sanitizeString(data.email, 254), subject: sanitizeString(data.subject, 200), message: sanitizeString(data.message, 5000) } }; }
+export function validateBooking(data) { const errors = []; const it = data.inquiry_type || data.inquiryType || data.inquiry; const pd = data.preferred_date || data.preferredDate; const dt = data.details || data.notes; const org = data.organization || data.org; if (!isRequired(data.name)) errors.push('Name is required'); if (!isRequired(data.email)) errors.push('Email is required'); if (data.email && !isValidEmail(data.email)) errors.push('Invalid email address'); if (!isRequired(it)) errors.push('Inquiry type is required'); if (it && !isValidInquiryType(it)) errors.push('Invalid inquiry type'); return { valid: errors.length === 0, errors, sanitized: { name: sanitizeString(data.name, 100), email: sanitizeString(data.email, 254), organization: sanitizeString(org, 200), inquiry_type: sanitizeString(it, 100), preferred_date: sanitizeString(pd, 50), details: sanitizeString(dt, 5000) } }; }
+export function validateNewsletter(data) { const errors = []; if (!isRequired(data.email)) errors.push('Email is required'); if (data.email && !isValidEmail(data.email)) errors.push('Invalid email address'); return { valid: errors.length === 0, errors, sanitized: { email: sanitizeString(data.email, 254).toLowerCase() } }; }

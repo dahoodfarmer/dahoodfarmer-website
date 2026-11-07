@@ -1,32 +1,6 @@
-export async function onRequest(context) {
-  const { request } = context;
-  const token = request.headers.get('cf-access-jwt-assertion');
-  if (!token) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    const payload = JSON.parse(atob(parts[1]));
-    if (payload.exp && Date.now() >= payload.exp * 1000) {
-      return new Response(JSON.stringify({ error: 'Token expired' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    return context.next();
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-}
+const jwksCache = new Map(); const MAX_TOKEN_SIZE = 8192; const JWKS_TIMEOUT = 5000;
+async function getKeys(issuer, force) { if (!force && jwksCache.has(issuer)) { const c = jwksCache.get(issuer); if (Date.now() < c.expiry) return c.keys; } const ctrl = new AbortController(); const id = setTimeout(() => ctrl.abort(), JWKS_TIMEOUT); try { const r = await fetch(issuer + '/cdn-cgi/access/certs', { signal: ctrl.signal }); clearTimeout(id); if (!r.ok) throw new Error(r.status); const d = await r.json(); if (!d.keys || !Array.isArray(d.keys)) throw new Error('no keys'); jwksCache.set(issuer, { keys: d, expiry: Date.now() + 3600000 }); return d; } catch (e) { clearTimeout(id); throw e; } }
+function b64d(s) { s = s.replace(/-/g,'+').replace(/_/g,'/'); while (s.length % 4) s += '='; return atob(s); }
+function b64bytes(s) { const b = b64d(s); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+async function verify(token, env) { if (!token) return { valid: false, error: 'No token' }; if (token.length > MAX_TOKEN_SIZE) return { valid: false, error: 'Token too large' }; const p = token.split('.'); if (p.length !== 3) return { valid: false, error: 'Bad format' }; let h, pl; try { h = JSON.parse(b64d(p[0])); pl = JSON.parse(b64d(p[1])); } catch { return { valid: false, error: 'Bad encoding' }; } if (h.alg !== 'RS256') return { valid: false, error: 'Wrong algorithm' }; if (!pl.exp || !pl.iss || !pl.aud || !h.kid) return { valid: false, error: 'Missing claims' }; const now = Date.now(); if (now >= pl.exp * 1000) return { valid: false, error: 'Expired' }; if (pl.nbf !== undefined && now < pl.nbf * 1000) return { valid: false, error: 'Not yet valid' }; const ti = env.ACCESS_ISSUER; if (!ti) return { valid: false, error: 'ACCESS_ISSUER not set' }; if (pl.iss !== ti) return { valid: false, error: 'Issuer mismatch' }; const ta = env.ACCESS_AUD; if (!ta) return { valid: false, error: 'ACCESS_AUD not set' }; const al = Array.isArray(pl.aud) ? pl.aud : [pl.aud]; if (!al.includes(ta)) return { valid: false, error: 'Audience mismatch' }; let jwks; try { jwks = await getKeys(ti); } catch { return { valid: false, error: 'JWKS fetch failed' }; } let key = jwks.keys.find(k => k.kid === h.kid); if (!key) { try { jwks = await getKeys(ti, true); key = jwks.keys.find(k => k.kid === h.kid); } catch { return { valid: false, error: 'JWKS refresh failed' }; } } if (!key) return { valid: false, error: 'Key not found' }; const alg = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }; let ck; try { ck = await crypto.subtle.importKey('jwk', key, alg, false, ['verify']); } catch { return { valid: false, error: 'Key import failed' }; } const sd = new TextEncoder().encode(p[0] + '.' + p[1]); const sig = b64bytes(p[2]); let ok; try { ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', ck, sig, sd); } catch { return { valid: false, error: 'Verify error' }; } if (!ok) return { valid: false, error: 'Invalid signature' }; return { valid: true }; }
+export async function onRequest(ctx) { const v = await verify(ctx.request.headers.get('cf-access-jwt-assertion'), ctx.env); if (!v.valid) return new Response(JSON.stringify({ error: v.error }), { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); return ctx.next(); }
