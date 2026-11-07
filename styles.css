@@ -18,3 +18,19 @@
 .wide-photo{aspect-ratio:3/2}.wide-photo img{object-position:50% 58%}
 .media-photo img{object-position:50% 20%}
 @media(max-width:650px){.hero{flex-wrap:wrap}.hero-photo{order:2;aspect-ratio:4/5}.wide-photo{aspect-ratio:4/3}}
+/* Mobile overflow fixes: keep every section inside the screen width */
+html,body{max-width:100%;overflow-x:hidden}
+img{max-width:100%;height:auto}
+.intro-grid>*,.media-grid>*,.contact-grid>*,.shop-section>*,.pillar-grid>*,.opportunity-grid>*{min-width:0}
+.photo-slot img{height:100%}
+@media(max-width:650px){.intro-grid,.media-grid,.contact-grid,.shop-section{grid-template-columns:minmax(0,1fr)}.media-photo{width:100%;margin-top:10px}.hero-content{width:100%}.hero-photo{width:100%;max-width:420px}.media-copy h2,.intro h2{overflow-wrap:break-word}}
+/* Multi-page navigation */
+.primary-nav a[aria-current="page"]{color:#e0b85f}.primary-nav a[aria-current="page"]:not(.nav-cta){box-shadow:inset 0 -1px 0 #c9a45a;padding-bottom:4px}.primary-nav .nav-cta[aria-current="page"]{background:#c9a45a;color:#1b1820}
+.subpage main{min-height:calc(100vh - 82px - 220px)}
+.page-first{padding-top:80px}
+.footer-nav{display:flex;flex-wrap:wrap;gap:12px 26px;margin:26px 0 10px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}.footer-nav a{color:#d7d1d8}.footer-nav a:hover{color:#e0b85f}
+.explore{background:#f4f0e9}.explore h2{font-size:clamp(40px,6vw,72px);line-height:1;margin:0 0 44px}
+.explore-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.explore-card{position:relative;display:flex;flex-direction:column;gap:12px;min-height:200px;padding:24px 22px;background:#fff;border:1px solid #e3dbd1;transition:transform .2s,border-color .2s}.explore-card:hover{transform:translateY(-4px);border-color:#c9a45a}.explore-card span{font-size:10px;color:#8050a2;letter-spacing:.2em}.explore-card strong{font-family:"Playfair Display",serif;font-size:26px;font-weight:600}.explore-card small{font-size:13px;line-height:1.6;color:#55494f}.explore-card b{position:absolute;right:20px;top:20px;color:#c9a45a}
+@media(max-width:900px){.explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.explore-grid{grid-template-columns:minmax(0,1fr)}.explore-card{min-height:0}.page-first{padding-top:55px}.subpage main{min-height:0}}
