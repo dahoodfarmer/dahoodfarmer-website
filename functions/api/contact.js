@@ -12,6 +12,13 @@ export async function onRequestPost({ request, env }) {
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const validation = validateContact(data);
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
-  try {\n    await insertContact(env.DB, { ...validation.sanitized, ip });\n    const email = await sendSubmissionNotification(env, 'New Da HoodFarmer contact inquiry', {\n      Name: validation.sanitized.name, Email: validation.sanitized.email,\n      Category: validation.sanitized.subject, Message: validation.sanitized.message,\n    }, validation.sanitized.email);\n    return json({ success: true, emailSent: email.sent, message: email.sent ? 'Thank you for reaching out! Your inquiry was received.' : 'Your inquiry was received and saved. Email notification is not yet available.' });\n  }
+  try {
+    await insertContact(env.DB, { ...validation.sanitized, ip });
+    const email = await sendSubmissionNotification(env, 'New Da HoodFarmer contact inquiry', {
+      Name: validation.sanitized.name, Email: validation.sanitized.email,
+      Category: validation.sanitized.subject, Message: validation.sanitized.message,
+    }, validation.sanitized.email);
+    return json({ success: true, emailSent: email.sent, message: email.sent ? 'Thank you for reaching out! Your inquiry was received.' : 'Your inquiry was received and saved. Email notification is not yet available.' });
+  }
   catch (err) { return json({ error: 'Failed to save your message' }, 500); }
 }
