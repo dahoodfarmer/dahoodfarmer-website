@@ -71,7 +71,7 @@ export async function onRequest(context) {
     // Build head injections — all values safely encoded
     let inj = '';
     if (tsKey) {
-      inj += '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
+
     }
     if (ga4Id) {
       inj += '<script async src="https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ga4Id) + '"></script>';
