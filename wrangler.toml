@@ -22,9 +22,6 @@ binding = "DB"
 database_name = "dahoodfarmer-preview-db"
 database_id = "ca5786b1-751e-4cee-b595-3a4b60061cc9"
 
-[[env.preview.kv_namespaces]]
-binding = "SESSIONS"
-id = "ac795693406f4c1998ceb35868b6155c"
 
 [env.preview.vars]
 GA4_ID = "G-BQJHY0DYR2"
