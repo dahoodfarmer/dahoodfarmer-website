@@ -8,7 +8,7 @@ export async function onRequestPost({ request, env }) {
   if (!allowed) return json({ error: 'Too many requests. Please try again in a minute.' }, 429);
   let data; try { data = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   if (!isValidPayload(data)) return json({ error: 'Invalid request body' }, 400);
-  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, 'dahoodfarmer.com');
+  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, new URL(request.url).hostname);
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const validation = validateContact(data);
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
