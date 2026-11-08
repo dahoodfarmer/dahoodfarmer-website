@@ -12,6 +12,14 @@ export async function onRequestPost({ request, env }) {
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const validation = validateBooking(data);
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
-  try {\n    await insertBooking(env.DB, { ...validation.sanitized, ip });\n    const email = await sendSubmissionNotification(env, 'New Da HoodFarmer booking request', {\n      Name: validation.sanitized.name, Email: validation.sanitized.email,\n      Organization: validation.sanitized.organization, Type: validation.sanitized.inquiry_type,\n      'Preferred date': validation.sanitized.preferred_date, Details: validation.sanitized.details,\n    }, validation.sanitized.email);\n    return json({ success: true, emailSent: email.sent, message: email.sent ? 'Your booking request has been received. We will contact you to confirm details.' : 'Your booking request was received and saved. Email notification is not yet available.' });\n  }
+  try {
+    await insertBooking(env.DB, { ...validation.sanitized, ip });
+    const email = await sendSubmissionNotification(env, 'New Da HoodFarmer booking request', {
+      Name: validation.sanitized.name, Email: validation.sanitized.email,
+      Organization: validation.sanitized.organization, Type: validation.sanitized.inquiry_type,
+      'Preferred date': validation.sanitized.preferred_date, Details: validation.sanitized.details,
+    }, validation.sanitized.email);
+    return json({ success: true, emailSent: email.sent, message: email.sent ? 'Your booking request has been received. We will contact you to confirm details.' : 'Your booking request was received and saved. Email notification is not yet available.' });
+  }
   catch (err) { return json({ error: 'Failed to save booking request' }, 500); }
 }
