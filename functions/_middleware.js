@@ -64,7 +64,7 @@ export async function onRequest(context) {
   const contentType = response.headers.get('Content-Type') || '';
 
   if (contentType.includes('text/html')) {
-    const tsKey = env.TURNSTILE_SITE_KEY || '';
+    const tsKey = env.TURNSTILE_SITE_KEY || env['TURNSTILE SITE_KEY'] || '';
     const ga4Id = env.GA4_ID || '';
     const adId = env.ADSENSE_ID || '';
 
