@@ -1,9 +1,9 @@
 export function validateEmail(email) {
-  return typeof email === 'string' && email.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+  return typeof email === 'string' && email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 export function sanitize(str, maxLen = 2000) {
   if (typeof str !== 'string') return '';
-  return str.trim().slice(0, maxLen).replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '');
+  return str.trim().slice(0, maxLen).replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
 }
 function isRecord(data) {
   return data !== null && typeof data === 'object' && !Array.isArray(data);
