@@ -2,7 +2,7 @@ export async function insertContact(db, { name, email, subject, message, ip }) {
   return db.prepare('INSERT INTO contacts (name, email, subject, message, ip_address) VALUES (?,?,?,?,?)').bind(name, email, subject || '', message, ip || null).run();
 }
 export async function insertBooking(db, { name, email, organization, inquiry_type, preferred_date, details, ip }) {
-  return db.prepare('INSERT INTO bookings (name, email, organization, inquiry_type, preferred_date, details) VALUES (?,?,?,?,?,?,?)').bind(name, email, organization || '', inquiry_type, preferred_date || '', details || '', ip || null).run();
+  return db.prepare('INSERT INTO bookings (name, email, organization, inquiry_type, preferred_date, details, ip_address) VALUES (?,?,?,?,?,?,?)').bind(name, email, organization || '', inquiry_type, preferred_date || '', details || '', ip || null).run();
 }
 export async function insertSubscriber(db, email) {
   return db.prepare('INSERT OR IGNORE INTO newsletter_subscribers (email) VALUES (?)').bind(email).run();
