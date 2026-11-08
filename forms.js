@@ -4,6 +4,7 @@
   var siteKey = window.TURNSTILE_SITE_KEY || '';
   var widgets = Object.create(null);
   var widgetReady = Object.create(null);
+  var widgetTokens = Object.create(null);
 
   function endpointForPath() {
     var path = window.location.pathname;
@@ -98,9 +99,9 @@
       try {
         widgets[id] = window.turnstile.render(target, {
           sitekey: siteKey,
-          callback: function () { widgetReady[id] = true; },
-          'expired-callback': function () { widgetReady[id] = false; },
-          'error-callback': function () { widgetReady[id] = false; }
+          callback: function (token) { widgetTokens[id] = token || ''; widgetReady[id] = !!token; },
+          'expired-callback': function () { widgetTokens[id] = ''; widgetReady[id] = false; },
+          'error-callback': function () { widgetTokens[id] = ''; widgetReady[id] = false; }
         });
         widgetReady[id] = false;
       } catch (error) {
@@ -112,6 +113,8 @@
   function attachForm(config, id) {
     if (!config || !config.form) return;
     var form = config.form;
+    if (form.dataset.dhfFormHandler === 'attached') return;
+    form.dataset.dhfFormHandler = 'attached';
     var endpoint = config.endpoint;
     var button = form.querySelector('button[type="submit"]');
     var originalLabel = button ? button.textContent : 'Submit';
@@ -130,7 +133,11 @@
         return;
       }
 
-      var token = window.turnstile.getResponse(widgets[id]);
+      var token = window.turnstile.getResponse(widgets[id]) || widgetTokens[id] || '';
+      if (!token) {
+        var responseField = form.querySelector('input[name="cf-turnstile-response"], textarea[name="cf-turnstile-response"]');
+        if (responseField) token = responseField.value || '';
+      }
       if (!token) {
         showMessage(form, 'Please complete the Cloudflare security check before sending your message.', false);
         return;
@@ -172,10 +179,12 @@
         showMessage(form, result.message || 'Thank you. Your submission was received.', true);
         form.reset();
         window.turnstile.reset(widgets[id]);
+        widgetTokens[id] = '';
         widgetReady[id] = false;
       } catch (error) {
         showMessage(form, error.message || 'Network error. Please check your connection and try again.', false);
         if (window.turnstile && widgets[id] !== undefined) window.turnstile.reset(widgets[id]);
+        widgetTokens[id] = '';
         widgetReady[id] = false;
       } finally {
         if (button) {
