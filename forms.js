@@ -100,6 +100,8 @@
   }
 
   function attach(form, endpoint) {
+    if (form.dataset.dhfFormHandler === 'attached') return;
+    form.dataset.dhfFormHandler = 'attached';
     mountTurnstile(form);
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
