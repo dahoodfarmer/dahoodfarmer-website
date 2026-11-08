@@ -63,12 +63,10 @@
 
   function ensureTurnstileScript(callback, onError) {
     var finished = false;
+    var retried = false;
     var timeoutId = window.setTimeout(function () {
-      if (!finished) {
-        finished = true;
-        if (onError) onError();
-      }
-    }, 20000);
+      if (!finished) failed();
+    }, 10000);
 
     function ready() {
       if (finished || !window.turnstile) return;
@@ -79,9 +77,24 @@
 
     function failed() {
       if (finished) return;
+      if (retried) {
+        finished = true;
+        window.clearTimeout(timeoutId);
+        if (onError) onError();
+        return;
+      }
+      retried = true;
+      window.clearTimeout(timeoutId);
       // A pre-existing script may have failed before this handler was attached.
       var existing = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]');
       if (existing && !window.turnstile) existing.remove();
+
+      timeoutId = window.setTimeout(function () {
+        if (!finished) {
+          finished = true;
+          if (onError) onError();
+        }
+      }, 15000);
 
       var retry = document.createElement('script');
       retry.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
