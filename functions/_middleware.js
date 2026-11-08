@@ -63,6 +63,14 @@ export async function onRequest(context) {
   const response = await context.next();
   const contentType = response.headers.get('Content-Type') || '';
 
+  // Prevent browsers and edge caches from reusing an old form handler.
+  if (url.pathname === '/forms.js') {
+    const scriptHeaders = new Headers(response.headers);
+    Object.entries(securityHeaders).forEach(([k, v]) => scriptHeaders.set(k, v));
+    scriptHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: scriptHeaders });
+  }
+
   if (contentType.includes('text/html')) {
     const tsKey = env.TURNSTILE_SITE_KEY || env['TURNSTILE SITE_KEY'] || '';
     const ga4Id = env.GA4_ID || '';
@@ -82,7 +90,7 @@ export async function onRequest(context) {
     }
 
     // Safely encode the Turnstile site key for inline script
-    const formScript = '<script>window.TURNSTILE_SITE_KEY=' + safeJsValue(tsKey) + '</script><script src="/forms.js" defer></script>';
+    const formScript = '<script>window.TURNSTILE_SITE_KEY=' + safeJsValue(tsKey) + '</script><script src="/forms.js?v=20261108-token-fix1" defer></script>';
 
     // Canonical URL — always uses the production domain
     const canonical = '<link rel="canonical" href="https://dahoodfarmer.com' + url.pathname + '">';
