@@ -1,19 +1,30 @@
+# Wrangler configuration for local development
+# This is for local dev only — production deployment is via GitHub integration
+
 name = "dahoodfarmer-website"
 compatibility_date = "2026-11-03"
 pages_build_output_dir = "."
 
+# D1 binding (local dev uses --local persistence)
 [[d1_databases]]
 binding = "DB"
 database_name = "dahoodfarmer-db"
 database_id = "60c66fbd-bde7-4dde-a822-aee20c42eb6b"
 
+# KV binding
 [[kv_namespaces]]
 binding = "SESSIONS"
 id = "ac795693406f4c1998ceb35868b6155c"
 
+# Environment variables (set real values via dashboard for production)
 [vars]
-GA4_ID = ""
+GA4_ID = "G-BQJHY0DYR2"
 GTM_ID = ""
 ADSENSE_ID = ""
-TURNSTILE_SITE_KEY = ""
+TURNSTILE_SITE_KEY = "0x4AAAAAAF4NKcwMel-ag1kV"
 NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
+
+# Secrets (set via `wrangler pages secret put` or dashboard)
+# TURNSTILE_SECRET_KEY
+# STRIPE_PUBLISHABLE_KEY
+# STRIPE_SECRET_KEY
