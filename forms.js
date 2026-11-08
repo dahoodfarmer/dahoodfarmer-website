@@ -1,7 +1,11 @@
 (function () {
   'use strict';
 
-  var siteKey = window.TURNSTILE_SITE_KEY || '';
+  function getSiteKey(form) {
+    var target = form.querySelector('.cf-turnstile');
+    return window.TURNSTILE_SITE_KEY ||
+      (target && target.getAttribute('data-sitekey')) || '';
+  }
   var widgets = Object.create(null);
   var widgetReady = Object.create(null);
   var widgetTokens = Object.create(null);
@@ -57,32 +61,76 @@
     node.style.border = '1px solid ' + (success ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)');
   }
 
-  function ensureTurnstileScript(callback) {
-    if (window.turnstile) {
+  function ensureTurnstileScript(callback, onError) {
+    var finished = false;
+    var timeoutId = window.setTimeout(function () {
+      if (!finished) {
+        finished = true;
+        if (onError) onError();
+      }
+    }, 20000);
+
+    function ready() {
+      if (finished || !window.turnstile) return;
+      finished = true;
+      window.clearTimeout(timeoutId);
       callback();
+    }
+
+    function failed() {
+      if (finished) return;
+      // A pre-existing script may have failed before this handler was attached.
+      var existing = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]');
+      if (existing && !window.turnstile) existing.remove();
+
+      var retry = document.createElement('script');
+      retry.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      retry.async = true;
+      retry.defer = true;
+      retry.onload = function () {
+        if (window.turnstile) ready();
+        else if (onError && !finished) {
+          finished = true;
+          window.clearTimeout(timeoutId);
+          onError();
+        }
+      };
+      retry.onerror = function () {
+        if (!finished) {
+          finished = true;
+          window.clearTimeout(timeoutId);
+          if (onError) onError();
+        }
+      };
+      document.head.appendChild(retry);
+    }
+
+    if (window.turnstile) {
+      ready();
       return;
     }
 
-    var script = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]');
-    if (!script) {
-      script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
+    var existing = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]');
+    if (existing) {
+      existing.addEventListener('load', ready, { once: true });
+      existing.addEventListener('error', failed, { once: true });
+    } else {
+      failed();
     }
 
-    var started = Date.now();
-    (function waitForApi() {
+    // Also cover the case where an existing script finished before listeners attached.
+    (function poll() {
+      if (finished) return;
       if (window.turnstile) {
-        callback();
-      } else if (Date.now() - started < 15000) {
-        window.setTimeout(waitForApi, 100);
+        ready();
+      } else {
+        window.setTimeout(poll, 100);
       }
     })();
   }
 
   function mountTurnstile(form, id) {
+    var siteKey = getSiteKey(form);
     if (!siteKey) return;
     var target = form.querySelector('.cf-turnstile');
     if (!target) {
@@ -107,6 +155,8 @@
       } catch (error) {
         showMessage(form, 'Spam protection could not load. Please refresh the page and try again.', false);
       }
+    }, function () {
+      showMessage(form, 'Cloudflare security verification could not load. Check your connection, refresh, and try again.', false);
     });
   }
 
@@ -124,7 +174,7 @@
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
 
-      if (!siteKey) {
+      if (!getSiteKey(form)) {
         showMessage(form, 'This form is temporarily unavailable because spam protection is not configured. Please contact the site owner.', false);
         return;
       }
