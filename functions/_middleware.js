@@ -40,7 +40,7 @@ export async function onRequest(context) {
     const ga4Id = env.GA4_ID || '';
     let headInjections = '';
     if (turnstileKey) {
-      headInjections += '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
+      headInjections += '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>';
     }
     if (ga4Id) {
       headInjections += '<script async src="https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ga4Id) + '"></script>';
