@@ -65,7 +65,7 @@
     var script = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]');
     if (!script) {
       script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
