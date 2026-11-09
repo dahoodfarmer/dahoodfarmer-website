@@ -2,7 +2,7 @@ import { sanitizeString, isValidPayload } from '../lib/validation.js';
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
 function escapeHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function htmlResponse(title, message, showForm, email, token) {
-  var formHtml = showForm ? '<form method="POST" action="/api/unsubscribe" style="margin-top:1.5rem;"><input type="hidden" name="email" value="' + email + '"><input type="hidden" name="token" value="' + token + '"><button type="submit" class="btn btn-gold">Confirm Unsubscribe</button></form>' : '';
+  var formHtml = showForm ? '<form method="POST" action="/api/unsubscribe" data-newsletter="false" style="margin-top:1.5rem;"><input type="hidden" name="email" value="' + email + '"><input type="hidden" name="token" value="' + token + '"><button type="submit" class="btn btn-gold">Confirm Unsubscribe</button></form>' : '';
   return new Response('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>' + title + '</title><link rel="stylesheet" href="/styles.css"></head><body><div class="page-content" style="max-width:500px;margin:2rem auto;text-align:center;"><h1>' + title + '</h1><p>' + message + '</p>' + formHtml + '<p style="margin-top:1.5rem;"><a href="/" class="btn btn-outline">Return to Homepage</a></p></div><script src="/script.js"></script></body></html>', { headers: { 'Content-Type': 'text/html' } });
 }
 export async function onRequestGet({ request, env }) {

@@ -1,6 +1,7 @@
 -- ============================================================
 -- D1 Schema for dahoodfarmer-website
--- Run: wrangler d1 execute dahoodfarmer-db --file=schema.sql
+-- Local: wrangler d1 execute dahoodfarmer-local --local --file=schema.sql
+-- Production: wrangler d1 execute dahoodfarmer-db --remote --file=schema.sql
 -- ============================================================
 
 -- Contact form submissions

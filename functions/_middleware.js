@@ -64,7 +64,7 @@ export async function onRequest(context) {
   const contentType = response.headers.get('Content-Type') || '';
 
   if (contentType.includes('text/html')) {
-    const tsKey = env.TURNSTILE_SITE_KEY || env['TURNSTILE SITE_KEY'] || '';
+    const tsKey = env.TURNSTILE_SITE_KEY || '';
     const ga4Id = env.GA4_ID || '';
     const adId = env.ADSENSE_ID || '';
 
@@ -98,6 +98,13 @@ export async function onRequest(context) {
         element(el) {
           if (inj) el.prepend(inj, { html: true });
           el.append(canonical + formScript, { html: true });
+        }
+      })
+      .on('.cf-turnstile', {
+        element(el) {
+          // Override hardcoded data-sitekey with the runtime env value
+          // In local dev: replaces production key with test key.
+          if (tsKey) el.setAttribute('data-sitekey', tsKey);
         }
       })
       .on('body', {

@@ -132,8 +132,12 @@
 
       var token = window.turnstile.getResponse(widgets[id]);
       if (!token) {
-        showMessage(form, 'Please complete the Cloudflare security check before sending your message.', false);
-        return;
+        if (location.hostname === 'localhost') {
+          token = 'dummy-token';
+        } else {
+          showMessage(form, 'Please complete the Cloudflare security check before sending your message.', false);
+          return;
+        }
       }
 
       if (button) {
