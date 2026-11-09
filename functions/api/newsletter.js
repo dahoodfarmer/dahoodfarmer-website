@@ -15,6 +15,14 @@ export async function onRequestPost({ request, env }) {
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const email = sanitizeString(data.email, 254).toLowerCase();
   if (!email || !isValidEmail(email)) return json({ error: 'Valid email is required' }, 422);
-  try { const result = await insertSubscriber(env.DB, email); return json({ success: true, message: result.action === 'reactivated' ? 'Welcome back! Your subscription has been reactivated.' : 'Successfully subscribed! You can unsubscribe at any time.' }); }
-  catch (err) { return json({ error: 'Failed to subscribe' }, 500); }
+  try {
+    const result = await insertSubscriber(env.DB, email);
+    if (result.action === 'already_subscribed') {
+      return json({ success: true, alreadySubscribed: true, message: 'You are already subscribed.' });
+    }
+    return json({ success: true, message: result.action === 'reactivated' ? 'Welcome back! Your subscription has been reactivated.' : 'Successfully subscribed! You can unsubscribe at any time.' });
+  } catch (err) {
+    console.error('Newsletter D1 insert failed:', err?.stack || err?.message || String(err));
+    return json({ error: 'Failed to subscribe' }, 500);
+  }
 }

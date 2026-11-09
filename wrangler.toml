@@ -3,7 +3,7 @@
 
 name = "dahoodfarmer-website"
 compatibility_date = "2026-11-03"
-pages_build_output_dir = "."
+pages_build_output_dir = "public"
 
 [[d1_databases]]
 binding = "DB"
@@ -21,5 +21,5 @@ ADSENSE_ID = "ca-pub-5452000990146137"
 TURNSTILE_SITE_KEY = "0x4AAAAAAF4NKcwMel-ag1kV"
 NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
 
-# Keep TURNSTILE_SECRET_KEY configured as a secret in Cloudflare Pages.
+# Keep TURNSTILE_SECRET_KEY and provider API keys configured as Cloudflare Pages secrets.
 # Never put private API keys or secrets in this file.
