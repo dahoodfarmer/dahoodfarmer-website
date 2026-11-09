@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speaking & Bookings — Da HoodFarmer</title>
+<meta name="description" content="Book Da HoodFarmer for speaking engagements, television appearances, agricultural consulting, wilderness survival instruction, and community events.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<!-- Turnstile is loaded once by Cloudflare Pages middleware in explicit mode. -->
+</head>
+<body>
+<div class="page-hero">
+  <h1>★ Speaking & Bookings ★</h1>
+  <p>Book Da HoodFarmer for your event, show, or program</p>
+</div>
+<div class="page-content">
+  <h2>Booking Inquiry Form</h2>
+  <p>Submit a booking request and Da HoodFarmer will respond to discuss details, availability, and pricing.</p>
+  <form class="form-container" method="post">
+    <div class="form-group">
+      <label for="bk-name">Name *</label>
+      <input id="bk-name" name="name" type="text" required placeholder="Your full name">
+    </div>
+    <div class="form-group">
+      <label for="bk-email">Email *</label>
+      <input id="bk-email" name="email" type="email" required placeholder="your@email.com">
+    </div>
+    <div class="form-group">
+      <label for="bk-org">Organization</label>
+      <input id="bk-org" name="organization" type="text" placeholder="Company, network, or event name">
+    </div>
+    <div class="form-group">
+      <label for="bk-type">Inquiry Type *</label>
+      <select id="bk-type" name="inquiry_type" required>
+        <option value="">Select a type...</option>
+        <option value="Speaking Engagement">Speaking Engagement</option>
+        <option value="TV Appearance">TV / Media Appearance</option>
+        <option value="Agricultural Consulting">Agricultural Consulting</option>
+        <option value="Wilderness Survival Instruction">Wilderness Survival Instruction</option>
+        <option value="Community Event">Community Event</option>
+        <option value="Brand Partnership">Brand Partnership / Sponsorship</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="bk-date">Preferred Date</label>
+      <input id="bk-date" name="preferred_date" type="date">
+    </div>
+    <div class="form-group">
+      <label for="bk-details">Details</label>
+      <textarea id="bk-details" name="details" placeholder="Tell us about your event, audience, location, and what you need..."></textarea>
+    </div>
+    <div class="cf-turnstile" data-sitekey="0x4AAAAAAF4NKcwMel-ag1kV" style="margin:1rem 0;"></div>
+    <button type="submit" class="btn btn-gold" style="width:100%;">Submit Booking Request</button>
+  </form>
+</div>
+<script src="/script.js"></script>
+</body>
+</html>
