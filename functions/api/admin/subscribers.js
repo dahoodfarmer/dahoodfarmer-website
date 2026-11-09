@@ -5,7 +5,7 @@ export async function onRequestGet({ request, env }) {
   const o = (p - 1) * l;
 
   try {
-    // The current production newsletter_subscribers table has no consent_at column.
+    // consent_at is added by migration 0003; legacy rows remain NULL until resubscribed.
     // Return only columns confirmed in the deployed schema.
     const r = await env.DB.prepare(
       'SELECT id,email,status,consent_at,subscribed_at FROM newsletter_subscribers ORDER BY subscribed_at DESC LIMIT ? OFFSET ?'
