@@ -13,6 +13,14 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
+  // Protect the admin dashboard and every admin API route. This applies to
+  // production and preview deployments, which currently share the same D1/KV.
+  if (url.pathname === '/admin' || url.pathname.startsWith('/admin/') || url.pathname.startsWith('/api/admin/')) {
+    const { requireAdminAccess } = await import('./lib/access.js');
+    const denied = await requireAdminAccess(request, env);
+    if (denied) return denied;
+  }
+
   // Redirect www to apex domain
   if (url.hostname === 'www.dahoodfarmer.com') {
     url.hostname = 'dahoodfarmer.com';
