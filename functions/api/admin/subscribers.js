@@ -8,7 +8,7 @@ export async function onRequestGet({ request, env }) {
     // The current production newsletter_subscribers table has no consent_at column.
     // Return only columns confirmed in the deployed schema.
     const r = await env.DB.prepare(
-      'SELECT id,email,status,subscribed_at FROM newsletter_subscribers ORDER BY subscribed_at DESC LIMIT ? OFFSET ?'
+      'SELECT id,email,status,consent_at,subscribed_at FROM newsletter_subscribers ORDER BY subscribed_at DESC LIMIT ? OFFSET ?'
     ).bind(l, o).all();
     const c = await env.DB.prepare(
       "SELECT COUNT(*) as total FROM newsletter_subscribers WHERE status='active'"
