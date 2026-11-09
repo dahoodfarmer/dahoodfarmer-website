@@ -18,12 +18,12 @@
   }
 
   function findNewsletterForm() {
-    var forms = document.querySelectorAll('form');
+    // Only bind forms explicitly marked as newsletter forms. The global
+    // middleware also loads this script on unsubscribe and admin pages.
+    var forms = document.querySelectorAll('form[data-newsletter="true"]');
     for (var i = 0; i < forms.length; i++) {
       var form = forms[i];
-      if (form.querySelector('input[name="email"]') &&
-          !form.querySelector('input[name="name"]') &&
-          form.dataset.newsletter !== 'false') {
+      if (form.querySelector('input[type="email"][name="email"]')) {
         return { form: form, endpoint: '/api/newsletter' };
       }
     }
