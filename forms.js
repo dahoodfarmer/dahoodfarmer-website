@@ -1,11 +1,202 @@
-(function(){
-  var K = window.TURNSTILE_SITE_KEY || '';
-  function ep(){var p = window.location.pathname; if(p==='/contact'||p==='/contact.html') return '/api/contact'; if(p==='/booking'||p==='/booking.html') return '/api/booking'; return null}
-  function nf(){var fs = document.querySelectorAll('form'); for(var i=0;i<fs.length;i++){var f=fs[i]; if(f.querySelector('input[name="email"]') && !f.querySelector('input[name="name"]') && f.dataset.newsletter !== 'false') return {form:f, endpoint:'/api/newsletter'}} return null}
-  function ser(f){var d={}; f.querySelectorAll('input,textarea,select').forEach(function(i){if(i.name) d[i.name] = i.value}); return d}
-  function msg(f,t,ok){var m=f.querySelector('.form-message'); if(!m){m=document.createElement('div'); m.className='form-message'; m.style.cssText='padding:1rem;margin-top:1rem;border-radius:6px;text-align:center;font-size:.95rem'; f.appendChild(m)} m.textContent=t; m.style.background=ok?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'; m.style.color=ok?'#22c55e':'#ef4444'; m.style.border='1px solid '+(ok?'rgba(34,197,94,0.3)':'rgba(239,68,68,0.3)')}
-  var tw={};
-  function at(f,id){if(!K) return; var ex=f.querySelector('.cf-turnstile'); if(ex&&ex.querySelector('iframe')) return; if(ex) ex.remove(); var d=document.createElement('div'); d.className='cf-turnstile'; d.style.cssText='margin:1rem 0;'; var b=f.querySelector('button[type="submit"]'); if(b) b.parentNode.insertBefore(d,b); else f.appendChild(d); function tr(){if(window.turnstile) tw[id]=window.turnstile.render(d,{sitekey:K}); else setTimeout(tr,200)} tr()}
-  function sf(fi,id){var f=fi.form, e=fi.endpoint; var st=f.querySelector('button[type="submit"]') ? f.querySelector('button[type="submit"]').textContent : 'Submit'; at(f,id); f.addEventListener('submit', async function(ev){ev.preventDefault(); var b=f.querySelector('button[type="submit"]'); if(b){b.disabled=true; b.textContent='Sending...'} try{var d=ser(f); if(window.turnstile && tw[id]){var t=window.turnstile.getResponse(tw[id]); if(t) d['cf-turnstile-response']=t} if(!d['cf-turnstile-response'] && location.hostname==='localhost'){d['cf-turnstile-response']='dummy-token'} if(e==='/api/newsletter'){d.consent = f.querySelector('input[name="consent"]') ? (f.querySelector('input[name="consent"]').checked ? 'true' : '') : ''} var r=await fetch(e,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); var res=await r.json(); if(r.ok){msg(f,res.message||'Success! Thank you.',true); f.reset(); if(window.turnstile&&tw[id]) window.turnstile.reset(tw[id])} else{msg(f,res.error||'Something went wrong. Please try again.',false)}}catch(err){msg(f,'Network error. Please try again.',false)} if(b){b.disabled=false; b.textContent=st}})}
-  document.addEventListener('DOMContentLoaded', function(){var m=ep(); if(m) sf({form:document.querySelector('form.form-container'), endpoint:m}, 'main'); var n=nf(); if(n) sf(n, 'newsletter')})
+(function () {
+  'use strict';
+
+  var siteKey = window.TURNSTILE_SITE_KEY || '';
+  var widgets = Object.create(null);
+  var widgetReady = Object.create(null);
+
+  function endpointForPath() {
+    var path = window.location.pathname;
+    if (path === '/contact' || path === '/contact.html') return '/api/contact';
+    if (path === '/booking' || path === '/booking.html') return '/api/booking';
+    return null;
+  }
+
+  function findNewsletterForm() {
+    var forms = document.querySelectorAll('form');
+    for (var i = 0; i < forms.length; i++) {
+      var form = forms[i];
+      if (form.querySelector('input[name="email"]') &&
+          !form.querySelector('input[name="name"]') &&
+          form.dataset.newsletter !== 'false') {
+        return { form: form, endpoint: '/api/newsletter' };
+      }
+    }
+    return null;
+  }
+
+  function serialize(form) {
+    var data = {};
+    form.querySelectorAll('input, textarea, select').forEach(function (field) {
+      if (!field.name || field.disabled) return;
+      if (field.type === 'checkbox') {
+        data[field.name] = field.checked;
+      } else if (field.type === 'radio') {
+        if (field.checked) data[field.name] = field.value;
+      } else {
+        data[field.name] = field.value;
+      }
+    });
+    return data;
+  }
+
+  function showMessage(form, message, success) {
+    var node = form.querySelector('.form-message');
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'form-message';
+      node.setAttribute('role', 'status');
+      node.setAttribute('aria-live', 'polite');
+      node.style.cssText = 'padding:1rem;margin-top:1rem;border-radius:6px;text-align:center;font-size:.95rem';
+      form.appendChild(node);
+    }
+    node.textContent = message;
+    node.style.background = success ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)';
+    node.style.color = success ? '#22c55e' : '#ef4444';
+    node.style.border = '1px solid ' + (success ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)');
+  }
+
+  function ensureTurnstileScript(callback) {
+    if (window.turnstile) {
+      callback();
+      return;
+    }
+
+    var script = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    var started = Date.now();
+    (function waitForApi() {
+      if (window.turnstile) {
+        callback();
+      } else if (Date.now() - started < 15000) {
+        window.setTimeout(waitForApi, 100);
+      }
+    })();
+  }
+
+  function mountTurnstile(form, id) {
+    if (!siteKey) return;
+    var target = form.querySelector('.cf-turnstile');
+    if (!target) {
+      target = document.createElement('div');
+      target.className = 'cf-turnstile';
+      target.style.cssText = 'margin:1rem 0;';
+      var button = form.querySelector('button[type="submit"]');
+      if (button) button.parentNode.insertBefore(target, button);
+      else form.appendChild(target);
+    }
+
+    ensureTurnstileScript(function () {
+      if (widgets[id] !== undefined) return;
+      try {
+        widgets[id] = window.turnstile.render(target, {
+          sitekey: siteKey,
+          callback: function () { widgetReady[id] = true; },
+          'expired-callback': function () { widgetReady[id] = false; },
+          'error-callback': function () { widgetReady[id] = false; }
+        });
+        widgetReady[id] = false;
+      } catch (error) {
+        showMessage(form, 'Spam protection could not load. Please refresh the page and try again.', false);
+      }
+    });
+  }
+
+  function attachForm(config, id) {
+    if (!config || !config.form) return;
+    var form = config.form;
+    var endpoint = config.endpoint;
+    var button = form.querySelector('button[type="submit"]');
+    var originalLabel = button ? button.textContent : 'Submit';
+
+    mountTurnstile(form, id);
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      if (!siteKey) {
+        showMessage(form, 'This form is temporarily unavailable because spam protection is not configured. Please contact the site owner.', false);
+        return;
+      }
+      if (!window.turnstile || widgets[id] === undefined) {
+        showMessage(form, 'Spam protection is still loading. Please wait a moment and try again.', false);
+        return;
+      }
+
+      var token = window.turnstile.getResponse(widgets[id]);
+      if (!token) {
+        if (location.hostname === 'localhost') {
+          token = 'dummy-token';
+        } else {
+          showMessage(form, 'Please complete the Cloudflare security check before sending your message.', false);
+          return;
+        }
+      }
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Sending...';
+      }
+
+      try {
+        var data = serialize(form);
+        data['cf-turnstile-response'] = token;
+
+        if (endpoint === '/api/newsletter') {
+          var consent = form.querySelector('input[name="consent"]');
+          data.consent = consent && consent.checked ? 'true' : '';
+        }
+
+        var response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        var result;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          throw new Error('The server returned an unreadable response. Please try again later.');
+        }
+
+        if (!response.ok) {
+          showMessage(form, result.error || 'Your message could not be sent. Please try again.', false);
+          if (window.turnstile) window.turnstile.reset(widgets[id]);
+          return;
+        }
+
+        showMessage(form, result.message || 'Thank you. Your submission was received.', true);
+        form.reset();
+        window.turnstile.reset(widgets[id]);
+        widgetReady[id] = false;
+      } catch (error) {
+        showMessage(form, error.message || 'Network error. Please check your connection and try again.', false);
+        if (window.turnstile && widgets[id] !== undefined) window.turnstile.reset(widgets[id]);
+        widgetReady[id] = false;
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var endpoint = endpointForPath();
+    if (endpoint) {
+      attachForm({ form: document.querySelector('form.form-container'), endpoint: endpoint }, 'primary');
+    }
+
+    var newsletter = findNewsletterForm();
+    if (newsletter) attachForm(newsletter, 'newsletter');
+  });
 })();
