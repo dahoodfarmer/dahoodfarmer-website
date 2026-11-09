@@ -36,11 +36,8 @@ export async function verifyTurnstile(token, secret, remoteip, expectedHostname)
   }
 
   if (!data.success) {
-    const debug = JSON.stringify({ success: data.success, errorCodes: data['error-codes'], hostname: data.hostname, action: data.action, cdata: data.cdata, challenge_ts: data.challenge_ts });
-    const errorCodes = Array.isArray(data['error-codes']) && data['error-codes'].length > 0
-      ? data['error-codes'].join(', ')
-      : 'Captcha verification failed';
-    return { success: false, error: errorCodes + ' [DEBUG: ' + debug + ']' };
+    console.error('Turnstile verification failed:', JSON.stringify({ success: data.success, errorCodes: data['error-codes'], hostname: data.hostname, challenge_ts: data.challenge_ts }));
+    return { success: false, error: 'Security verification failed. Please refresh the page and try again.' };
   }
 
   if (expectedHostname && data.hostname && data.hostname !== expectedHostname) {
