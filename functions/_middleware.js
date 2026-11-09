@@ -97,7 +97,7 @@ export async function onRequest(context) {
       .on('head', {
         element(el) {
           if (inj) el.prepend(inj, { html: true });
-          el.append(canonical + formScript, { html: true });
+          el.append('<link rel="icon" type="image/svg+xml" href="/favicon.svg"><meta name="theme-color" content="#0A0A0A">' + canonical + formScript, { html: true });
         }
       })
       .on('.cf-turnstile', {
