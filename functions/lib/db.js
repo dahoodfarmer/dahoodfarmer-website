@@ -3,10 +3,10 @@ async function tableColumns(db, table) {
   return new Set((result.results || []).map((column) => column.name));
 }
 
-function insertStatement(db, table, values) {
+function insertStatement(db, table, values, ignoreConflict = false) {
   const columns = Object.keys(values);
   const placeholders = columns.map(() => '?').join(', ');
-  return db.prepare(`INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`).bind(...columns.map((column) => values[column])).run();
+  return db.prepare(`INSERT ${ignoreConflict ? 'OR IGNORE ' : ''}INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`).bind(...columns.map((column) => values[column])).run();
 }
 
 export async function insertContact(db, { name, email, subject, message, ip }) {
@@ -30,28 +30,41 @@ export async function insertBooking(db, { name, email, organization, inquiry_typ
 export async function insertSubscriber(db, email) {
   const columns = await tableColumns(db, 'newsletter_subscribers');
   if (!columns.has('email')) throw new Error('newsletter_subscribers table is missing required column: email');
+
+  const now = new Date().toISOString();
+  const mutableValues = {};
+  if (columns.has('unsubscribe_token')) mutableValues.unsubscribe_token = crypto.randomUUID();
+  if (columns.has('consent_at')) mutableValues.consent_at = now;
+  if (columns.has('status')) mutableValues.status = 'active';
+  if (columns.has('subscribed_at')) mutableValues.subscribed_at = now;
+
   const existing = await db.prepare('SELECT * FROM newsletter_subscribers WHERE email = ?').bind(email).first();
-  const status = columns.has('status') ? existing?.status : (existing ? 'active' : null);
-  if (existing && status === 'active') return { action: 'already_subscribed' };
+  const existingStatus = columns.has('status') ? existing?.status : (existing ? 'active' : null);
+  if (existing && existingStatus === 'active') return { action: 'already_subscribed' };
 
-  const values = { email };
-  if (columns.has('unsubscribe_token')) values.unsubscribe_token = crypto.randomUUID();
-  if (columns.has('consent_at')) values.consent_at = new Date().toISOString();
-  if (columns.has('status')) values.status = 'active';
-
-  if (existing) {
-    const updates = Object.keys(values).filter((column) => column !== 'email');
+  async function reactivate() {
+    const updates = Object.keys(mutableValues);
     if (updates.length) {
       const assignments = updates.map((column) => `${column} = ?`).join(', ');
       await db.prepare(`UPDATE newsletter_subscribers SET ${assignments} WHERE email = ?`)
-        .bind(...updates.map((column) => values[column]), email).run();
+        .bind(...updates.map((column) => mutableValues[column]), email).run();
     }
     return { action: 'reactivated' };
   }
 
-  if (columns.has('subscribed_at')) values.subscribed_at = new Date().toISOString();
-  await insertStatement(db, 'newsletter_subscribers', values);
-  return { action: 'inserted' };
+  if (existing) return reactivate();
+
+  const values = { email, ...mutableValues };
+  const result = await insertStatement(db, 'newsletter_subscribers', values, true);
+  if (result?.meta?.changes > 0) return { action: 'inserted' };
+
+  // A concurrent signup may have inserted this email after the initial read.
+  // Re-read and treat the duplicate as already subscribed or reactivate it.
+  const concurrent = await db.prepare('SELECT * FROM newsletter_subscribers WHERE email = ?').bind(email).first();
+  if (!concurrent) throw new Error('Newsletter insert was ignored without an existing subscriber row');
+  const concurrentStatus = columns.has('status') ? concurrent.status : 'active';
+  if (concurrentStatus === 'active') return { action: 'already_subscribed' };
+  return reactivate();
 }
 
 export async function getStats(db) {
