@@ -93,6 +93,7 @@
       else form.appendChild(target);
     }
 
+    if (target.querySelector('iframe')) return;
     ensureTurnstileScript(function () {
       if (widgets[id] !== undefined) return;
       try {
@@ -125,12 +126,14 @@
         showMessage(form, 'This form is temporarily unavailable because spam protection is not configured. Please contact the site owner.', false);
         return;
       }
-      if (!window.turnstile || widgets[id] === undefined) {
+      if (!window.turnstile) {
         showMessage(form, 'Spam protection is still loading. Please wait a moment and try again.', false);
         return;
       }
 
-      var token = window.turnstile.getResponse(widgets[id]);
+      var token = widgets[id] !== undefined
+        ? window.turnstile.getResponse(widgets[id])
+        : window.turnstile.getResponse();
       if (!token) {
         if (location.hostname === 'localhost') {
           token = 'dummy-token';
