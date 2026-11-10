@@ -1,4 +1,5 @@
 import { retrieveKnowledge } from './apex-knowledge.js';
+import { buildAgentPlan, buildAgentInstructions } from './apex-agents.js';
 
 export const APEX_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
@@ -94,5 +95,7 @@ export function buildSystemPrompt(message) {
     ? '\n\nRETRIEVED OFFICIAL WEBSITE SOURCES\nUse these snippets as the approved public website knowledge for this question. Cite relevant sources as Markdown links using only the exact URLs below. Do not infer availability, pricing, or current status beyond what the snippets state.\n' + knowledge.map(item => 'SOURCE: ' + item.title + ' — ' + item.url + '\n' + item.content).join('\n\n')
     : '';
   const specialistContext = specialists.map(name => SPECIALISTS[name]).join('\n\n');
-  return { specialist, specialists, prompt: BASE_SYSTEM + '\n\n' + specialistContext + sourceContext, sources: knowledge.map(({ title, url }) => ({ title, url })) };
+  const agentPlan = buildAgentPlan(specialists);
+  const agentContext = buildAgentInstructions(agentPlan);
+  return { specialist, specialists, prompt: BASE_SYSTEM + '\n\n' + specialistContext + '\n\n' + agentContext + sourceContext, sources: knowledge.map(({ title, url }) => ({ title, url })) };
 }
