@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chooseSpecialist, buildSystemPrompt, APEX_MODEL } from '../functions/lib/apex.js';
+import { retrieveKnowledge } from '../functions/lib/apex-knowledge.js';
 
 test('APEX model adapter is explicit and replaceable', () => {
   assert.equal(APEX_MODEL, '@cf/meta/llama-3.3-70b-instruct-fp8-fast');
@@ -62,4 +63,20 @@ test('evaluation dataset is internally consistent and includes critical safety c
   for (const category of ['prompt_injection','privacy','permissions','financial_boundary','legal_boundary']) {
     assert.ok(data.tests.some(x => x.category === category), 'missing ' + category);
   }
+});
+
+test('retrieval returns source-grounded brand facts and store availability', () => {
+  const media = retrieveKnowledge('What television appearance was Da HoodFarmer in?');
+  assert.ok(media.some(x => x.id === 'media' || x.id === 'about'));
+  assert.ok(media.every(x => x.url.startsWith('https://dahoodfarmer.com/')));
+  const shop = retrieveKnowledge('Can I buy products from the official store?');
+  assert.ok(shop.some(x => x.id === 'shop'));
+  assert.ok(shop.find(x => x.id === 'shop').content.includes('no products are currently available'));
+});
+
+test('booking retrieval does not promise a confirmed reservation', () => {
+  const { prompt, sources } = buildSystemPrompt('Can I book Da HoodFarmer for a speaking engagement?');
+  assert.ok(sources.some(x => x.url === 'https://dahoodfarmer.com/booking'));
+  assert.ok(prompt.includes('Submitt'));
+  assert.ok(prompt.includes('does not confirm a booking'));
 });
