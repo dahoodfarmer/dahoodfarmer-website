@@ -4,6 +4,9 @@ export async function onRequestPost({ request, env }) {
   const origin = request.headers.get('Origin');
   try { if (!origin || new URL(origin).origin !== new URL(request.url).origin) return json({ error: 'Invalid origin.' }, 403); }
   catch { return json({ error: 'Invalid origin.' }, 403); }
+  if (!(request.headers.get('Content-Type') || '').toLowerCase().includes('application/json')) return json({ error: 'JSON is required.' }, 415);
+  const length = Number(request.headers.get('Content-Length') || 0);
+  if (length > 2000) return json({ error: 'Feedback payload is too large.' }, 413);
   if (!env.APEX_DB) return json({ ok: true, recorded: false });
   if (!env.SESSIONS || !env.APEX_RATE_LIMIT_SALT) return json({ error: 'Feedback is temporarily unavailable.' }, 503);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -15,7 +18,11 @@ export async function onRequestPost({ request, env }) {
   if (rate && rate.count >= 30) return json({ error: 'Feedback limit reached.' }, 429);
   await env.SESSIONS.put(rateKey, JSON.stringify({ count: (rate?.count || 0) + 1 }), { expirationTtl: 86400 });
   let data;
-  try { data = await request.json(); } catch { return json({ error: 'Invalid request.' }, 400); }
+  try {
+    const raw = await request.text();
+    if (raw.length > 2000) return json({ error: 'Feedback payload is too large.' }, 413);
+    data = JSON.parse(raw);
+  } catch { return json({ error: 'Invalid request.' }, 400); }
   const conversationId = typeof data.conversationId === 'string' && /^[0-9a-f-]{36}$/i.test(data.conversationId) ? data.conversationId : null;
   const rating = data.rating === 'helpful' || data.rating === 'not_helpful' ? data.rating : null;
   const category = ['accuracy', 'relevance', 'clarity', 'other'].includes(data.category) ? data.category : null;
