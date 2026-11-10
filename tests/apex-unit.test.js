@@ -368,3 +368,24 @@ test('visitor-supplied assistant history is discarded to prevent fabricated assi
   assert.equal(history[1].content, 'What should I plant?');
   assert.equal(history[2].content.length, 1200);
 });
+
+test('internal agent orchestration dispatches at most two bounded specialist reviews', async () => {
+  const { buildAgentPlan, buildAgentInstructions } = await import('../functions/lib/apex-agents.js');
+  const plan = buildAgentPlan(['finance', 'agriculture', 'legal']);
+  assert.deepEqual(plan.agents.map(agent => agent.discipline), ['finance', 'agriculture']);
+  assert.equal(plan.execution, 'parallel_review_then_single_synthesis');
+  assert.deepEqual(plan.toolPermissions, []);
+  assert.equal(plan.externalActionsAllowed, false);
+  assert.equal(plan.revealInternalRouting, false);
+  const instructions = buildAgentInstructions(plan);
+  assert.ok(instructions.includes('FINANCE'));
+  assert.ok(instructions.includes('AGRICULTURE'));
+  assert.ok(instructions.includes('Do not mention internal agent names'));
+  assert.ok(!instructions.includes('LEGAL'));
+});
+
+test('agent orchestration safely falls back to general for unknown or empty routes', async () => {
+  const { buildAgentPlan } = await import('../functions/lib/apex-agents.js');
+  assert.deepEqual(buildAgentPlan([]).agents.map(agent => agent.discipline), ['general']);
+  assert.deepEqual(buildAgentPlan(['unknown']).agents.map(agent => agent.discipline), ['general']);
+});
