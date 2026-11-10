@@ -83,7 +83,8 @@ export async function onRequest(context) {
     }
 
     // Safely encode the Turnstile site key for inline script
-    const formScript = '<script>window.TURNSTILE_SITE_KEY=' + safeJsValue(tsKey) + '</script><script src="/forms.js" defer></script>';
+    const apexTsKey = env.APEX_TURNSTILE_SITE_KEY || tsKey;
+    const formScript = '<script>window.TURNSTILE_SITE_KEY=' + safeJsValue(tsKey) + ';window.APEX_TURNSTILE_SITE_KEY=' + safeJsValue(apexTsKey) + '</script><script src="/forms.js" defer></script>';
 
     // Canonical URL — always uses the production domain
     const canonical = '<link rel="canonical" href="https://dahoodfarmer.com' + url.pathname + '">';
