@@ -28,3 +28,34 @@ ACCESS_AUD = "6a0c1ed1900526a1e3550094c3c71bd43ea2c0a6cdf9557f340c764cf3675909"
 
 # Keep TURNSTILE_SECRET_KEY and provider API keys configured as Cloudflare Pages secrets.
 # Never put private API keys or secrets in this file.
+
+# Preview deployments are isolated from production data and rate-limit state.
+# DB and APEX_DB intentionally point to the same empty staging database.
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "dahoodfarmer-preview-db"
+database_id = "ca5786b1-751e-4cee-b595-3a4b60061cc9"
+
+[[env.preview.d1_databases]]
+binding = "APEX_DB"
+database_name = "dahoodfarmer-preview-db"
+database_id = "ca5786b1-751e-4cee-b595-3a4b60061cc9"
+
+[[env.preview.d1_databases]]
+binding = "PAYMENTS_DB"
+database_name = "dahoodfarmer-payments-test"
+database_id = "3ea269d0-4333-42d1-8fd6-43f42f62d708"
+
+[[env.preview.kv_namespaces]]
+binding = "SESSIONS"
+id = "2218d0643bab47e0b1bd46fd0e473637"
+
+[env.preview.vars]
+GA4_ID = "G-BQJHY0DYR2"
+GTM_ID = ""
+ADSENSE_ID = "ca-pub-5452000990146137"
+TURNSTILE_SITE_KEY = "0x4AAAAAAF4NKcwMel-ag1kV"
+NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
+ACCESS_ISSUER = "https://snowy-silence-28c3.cloudflareaccess.com"
+ACCESS_AUD = "6a0c1ed1900526a1e3550094c3c71bd43ea2c0a6cdf9557f340c764cf3675909"
+APEX_ENABLED = "false"
