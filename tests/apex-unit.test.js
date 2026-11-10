@@ -134,3 +134,61 @@ test('daily inference budget fails closed when telemetry DB is unavailable', asy
   const { reserveDailyInference } = await import('../functions/api/apex/chat.js');
   assert.equal(await reserveDailyInference({}), false);
 });
+
+test('Cloudflare model adapter normalizes output and usage', async () => {
+  const { runApexModel } = await import('../functions/lib/apex-model.js');
+  let model = '';
+  const result = await runApexModel({
+    AI: { async run(name, args) { model = name; assert.equal(args.max_tokens, 500); return { response: '  grounded answer  ', usage: { prompt_tokens: 120, completion_tokens: 45 } }; } }
+  }, [{ role: 'user', content: 'Hello' }], { maxTokens: 500 });
+  assert.equal(model, '@cf/meta/llama-3.3-70b-instruct-fp8-fast');
+  assert.equal(result.response, 'grounded answer');
+  assert.equal(result.usage.prompt_tokens, 120);
+  assert.equal(result.usage.completion_tokens, 45);
+});
+
+test('OpenAI adapter uses Responses API without server-side conversation storage', async () => {
+  const { runApexModel } = await import('../functions/lib/apex-model.js');
+  let requestBody, requestUrl, auth;
+  const fakeFetch = async (url, options) => {
+    requestUrl = url;
+    auth = options.headers.Authorization;
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      model: 'gpt-6.1-sol',
+      output: [{ type: 'message', content: [{ type: 'output_text', text: 'OpenAI answer' }] }],
+      usage: { input_tokens: 200, output_tokens: 40 }
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const result = await runApexModel({ APEX_PROVIDER: 'openai', OPENAI_API_KEY: 'test-key' }, [
+    { role: 'system', content: 'System' }, { role: 'user', content: 'Question' }
+  ], {}, fakeFetch);
+  assert.equal(requestUrl, 'https://api.openai.com/v1/responses');
+  assert.equal(auth, 'Bearer test-key');
+  assert.equal(requestBody.store, false);
+  assert.equal(requestBody.model, 'gpt-6.1-sol');
+  assert.equal(result.response, 'OpenAI answer');
+  assert.equal(result.usage.prompt_tokens, 200);
+});
+
+test('Anthropic adapter separates system prompt and conversation messages', async () => {
+  const { runApexModel } = await import('../functions/lib/apex-model.js');
+  let requestBody;
+  const fakeFetch = async (url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      model: 'claude-sonnet-test',
+      content: [{ type: 'text', text: 'Anthropic answer' }],
+      usage: { input_tokens: 150, output_tokens: 35 }
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const result = await runApexModel({
+    APEX_PROVIDER: 'anthropic', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_MODEL: 'claude-sonnet-test'
+  }, [{ role: 'system', content: 'System prompt' }, { role: 'user', content: 'Question' }], {}, fakeFetch);
+  assert.equal(requestBody.system, 'System prompt');
+  assert.equal(requestBody.messages.length, 1);
+  assert.equal(requestBody.messages[0].role, 'user');
+  assert.equal(requestBody.top_p, undefined);
+  assert.equal(result.response, 'Anthropic answer');
+  assert.equal(result.usage.completion_tokens, 35);
+});
