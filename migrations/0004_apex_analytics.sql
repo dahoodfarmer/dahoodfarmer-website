@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS apex_events (
   id TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
   event_type TEXT NOT NULL,
+  target_path TEXT,
   specialist TEXT,
   model TEXT,
   status TEXT NOT NULL DEFAULT 'ok',
