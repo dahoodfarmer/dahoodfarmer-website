@@ -62,7 +62,7 @@ const SPECIALISTS = {
 };
 
 const ROUTES = [
-  ['health_safety', /\b(symptom|diagnos|medical|medicine|medication|treatment|injur|emergency|animal health|veterinar|poison|safety hazard|first aid)\b/],
+  ['health_safety', /\b(symptom|diagnos|medical|medicine|medication|treatment|injur|emergency|chest pain|shortness of breath|animal health|veterinar|poison|safety hazard|first aid)\b/],
   ['legal', /\b(legal|lawyer|attorney|lawsuit|contract|trademark|copyright|compliance|regulation|permit|license requirement)\b/],
   ['finance', /\b(credit|debt|loan|financing|tax|budget|cash flow|investment|investing|insurance|interest rate|accounting)\b/],
   ['agriculture', /\b(farm|crop|soil|livestock|chicken|rabbit|horse|pig|duck|seed|harvest|irrigat|agricultur|compost|pest control)\b/],
