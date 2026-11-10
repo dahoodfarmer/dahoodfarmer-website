@@ -62,7 +62,7 @@ async function enforceRateLimit(request, env, salt) {
   return true;
 }
 
-async function reserveDailyInference(env) {
+export async function reserveDailyInference(env) {
   if (!env.APEX_DB) return false;
   const cap = Math.min(20, Math.max(1, Number(env.APEX_DAILY_REQUEST_LIMIT || 20)));
   const day = new Date().toISOString().slice(0, 10);
