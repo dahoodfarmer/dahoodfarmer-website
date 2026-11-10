@@ -4,8 +4,14 @@ export async function onRequestGet({ env, request }) {
   const days = Math.min(90, Math.max(1, Number(url.searchParams.get('days') || 7)));
   const windowExpr = '-' + days + ' days';
   const rateLimitSalt = await getApexRateLimitSalt(env);
+  const provider = String(env.APEX_PROVIDER || 'cloudflare').toLowerCase();
+  const modelReady = provider === 'cloudflare' ? Boolean(env.AI)
+    : provider === 'openai' ? Boolean(env.OPENAI_API_KEY)
+    : provider === 'anthropic' ? Boolean(env.ANTHROPIC_API_KEY && env.ANTHROPIC_MODEL)
+    : false;
   const readiness = {
-    model_binding_configured: Boolean(env.AI),
+    model_binding_configured: modelReady,
+    model_provider: provider,
     telemetry_database_configured: Boolean(env.APEX_DB),
     rate_limit_configured: Boolean(env.SESSIONS && rateLimitSalt),
     turnstile_site_key_configured: Boolean(env.TURNSTILE_SITE_KEY),
