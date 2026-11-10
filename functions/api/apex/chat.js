@@ -95,6 +95,9 @@ async function recordEvent(env, event) {
 
 export async function onRequestPost({ request, env, waitUntil }) {
   if (!sameOrigin(request)) return json({ error: 'Request origin could not be verified.' }, 403);
+  // Enforce the feature flag at the API boundary, not only in page rendering.
+  // This keeps direct API calls disabled until the owner explicitly enables APEX.
+  if (env.APEX_ENABLED !== 'true') return json({ error: 'APEX is not enabled.' }, 404);
   if (!(request.headers.get('Content-Type') || '').toLowerCase().includes('application/json')) return json({ error: 'JSON is required.' }, 415);
   const length = Number(request.headers.get('Content-Length') || 0);
   if (length > MAX_BODY) return json({ error: 'Message is too large.' }, 413);
