@@ -1,4 +1,4 @@
-import { getApexRateLimitSalt } from '../../lib/apex-analytics.js';
+import { getApexRateLimitSalt, enforceApexTelemetryLimit } from '../../lib/apex-analytics.js';
 const HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: HEADERS }); }
 export async function onRequestPost({ request, env }) {
@@ -13,13 +13,7 @@ export async function onRequestPost({ request, env }) {
   const salt = await getApexRateLimitSalt(env);
   if (!env.SESSIONS || !salt) return json({ error: 'Feedback is temporarily unavailable.' }, 503);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + ip));
-  const ipHash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
-  const rateKey = 'apex:feedback:' + ipHash;
-  let rate = null;
-  try { rate = await env.SESSIONS.get(rateKey, 'json'); } catch {}
-  if (rate && rate.count >= 30) return json({ error: 'Feedback limit reached.' }, 429);
-  await env.SESSIONS.put(rateKey, JSON.stringify({ count: (rate?.count || 0) + 1 }), { expirationTtl: 86400 });
+  if (!await enforceApexTelemetryLimit(env, salt, ip, 'feedback', 30, 86400)) return json({ error: 'Feedback limit reached.' }, 429);
   let data;
   try {
     const raw = await request.text();
