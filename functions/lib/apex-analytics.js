@@ -36,30 +36,38 @@ async function attributionKey(env) {
 
 export async function createApexAttributionToken(env, conversationId) {
   if (!isApexConversationId(conversationId)) return null;
-  const key = await attributionKey(env);
-  if (!key) return null;
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(TOKEN_CONTEXT + conversationId));
-  return conversationId + '.' + encodeBase64Url(signature);
+  try {
+    const key = await attributionKey(env);
+    if (!key) return null;
+    const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(TOKEN_CONTEXT + conversationId));
+    return conversationId + '.' + encodeBase64Url(signature);
+  } catch {
+    return null;
+  }
 }
 
 export async function verifyApexAttributionToken(env, token) {
   if (typeof token !== 'string' || token.length > 160) return null;
-  const parts = token.split('.');
-  if (parts.length !== 2 || !isApexConversationId(parts[0])) return null;
-  const signature = decodeBase64Url(parts[1]);
-  const key = await attributionKey(env);
-  if (!signature || !key) return null;
-  const valid = await crypto.subtle.verify('HMAC', key, signature, new TextEncoder().encode(TOKEN_CONTEXT + parts[0]));
-  return valid ? parts[0] : null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 2 || !isApexConversationId(parts[0])) return null;
+    const signature = decodeBase64Url(parts[1]);
+    const key = await attributionKey(env);
+    if (!signature || !key) return null;
+    const valid = await crypto.subtle.verify('HMAC', key, signature, new TextEncoder().encode(TOKEN_CONTEXT + parts[0]));
+    return valid ? parts[0] : null;
+  } catch {
+    return null;
+  }
 }
 
 // Records only the conversion event and signed anonymous conversation reference.
 // Never stores the form payload, name, email, or message in APEX analytics.
 export async function recordApexLead(env, attributionToken, targetPath) {
   if (!env.APEX_DB || !['/contact', '/booking'].includes(targetPath)) return false;
-  const conversationId = await verifyApexAttributionToken(env, attributionToken);
-  if (!conversationId) return false;
   try {
+    const conversationId = await verifyApexAttributionToken(env, attributionToken);
+    if (!conversationId) return false;
     await env.APEX_DB.prepare(
       'INSERT INTO apex_events (id, conversation_id, event_type, target_path, status) VALUES (?, ?, ?, ?, ?)'
     ).bind(crypto.randomUUID(), conversationId, 'lead_submit', targetPath, 'ok').run();
