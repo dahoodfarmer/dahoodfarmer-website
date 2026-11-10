@@ -42,10 +42,19 @@ export async function onRequestPost({ request, env }) {
   if (!status) return json({ received: true });
 
   try {
-    const recorded = await env.DB.prepare(
+    const order = await env.DB.prepare(
+      'SELECT order_id, amount, currency FROM dhf_payment_orders WHERE provider_session_id = ?'
+    ).bind(session.id).first();
+    if (!order) return json({ error: 'Order not found.' }, 404);
+    if (session.metadata?.order_id !== order.order_id || Number(session.amount_total) !== Number(order.amount) || session.currency !== order.currency) {
+      console.error('Stripe webhook order reconciliation mismatch for session:', session.id);
+      return json({ error: 'Order reconciliation failed.' }, 400);
+    }
+
+    // Record event IDs for audit/deduplication. Reapplying the same state update is safe.
+    await env.DB.prepare(
       "INSERT OR IGNORE INTO dhf_payment_events (event_id, event_type) VALUES (?, ?)"
     ).bind(event.id, event.type).run();
-    if (recorded?.meta?.changes === 0) return json({ received: true, duplicate: true });
 
     await env.DB.prepare(
       "UPDATE dhf_payment_orders SET status = ?, customer_email = CASE WHEN ? <> '' THEN ? ELSE customer_email END, updated_at = datetime('now') WHERE provider_session_id = ?"
