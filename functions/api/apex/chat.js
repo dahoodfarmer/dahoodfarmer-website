@@ -26,9 +26,9 @@ function sameOrigin(request) {
 }
 
 async function verifyTurnstile(token, request, env) {
-  if (!token || !env.TURNSTILE_SECRET_KEY) return false;
+  if (!token || !(env.APEX_TURNSTILE_SECRET_KEY || env.TURNSTILE_SECRET_KEY)) return false;
   const body = new URLSearchParams();
-  body.set('secret', env.TURNSTILE_SECRET_KEY);
+  body.set('secret', env.APEX_TURNSTILE_SECRET_KEY || env.TURNSTILE_SECRET_KEY);
   body.set('response', token);
   const ip = request.headers.get('CF-Connecting-IP');
   if (ip) body.set('remoteip', ip);
@@ -98,7 +98,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (!(request.headers.get('Content-Type') || '').toLowerCase().includes('application/json')) return json({ error: 'JSON is required.' }, 415);
   const length = Number(request.headers.get('Content-Length') || 0);
   if (length > MAX_BODY) return json({ error: 'Message is too large.' }, 413);
-  if (!env.AI) return json({ error: 'APEX is being prepared. Please try again soon.' }, 503);
+  const provider = String(env.APEX_PROVIDER || 'cloudflare').toLowerCase();
+  const providerReady = provider === 'cloudflare' ? Boolean(env.AI)
+    : provider === 'openai' ? Boolean(env.OPENAI_API_KEY)
+    : provider === 'anthropic' ? Boolean(env.ANTHROPIC_API_KEY && env.ANTHROPIC_MODEL)
+    : false;
+  if (!providerReady) return json({ error: 'APEX is being prepared. Please try again soon.' }, 503);
   const rateLimitSalt = await getApexRateLimitSalt(env);
   if (!env.SESSIONS || !rateLimitSalt || !env.APEX_DB) return json({ error: 'APEX is temporarily unavailable while its security settings are completed.' }, 503);
 
@@ -151,7 +156,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   } catch (error) {
     console.error('APEX inference failed:', error?.message || 'unknown');
     if (waitUntil) waitUntil(recordEvent(env, {
-      conversationId, eventType: 'chat_error', specialist, model: APEX_MODEL,
+      conversationId, eventType: 'chat_error', specialist, model: provider + '/' + (env.APEX_MODEL || env.OPENAI_MODEL || env.ANTHROPIC_MODEL || 'unconfigured'),
       status: 'error', latencyMs: Date.now() - started
     }));
     return json({ error: 'APEX could not complete that response. Please try again.' }, 502);
