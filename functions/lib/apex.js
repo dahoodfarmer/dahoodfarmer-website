@@ -1,3 +1,5 @@
+import { retrieveKnowledge } from './apex-knowledge.js';
+
 export const APEX_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 const BASE_SYSTEM = `You are DHF APEX, the official AI assistant for Da HoodFarmer.
@@ -84,5 +86,9 @@ export function chooseSpecialist(message) {
 
 export function buildSystemPrompt(message) {
   const specialist = chooseSpecialist(message);
-  return { specialist, prompt: BASE_SYSTEM + '\n\n' + SPECIALISTS[specialist] };
+  const knowledge = retrieveKnowledge(message, 3);
+  const sourceContext = knowledge.length
+    ? '\\n\\nRETRIEVED OFFICIAL WEBSITE SOURCES\\nUse these snippets as the approved public website knowledge for this question. Cite relevant sources as Markdown links using only the exact URLs below. Do not infer availability, pricing, or current status beyond what the snippets state.\\n' + knowledge.map(item => 'SOURCE: ' + item.title + ' — ' + item.url + '\\n' + item.content).join('\\n\\n')
+    : '';
+  return { specialist, prompt: BASE_SYSTEM + '\\n\\n' + SPECIALISTS[specialist] + sourceContext, sources: knowledge.map(({ title, url }) => ({ title, url })) };
 }
