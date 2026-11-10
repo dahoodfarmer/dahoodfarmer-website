@@ -1,3 +1,4 @@
+import { createApexAttributionToken } from '../../lib/apex-analytics.js';
 import { APEX_MODEL, buildSystemPrompt } from '../../lib/apex.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
@@ -131,7 +132,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
     };
     if (waitUntil) waitUntil(recordEvent(env, event));
     else await recordEvent(env, event);
-    return json({ answer, conversationId, specialist, model: APEX_MODEL, sources });
+    const apexRef = await createApexAttributionToken(env, conversationId);
+    return json({ answer, conversationId, specialist, model: APEX_MODEL, sources, apexRef });
   } catch (error) {
     console.error('APEX inference failed:', error?.message || 'unknown');
     if (waitUntil) waitUntil(recordEvent(env, {
