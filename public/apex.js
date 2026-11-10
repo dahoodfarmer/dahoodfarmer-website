@@ -49,6 +49,7 @@
     try {
       widgetId = window.turnstile.render(root.querySelector('.apex-turnstile'), {
         sitekey: window.TURNSTILE_SITE_KEY,
+        action: 'apex_chat',
         callback: function (token) { turnstileToken = token; send.disabled = false; },
         'expired-callback': function () { turnstileToken = ''; send.disabled = true; },
         'error-callback': function () { turnstileToken = ''; send.disabled = true; }
