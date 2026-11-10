@@ -50,6 +50,10 @@ database_id = "3ea269d0-4333-42d1-8fd6-43f42f62d708"
 binding = "SESSIONS"
 id = "2218d0643bab47e0b1bd46fd0e473637"
 
+# Preview-only Workers AI binding. APEX_ENABLED remains false until usage is verified.
+[env.preview.ai]
+binding = "AI"
+
 [env.preview.vars]
 GA4_ID = "G-BQJHY0DYR2"
 GTM_ID = ""
