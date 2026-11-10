@@ -150,6 +150,8 @@
 
       try {
         var data = serialize(form);
+        var apexRef = new URLSearchParams(window.location.search).get('apex_ref');
+        if (apexRef && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(apexRef)) data.apex_ref = apexRef;
         data['cf-turnstile-response'] = token;
 
         if (endpoint === '/api/newsletter') {
