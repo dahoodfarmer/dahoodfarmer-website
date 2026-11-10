@@ -144,7 +144,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (!await verifyTurnstile(payload.turnstileToken, request, env)) return json({ error: 'Please complete the security check and try again.' }, 403);
 
   const conversationId = /^[0-9a-f-]{36}$/i.test(payload.conversationId || '') ? payload.conversationId : crypto.randomUUID();
-  const { specialist, prompt, sources } = buildSystemPrompt(message);
+  const { specialist, specialists, prompt, sources } = buildSystemPrompt(message);
   const history = normalizeVisitorHistory(payload.history);
   const messages = [{ role: 'system', content: prompt }, ...history, { role: 'user', content: message }];
 
@@ -170,7 +170,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (waitUntil) waitUntil(recordEvent(env, event));
     else await recordEvent(env, event);
     const apexRef = await createApexAttributionToken(env, conversationId);
-    return json({ answer, conversationId, specialist, provider: result.provider, model: result.model, sources, apexRef });
+    return json({ answer, conversationId, specialist, specialists, provider: result.provider, model: result.model, sources, apexRef });
   } catch (error) {
     console.error('APEX inference failed:', error?.message || 'unknown');
     if (waitUntil) waitUntil(recordEvent(env, {
