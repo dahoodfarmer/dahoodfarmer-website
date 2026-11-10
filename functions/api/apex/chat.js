@@ -78,9 +78,10 @@ export async function enforceRateLimit(request, env, salt) {
 // Client history is never authoritative: accept only prior visitor turns, never client-supplied assistant messages.
 export function normalizeVisitorHistory(history) {
   if (!Array.isArray(history)) return [];
-  return history.slice(-6).filter(item => item && item.role === 'user' && typeof item.content === 'string')
+  return history.filter(item => item && item.role === 'user' && typeof item.content === 'string')
     .map(item => ({ role: 'user', content: item.content.trim().slice(0, 1200) }))
-    .filter(item => item.content.length > 0);
+    .filter(item => item.content.length > 0)
+    .slice(-6);
 }
 
 export async function reserveDailyInference(env) {
