@@ -66,7 +66,7 @@ const SPECIALISTS = {
 const ROUTES = [
   ['health_safety', /\b(symptom|diagnos|medical|medicine|medication|treatment|injur|emergency|chest pain|shortness of breath|animal health|veterinar|poison|safety hazard|first aid)\b/],
   ['legal', /\b(legal|lawyer|attorney|lawsuit|contract|trademark|copyright|compliance|regulation|permit|license requirement)\b/],
-  ['finance', /\b(credit|debt|loan|financing|tax|budget|cash flow|investment|investing|insurance|interest rate|accounting)\b/],
+  ['finance', /\b(credit|debt|loan|financ(?:e|ing|ial)?|tax|budget|cash flow|investment|investing|insurance|interest rate|accounting)\b/],
   ['agriculture', /\b(farm|crop|soil|livestock|chicken|rabbit|horse|pig|duck|seed|harvest|irrigat|agricultur|compost|pest control)\b/],
   ['media', /\b(book|booking|appearance|sponsor|sponsorship|press|media|tv|television|interview|collaborat|partnership|speaking)\b/],
   ['marketing', /\b(marketing|advertis|seo|search ranking|social media|campaign|content strategy|traffic|conversion|brand awareness|audience growth)\b/],
@@ -76,19 +76,23 @@ const ROUTES = [
   ['research', /\b(research|source|study|evidence|compare|explain|learn|education|statistics|data)\b/]
 ];
 
-export function chooseSpecialist(message) {
+export function chooseSpecialists(message) {
   const text = String(message || '').toLowerCase();
-  for (const [name, pattern] of ROUTES) {
-    if (pattern.test(text)) return name;
-  }
-  return 'general';
+  const matches = ROUTES.filter(([, pattern]) => pattern.test(text)).map(([name]) => name);
+  return matches.length ? matches.slice(0, 2) : ['general'];
+}
+
+export function chooseSpecialist(message) {
+  return chooseSpecialists(message)[0];
 }
 
 export function buildSystemPrompt(message) {
-  const specialist = chooseSpecialist(message);
+  const specialists = chooseSpecialists(message);
+  const specialist = specialists[0];
   const knowledge = retrieveKnowledge(message, 3);
   const sourceContext = knowledge.length
     ? '\n\nRETRIEVED OFFICIAL WEBSITE SOURCES\nUse these snippets as the approved public website knowledge for this question. Cite relevant sources as Markdown links using only the exact URLs below. Do not infer availability, pricing, or current status beyond what the snippets state.\n' + knowledge.map(item => 'SOURCE: ' + item.title + ' — ' + item.url + '\n' + item.content).join('\n\n')
     : '';
-  return { specialist, prompt: BASE_SYSTEM + '\n\n' + SPECIALISTS[specialist] + sourceContext, sources: knowledge.map(({ title, url }) => ({ title, url })) };
+  const specialistContext = specialists.map(name => SPECIALISTS[name]).join('\n\n');
+  return { specialist, specialists, prompt: BASE_SYSTEM + '\n\n' + specialistContext + sourceContext, sources: knowledge.map(({ title, url }) => ({ title, url })) };
 }
