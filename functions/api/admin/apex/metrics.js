@@ -1,11 +1,13 @@
+import { getApexRateLimitSalt } from '../../../lib/apex-analytics.js';
 export async function onRequestGet({ env, request }) {
   const url = new URL(request.url);
   const days = Math.min(90, Math.max(1, Number(url.searchParams.get('days') || 7)));
   const windowExpr = '-' + days + ' days';
+  const rateLimitSalt = await getApexRateLimitSalt(env);
   const readiness = {
     model_binding_configured: Boolean(env.AI),
     telemetry_database_configured: Boolean(env.APEX_DB),
-    rate_limit_configured: Boolean(env.SESSIONS && env.APEX_RATE_LIMIT_SALT),
+    rate_limit_configured: Boolean(env.SESSIONS && rateLimitSalt),
     turnstile_site_key_configured: Boolean(env.TURNSTILE_SITE_KEY),
     turnstile_secret_configured: Boolean(env.TURNSTILE_SECRET_KEY),
     owner_access_configured: Boolean(env.ACCESS_ISSUER && env.ACCESS_AUD)
