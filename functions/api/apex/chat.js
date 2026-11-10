@@ -86,7 +86,8 @@ export function normalizeVisitorHistory(history) {
 
 export async function reserveDailyInference(env) {
   if (!env.APEX_DB) return false;
-  const cap = Math.min(20, Math.max(1, Number(env.APEX_DAILY_REQUEST_LIMIT || 20)));
+  const configuredCap = Number.parseInt(env.APEX_DAILY_REQUEST_LIMIT || '3', 10);
+  const cap = Number.isFinite(configuredCap) ? Math.min(20, Math.max(1, configuredCap)) : 3;
   const day = new Date().toISOString().slice(0, 10);
   try {
     const row = await env.APEX_DB.prepare(
@@ -112,6 +113,11 @@ async function recordEvent(env, event) {
   } catch (error) {
     console.error('APEX analytics write failed:', error?.message || 'unknown');
   }
+}
+
+export function buildPublicChatResponse({ answer, conversationId, sources, apexRef }) {
+  // Explicit allowlist: never expose internal specialist routing or model/provider metadata.
+  return { answer, conversationId, sources, apexRef };
 }
 
 export async function onRequestPost({ request, env, waitUntil }) {
@@ -170,7 +176,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (waitUntil) waitUntil(recordEvent(env, event));
     else await recordEvent(env, event);
     const apexRef = await createApexAttributionToken(env, conversationId);
-    return json({ answer, conversationId, specialist, specialists, provider: result.provider, model: result.model, sources, apexRef });
+    return json(buildPublicChatResponse({ answer, conversationId, sources, apexRef }));
   } catch (error) {
     console.error('APEX inference failed:', error?.message || 'unknown');
     if (waitUntil) waitUntil(recordEvent(env, {
