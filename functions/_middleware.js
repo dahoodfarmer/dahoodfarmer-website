@@ -67,6 +67,7 @@ export async function onRequest(context) {
     const tsKey = env.TURNSTILE_SITE_KEY || '';
     const ga4Id = env.GA4_ID || '';
     const adId = env.ADSENSE_ID || '';
+    const apexEnabled = env.APEX_ENABLED === 'true';
 
     // Build head injections — all values safely encoded
     let inj = '';
@@ -97,7 +98,7 @@ export async function onRequest(context) {
       .on('head', {
         element(el) {
           if (inj) el.prepend(inj, { html: true });
-          el.append('<link rel="icon" type="image/svg+xml" href="/favicon.svg"><meta name="theme-color" content="#0A0A0A">' + canonical + formScript, { html: true });
+          el.append('<link rel="icon" type="image/svg+xml" href="/favicon.svg"><meta name="theme-color" content="#0A0A0A">' + canonical + formScript + (apexEnabled ? '<link rel="stylesheet" href="/apex.css?v=20261110">' : ''), { html: true });
         }
       })
       .on('.cf-turnstile', {
@@ -110,6 +111,7 @@ export async function onRequest(context) {
       .on('body', {
         element(el) {
           el.prepend(skipLink, { html: true });
+          if (apexEnabled) el.append('<script src="/apex.js?v=20261110" defer></script>', { html: true });
         }
       })
       // Add id="main-content" to the first .page-content or .hero element
