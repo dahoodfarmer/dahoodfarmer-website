@@ -1,10 +1,12 @@
 {
   "name": "dahoodfarmer-website",
   "version": "1.0.0",
+  "type": "module",
   "description": "Da HoodFarmer — professional digital headquarters",
   "scripts": {
     "dev": "npx wrangler pages dev . --d1 DB=dahoodfarmer-local --kv SESSIONS=local-kv --binding TURNSTILE_SITE_KEY=1x00000000000000000000AA --binding TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA --binding NOTIFICATION_EMAIL= --binding RESEND_API_KEY= --binding RESEND_FROM_EMAIL= --binding EXPECTED_HOSTNAME=example.com --port 8788",
-    "deploy": "npx wrangler pages deploy . --project-name dahoodfarmer-website"
+    "deploy": "npx wrangler pages deploy . --project-name dahoodfarmer-website",
+    "test": "node --test tests/*.test.js"
   },
   "devDependencies": { "wrangler": "^4.0.0" }
 }
