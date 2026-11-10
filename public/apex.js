@@ -62,6 +62,29 @@
     if (widgetId !== null && window.turnstile) { try { window.turnstile.reset(widgetId); } catch (error) {} }
     send.disabled = true;
   }
+  function addSources(node, sources) {
+    if (!Array.isArray(sources) || !sources.length) return;
+    var valid = sources.filter(function (source) {
+      try { return source && new URL(source.url).origin === 'https://dahoodfarmer.com'; }
+      catch (error) { return false; }
+    });
+    if (!valid.length) return;
+    var box = document.createElement('div');
+    box.className = 'apex-sources';
+    var label = document.createElement('span');
+    label.textContent = 'Sources: ';
+    box.appendChild(label);
+    valid.forEach(function (source, index) {
+      if (index) box.appendChild(document.createTextNode(' · '));
+      var link = document.createElement('a');
+      link.href = source.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = source.title || 'Da HoodFarmer';
+      box.appendChild(link);
+    });
+    node.appendChild(box);
+  }
   function addFeedback(node, id) {
     var group = document.createElement('div'); group.className = 'apex-feedback';
     var up = document.createElement('button'), down = document.createElement('button');
@@ -90,6 +113,7 @@
       var data = await response.json();
       if (!response.ok) throw new Error(data.error || 'APEX is temporarily unavailable.');
       pending.textContent = data.answer;
+      addSources(pending, data.sources);
       addFeedback(pending, data.conversationId || conversationId);
       history.push({ role: 'user', content: value }, { role: 'assistant', content: data.answer });
       history = history.slice(-8);
