@@ -280,7 +280,7 @@ test('visitor rate limiting is atomic under concurrent requests and stores only 
   );
   assert.equal(results.filter(Boolean).length, 12);
   assert.equal(results.filter(value => !value).length, 18);
-  assert.match(capturedSql, /ON CONFLICT\\(rate_key\\) DO UPDATE/);
+  assert.ok(capturedSql.includes('ON CONFLICT(rate_key) DO UPDATE'));
   assert.match(capturedSql, /RETURNING request_count/);
   assert.match(capturedKey, /^[a-f0-9]{64}$/);
   assert.notEqual(capturedKey, '203.0.113.10');
