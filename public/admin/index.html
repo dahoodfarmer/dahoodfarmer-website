@@ -32,11 +32,39 @@ tr:hover{background:#243652}
 <div class="stat-card"><div class="label">New Bookings</div><div class="value" id="s4">—</div></div>
 <div class="stat-card"><div class="label">Subscribers</div><div class="value" id="s5">—</div></div>
 </div>
+<div class="section">
+<h2 style="margin-bottom:1rem">DHF APEX — Performance & Readiness</h2>
+<p style="color:#94a3b8;margin-bottom:1rem">Owner-only operational snapshot. No visitor prompts or response text are displayed or stored.</p>
+<div class="stats-grid" style="margin-bottom:1rem">
+<div class="stat-card"><div class="label">Widget Opens (7d)</div><div class="value" id="apex-opens">—</div></div>
+<div class="stat-card"><div class="label">Conversations (7d)</div><div class="value" id="apex-chats">—</div></div>
+<div class="stat-card"><div class="label">Responses (7d)</div><div class="value" id="apex-responses">—</div></div>
+<div class="stat-card"><div class="label">Errors (7d)</div><div class="value" id="apex-errors">—</div></div>
+<div class="stat-card"><div class="label">Avg. Latency</div><div class="value" id="apex-latency">—</div></div>
+<div class="stat-card"><div class="label">Helpful Feedback</div><div class="value" id="apex-feedback">—</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem" id="apex-readiness">
+<div>Loading APEX readiness…</div>
+</div>
+<p id="apex-note" style="color:#94a3b8;margin-top:1rem;font-size:.85rem">Loading APEX metrics…</p>
+</div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Contacts</h2><table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Subject</th><th>Status</th></tr></thead><tbody id="ct"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Bookings</h2><table><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Pref Date</th><th>Status</th></tr></thead><tbody id="bt"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
 </div>
 <script>
 function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+fetch('/api/admin/apex/metrics?days=7').then(r=>r.json()).then(d=>{
+const s=d.summary||{}, rates=d.rates||{}, ready=d.readiness||{};
+document.getElementById('apex-opens').textContent=s.widget_opens??'—';
+document.getElementById('apex-chats').textContent=s.chat_starts??'—';
+document.getElementById('apex-responses').textContent=s.responses??'—';
+document.getElementById('apex-errors').textContent=s.errors??'—';
+document.getElementById('apex-latency').textContent=s.avg_latency_ms==null?'—':Math.round(s.avg_latency_ms)+' ms';
+document.getElementById('apex-feedback').textContent=rates.helpful_feedback_pct==null?'—':rates.helpful_feedback_pct+'%';
+const labels={model_binding_configured:'AI model binding',telemetry_database_configured:'Telemetry database',rate_limit_configured:'Rate limiting',turnstile_site_key_configured:'Turnstile site key',turnstile_secret_configured:'Turnstile secret',owner_access_configured:'Owner access configuration'};
+document.getElementById('apex-readiness').innerHTML=Object.keys(labels).map(k=>'<div class="stat-card" style="padding:1rem"><div class="label">'+labels[k]+'</div><div style="font-weight:700;margin-top:.4rem;color:'+(ready[k]?'#4ade80':'#fbbf24')+'">'+(ready[k]?'Configured':'Not configured')+'</div></div>').join('');
+document.getElementById('apex-note').textContent=(d.limitations||[]).join(' ');
+}).catch(()=>{document.getElementById('apex-note').textContent='APEX metrics could not be loaded. Check the protected metrics endpoint and its data bindings.'});
 fetch('/api/admin/stats').then(r=>{if(r.status===401){window.location.href='/';return}return r.json()}).then(d=>{
 if(!d)return;
 document.getElementById('s1').textContent=d.stats.totalContacts;
