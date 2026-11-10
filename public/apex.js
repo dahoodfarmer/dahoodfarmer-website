@@ -39,17 +39,17 @@
     launcher.setAttribute('aria-expanded', String(value));
     if (value) {
       input.focus();
-      if (!window.TURNSTILE_SITE_KEY) {
+      if (!window.APEX_TURNSTILE_SITE_KEY) {
         security.textContent = 'Security verification is not configured yet. APEX will become available after setup.';
         send.disabled = true;
       } else mountTurnstile();
     }
   }
   function mountTurnstile() {
-    if (widgetId !== null || !window.turnstile || !window.TURNSTILE_SITE_KEY) return;
+    if (widgetId !== null || !window.turnstile || !window.APEX_TURNSTILE_SITE_KEY) return;
     try {
       widgetId = window.turnstile.render(root.querySelector('.apex-turnstile'), {
-        sitekey: window.TURNSTILE_SITE_KEY,
+        sitekey: window.APEX_TURNSTILE_SITE_KEY,
         action: 'apex_chat',
         callback: function (token) { turnstileToken = token; send.disabled = false; },
         'expired-callback': function () { turnstileToken = ''; send.disabled = true; },
