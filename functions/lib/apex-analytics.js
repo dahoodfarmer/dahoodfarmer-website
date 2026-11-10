@@ -1,6 +1,18 @@
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TOKEN_CONTEXT = 'DHF_APEX_ATTRIBUTION_V1:';
 
+export async function getApexRateLimitSalt(env) {
+  const configured = typeof env.APEX_RATE_LIMIT_SALT === 'string' ? env.APEX_RATE_LIMIT_SALT : '';
+  if (configured.length >= 32) return configured;
+  if (!env.SESSIONS) return null;
+  try {
+    const stored = await env.SESSIONS.get('apex:internal:rate-limit-salt');
+    return typeof stored === 'string' && stored.length >= 32 ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
 export function isApexConversationId(value) {
   return typeof value === 'string' && UUID_PATTERN.test(value);
 }
@@ -24,10 +36,11 @@ function decodeBase64Url(value) {
 }
 
 async function attributionKey(env) {
-  if (!env.APEX_RATE_LIMIT_SALT || String(env.APEX_RATE_LIMIT_SALT).length < 32) return null;
+  const salt = await getApexRateLimitSalt(env);
+  if (!salt) return null;
   return crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(env.APEX_RATE_LIMIT_SALT),
+    new TextEncoder().encode(salt),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify']
