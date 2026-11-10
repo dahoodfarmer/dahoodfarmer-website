@@ -116,7 +116,7 @@ test('daily inference budget uses an atomic database cap', async () => {
         assert.ok(sql.includes('RETURNING request_count'));
         return {
           bind(day, cap) {
-            assert.match(day, /^\\d{4}-\\d{2}-\\d{2}$/);
+            assert.match(day, /^\d{4}-\d{2}-\d{2}$/);
             assert.equal(cap, 3);
             return { async first() { count += 1; return count <= 3 ? { request_count: count } : null; } };
           }
