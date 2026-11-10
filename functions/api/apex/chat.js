@@ -48,19 +48,31 @@ async function verifyTurnstile(token, request, env) {
 }
 
 async function enforceRateLimit(request, env, salt) {
-  if (!env.SESSIONS || !salt) return false;
+  if (!env.APEX_DB || !salt) return false;
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const key = 'apex:rate:' + await sha256(salt + ':' + ip);
+  // Persist only a salted hash of the client IP; never store the raw address.
+  const key = await sha256(salt + ':' + ip);
   const now = Math.floor(Date.now() / 1000);
-  let state = null;
-  try { state = await env.SESSIONS.get(key, 'json'); } catch {}
-  if (!state || now - state.start >= WINDOW_SECONDS) {
-    await env.SESSIONS.put(key, JSON.stringify({ start: now, count: 1 }), { expirationTtl: WINDOW_SECONDS });
-    return true;
+  const windowStartCutoff = now - WINDOW_SECONDS;
+  try {
+    const row = await env.APEX_DB.prepare(
+      "INSERT INTO apex_rate_limits (rate_key, window_start, request_count) VALUES (?, ?, 1) " +
+      "ON CONFLICT(rate_key) DO UPDATE SET " +
+      "window_start = CASE WHEN apex_rate_limits.window_start <= ? THEN ? ELSE apex_rate_limits.window_start END, " +
+      "request_count = CASE WHEN apex_rate_limits.window_start <= ? THEN 1 ELSE apex_rate_limits.request_count + 1 END, " +
+      "updated_at = datetime('now') " +
+      "WHERE apex_rate_limits.window_start <= ? OR apex_rate_limits.request_count < ? " +
+      "RETURNING request_count"
+    ).bind(key, now, windowStartCutoff, now, windowStartCutoff, windowStartCutoff, MAX_REQUESTS).first();
+    // Opportunistically expire stale hashed identifiers without storing visitor history.
+    if (now % 3600 < 10) {
+      try { await env.APEX_DB.prepare("DELETE FROM apex_rate_limits WHERE window_start < ?").bind(now - 86400).run(); } catch {}
+    }
+    return Boolean(row);
+  } catch (error) {
+    console.error('APEX rate limit check failed:', error?.message || 'unknown');
+    return false;
   }
-  if (state.count >= MAX_REQUESTS) return false;
-  await env.SESSIONS.put(key, JSON.stringify({ start: state.start, count: state.count + 1 }), { expirationTtl: Math.max(60, WINDOW_SECONDS - (now - state.start)) });
-  return true;
 }
 
 export async function reserveDailyInference(env) {
