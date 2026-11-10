@@ -29,6 +29,7 @@ test('specialist routing selects the appropriate discipline', () => {
 
 test('mixed-domain questions receive up to two relevant specialist disciplines', () => {
   assert.deepEqual(chooseSpecialists('How do I finance soil improvements for my farm?'), ['finance', 'agriculture']);
+  assert.deepEqual(chooseSpecialists('How do I finance a farm business loan and crop operation?'), ['finance', 'agriculture']);
   assert.deepEqual(chooseSpecialists('How do I improve soil fertility for tomatoes?'), ['agriculture']);
   assert.deepEqual(chooseSpecialists('Tell me about the brand'), ['general']);
 });
