@@ -2,6 +2,7 @@ import { getApexRateLimitSalt } from '../../lib/apex-analytics.js';
 const HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: HEADERS }); }
 export async function onRequestPost({ request, env }) {
+  if (env.APEX_ENABLED !== 'true') return json({ error: 'APEX is not enabled.' }, 404);
   const origin = request.headers.get('Origin');
   try { if (!origin || new URL(origin).origin !== new URL(request.url).origin) return json({ error: 'Invalid origin.' }, 403); }
   catch { return json({ error: 'Invalid origin.' }, 403); }
