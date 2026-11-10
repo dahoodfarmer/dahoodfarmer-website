@@ -1,7 +1,8 @@
 (function () {
   'use strict';
   if (document.getElementById('dhf-apex-root')) return;
-  var attributionToken = '', conversationId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+  function newConversationId() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }); }
+  var attributionToken = '', conversationId = newConversationId();
   var history = [], widgetId = null, turnstileToken = '', busy = false, opened = false, openedOnce = false;
   var root = document.createElement('div');
   root.id = 'dhf-apex-root';
@@ -125,7 +126,7 @@
   launcher.addEventListener('click', function () { setOpen(!opened); });
   close.addEventListener('click', function () { setOpen(false); });
   root.querySelector('.apex-clear').addEventListener('click', function () {
-    history = []; messages.innerHTML = ''; appendMessage('Chat cleared. What would you like to explore?', 'assistant');
+    history = []; attributionToken = ''; conversationId = newConversationId(); messages.innerHTML = ''; appendMessage('Chat cleared. What would you like to explore?', 'assistant');
   });
   root.querySelectorAll('[data-prompt]').forEach(function (button) {
     button.addEventListener('click', function () { input.value = button.getAttribute('data-prompt') || ''; input.focus(); });
