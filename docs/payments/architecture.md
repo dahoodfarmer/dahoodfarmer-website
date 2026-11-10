@@ -13,7 +13,7 @@ This is a first-party payment experience embedded in DaHoodFarmer.com. It is not
 
 - Branded payment entry point and QR landing page using approved Da HoodFarmer logo assets.
 - Mobile-first embedded checkout.
-- One-time payments for support/donations, products, services, and invoice/order references.
+- Initial MVP: one-time support contributions with a customer-entered amount. Product, service, and invoice payments remain disabled until trusted server-side catalog/invoice pricing is implemented.
 - Card payments plus Apple Pay / Google Pay when the device, browser, domain verification, and processor configuration support them.
 - Clear pending, successful, failed, and cancelled states.
 - Customer receipt and merchant notification after verified payment confirmation.
@@ -48,6 +48,8 @@ This is a first-party payment experience embedded in DaHoodFarmer.com. It is not
 - Identify approved Da HoodFarmer logo asset and brand colors.
 
 ### Phase 1 — Test-mode MVP
+- Use a dedicated preview-only D1 database (`dahoodfarmer-payments-test`); do not point preview payment writes at the production database.
+- Initial checkout purpose is support contributions only; never accept customer-entered totals for product/service/invoice purchases.
 - Create payment/order records.
 - Embedded checkout and branded payment page.
 - QR landing route for a payment/order reference.
