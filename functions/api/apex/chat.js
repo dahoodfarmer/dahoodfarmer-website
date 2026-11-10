@@ -47,7 +47,7 @@ async function verifyTurnstile(token, request, env) {
   } catch { return false; }
 }
 
-async function enforceRateLimit(request, env, salt) {
+export async function enforceRateLimit(request, env, salt) {
   if (!env.APEX_DB || !salt) return false;
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   // Persist only a salted hash of the client IP; never store the raw address.
