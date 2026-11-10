@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   if (document.getElementById('dhf-apex-root')) return;
-  var conversationId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+  var attributionToken = '', conversationId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
   var history = [], widgetId = null, turnstileToken = '', busy = false, opened = false, openedOnce = false;
   var root = document.createElement('div');
   root.id = 'dhf-apex-root';
@@ -113,6 +113,7 @@
       var data = await response.json();
       if (!response.ok) throw new Error(data.error || 'APEX is temporarily unavailable.');
       pending.textContent = data.answer;
+      attributionToken = data.apexRef || '';
       addSources(pending, data.sources);
       addFeedback(pending, data.conversationId || conversationId);
       history.push({ role: 'user', content: value }, { role: 'assistant', content: data.answer });
@@ -130,7 +131,7 @@
     button.addEventListener('click', function () { input.value = button.getAttribute('data-prompt') || ''; input.focus(); });
   });
   form.addEventListener('submit', function (event) { event.preventDefault(); var value = input.value.trim(); if (value) submitMessage(value); });
-  root.querySelectorAll('.apex-links a').forEach(function (link) { link.addEventListener('click', function () { var target = new URL(link.href); target.searchParams.set('apex_ref', conversationId); link.href = target.toString(); logEvent('cta_click', target.pathname); }); });
+  root.querySelectorAll('.apex-links a').forEach(function (link) { link.addEventListener('click', function () { var target = new URL(link.href); if (attributionToken) target.searchParams.set('apex_ref', attributionToken); link.href = target.toString(); logEvent('cta_click', target.pathname); }); });
   input.addEventListener('keydown', function (event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
   if (window.turnstile) mountTurnstile();
   else {
