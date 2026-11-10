@@ -34,7 +34,7 @@ export async function onRequestGet({ env, request }) {
   }
 
   try {
-    const [summary, specialists, feedback, eventTypes] = await Promise.all([
+    const [summary, specialists, feedback, eventTypes, leadsByPath] = await Promise.all([
       env.APEX_DB.prepare(`SELECT
         SUM(CASE WHEN event_type='widget_open' THEN 1 ELSE 0 END) AS widget_opens,
         COUNT(DISTINCT CASE WHEN event_type='chat_start' THEN conversation_id END) AS chat_starts,
@@ -54,7 +54,9 @@ export async function onRequestGet({ env, request }) {
       env.APEX_DB.prepare(`SELECT rating, COUNT(*) AS total FROM apex_feedback
         WHERE created_at >= datetime('now', ?) GROUP BY rating`).bind(windowExpr).all(),
       env.APEX_DB.prepare(`SELECT event_type, COUNT(*) AS total FROM apex_events
-        WHERE created_at >= datetime('now', ?) GROUP BY event_type ORDER BY total DESC`).bind(windowExpr).all()
+        WHERE created_at >= datetime('now', ?) GROUP BY event_type ORDER BY total DESC`).bind(windowExpr).all(),
+      env.APEX_DB.prepare(`SELECT target_path, COUNT(*) AS leads FROM apex_events
+        WHERE event_type='lead_submit' AND created_at >= datetime('now', ?) GROUP BY target_path ORDER BY leads DESC`).bind(windowExpr).all()
     ]);
     const s = { ...empty, ...(summary || {}) };
     const totalResponses = Number(s.responses || 0) + Number(s.errors || 0);
@@ -75,6 +77,7 @@ export async function onRequestGet({ env, request }) {
       specialists: specialists.results || [],
       feedback: feedback.results || [],
       event_types: eventTypes.results || [],
+      leads_by_path: leadsByPath.results || [],
       limitations: [
         'APEX analytics stores event metadata only, never visitor prompts or model responses.',
         'CTA clicks are not confirmed leads. Lead submissions are counted only when an explicit lead_submit event is instrumented.',
