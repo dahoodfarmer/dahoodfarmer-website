@@ -389,3 +389,34 @@ test('agent orchestration safely falls back to general for unknown or empty rout
   assert.deepEqual(buildAgentPlan([]).agents.map(agent => agent.discipline), ['general']);
   assert.deepEqual(buildAgentPlan(['unknown']).agents.map(agent => agent.discipline), ['general']);
 });
+
+test('public APEX response hides internal routing and model infrastructure metadata', async () => {
+  const { buildPublicChatResponse } = await import('../functions/api/apex/chat.js');
+  const response = buildPublicChatResponse({
+    answer: 'Here is the answer.',
+    conversationId: '123e4567-e89b-42d3-a456-426614174000',
+    sources: [{ title: 'About', url: 'https://dahoodfarmer.com/about' }],
+    apexRef: 'signed-reference',
+    specialist: 'finance',
+    specialists: ['finance', 'agriculture'],
+    provider: 'cloudflare',
+    model: '@cf/internal-model'
+  });
+  assert.deepEqual(Object.keys(response).sort(), ['answer', 'apexRef', 'conversationId', 'sources']);
+  assert.equal(JSON.stringify(response).includes('finance'), false);
+  assert.equal(JSON.stringify(response).includes('@cf/internal-model'), false);
+});
+
+test('daily inference budget defaults to a conservative three requests', async () => {
+  const { reserveDailyInference } = await import('../functions/api/apex/chat.js');
+  let capturedCap;
+  const env = {
+    APEX_DB: {
+      prepare(sql) {
+        return { bind(day, cap) { capturedCap = cap; return { async first() { return { request_count: 1 }; } }; } };
+      }
+    }
+  };
+  assert.equal(await reserveDailyInference(env), true);
+  assert.equal(capturedCap, 3);
+});
