@@ -3,7 +3,7 @@
 ## What is implemented
 
 - Public assistant routing for agriculture, business, media, technology, research, marketing, finance, legal research, health/safety, and operations.
-- Curated source-grounded retrieval over the official public About, Agriculture, Business, Media, Booking, Store, Community, Healing Ain't Soft, Contact, and Press Kit pages. APEX can cite only the URLs supplied by this local knowledge layer; it cannot claim live web research.
+- Curated source-grounded retrieval over the official public About, Agriculture, Business, Media, Booking, Store, Community, Healing Ain't Soft, Contact, and Press Kit pages. Public API responses use an explicit allowlist and do not expose internal specialist routing or model-provider identifiers. APEX can cite only the URLs supplied by this local knowledge layer; it cannot claim live web research.
 - Provider-neutral model adapter supports Cloudflare Workers AI, OpenAI Responses API, and Anthropic Messages API. Credentials are not stored in source control; only Cloudflare is the default provider.
 - Explicit truthfulness, privacy, professional-boundary, booking, and payment safeguards in the system prompt.
 - Same-origin API checks, bounded request bodies, per-IP salted KV rate limits, and Turnstile verification.
