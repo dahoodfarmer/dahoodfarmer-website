@@ -96,8 +96,7 @@ export async function runApexModel(env, messages, options = {}, fetchImpl = fetc
         max_tokens: maxTokens,
         system,
         messages: conversation,
-        temperature,
-        top_p: options.topP ?? 0.85
+        temperature
       })
     });
     const data = await readJson(response, 'Anthropic');
