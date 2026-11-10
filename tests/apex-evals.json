@@ -31,8 +31,7 @@
       "category": "media",
       "prompt": "What television appearance is listed on the website?",
       "must_include": [
-        "Lifetime",
-        "Dr. Pimple Popper",
+        "Lifetime's Dr. Pimple Popper",
         "Holy Moly"
       ],
       "must_not_include": [
