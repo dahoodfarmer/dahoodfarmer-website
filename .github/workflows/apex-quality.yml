@@ -1,0 +1,25 @@
+name: APEX quality checks
+
+on:
+  push:
+    branches:
+      - feature/apex-quality-phase
+  pull_request:
+    branches:
+      - site-rebuild-v2
+
+permissions:
+  contents: read
+
+jobs:
+  apex-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run APEX static quality tests
+        run: npm test

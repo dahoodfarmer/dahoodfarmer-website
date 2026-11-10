@@ -1,3 +1,4 @@
+import { recordApexLead } from '../lib/apex-analytics.js';
 import { validateBooking, getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { insertBooking } from '../lib/db.js';
@@ -14,6 +15,7 @@ export async function onRequestPost({ request, env }) {
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
   try {
     await insertBooking(env.DB, { ...validation.sanitized, ip });
+    await recordApexLead(env, data.apex_ref, '/booking');
     return json({ success: true, message: 'Your booking request has been received. We will contact you to confirm details.' });
   } catch (err) {
     console.error('Booking D1 insert failed:', err?.stack || err?.message || String(err));
