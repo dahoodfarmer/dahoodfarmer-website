@@ -1,7 +1,7 @@
 import { checkRateLimit, getClientIP, isValidEmail, isValidPayload, sanitizeString } from '../../lib/validation.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
-const purposes = new Set(['support', 'product', 'service', 'invoice']);
+const purposes = new Set(['support']);
 
 export async function onRequestPost({ request, env }) {
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PUBLISHABLE_KEY) return json({ error: 'Online payments are being prepared. Please check back soon.' }, 503);
