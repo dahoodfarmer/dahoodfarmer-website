@@ -6,6 +6,7 @@ async function hash(value) {
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).map(x => x.padStart(2, '0')).join('');
 }
 export async function onRequestPost({ request, env }) {
+  if (env.APEX_ENABLED !== 'true') return json({ error: 'APEX is not enabled.' }, 404);
   try { if (!request.headers.get('Origin') || new URL(request.headers.get('Origin')).origin !== new URL(request.url).origin) return json({ error: 'Invalid origin.' }, 403); }
   catch { return json({ error: 'Invalid origin.' }, 403); }
   if (!(request.headers.get('Content-Type') || '').toLowerCase().includes('application/json')) return json({ error: 'JSON is required.' }, 415);
