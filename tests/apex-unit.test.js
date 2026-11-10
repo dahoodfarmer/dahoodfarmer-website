@@ -255,10 +255,11 @@ test('visitor rate limiting is atomic under concurrent requests and stores only 
       prepare(sql) {
         capturedSql = sql;
         return {
-          bind(key, cutoff, now, resetCutoff, countCutoff, whereCutoff, maxRequests) {
+          bind(key, insertedAt, resetCutoff, resetAt, countResetCutoff, whereCutoff, maxRequests) {
             capturedKey = key;
-            assert.equal(typeof cutoff, 'number');
-            assert.equal(now >= cutoff, true);
+            assert.equal(typeof insertedAt, 'number');
+            assert.equal(resetCutoff <= insertedAt, true);
+            assert.equal(resetAt, insertedAt);
             assert.equal(maxRequests, 12);
             return {
               async first() {
