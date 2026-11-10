@@ -27,7 +27,8 @@ export async function onRequestPost({ request, env }) {
   params.set('mode', 'payment');
   params.set('redirect_on_completion', 'if_required');
   const requestUrl = new URL(request.url);
-  const allowedHost = requestUrl.hostname === 'dahoodfarmer.com' || requestUrl.hostname.endsWith('.dahoodfarmer-website.pages.dev');\n  if (!allowedHost) return json({ error: 'This checkout domain is not authorized.' }, 400);\n  params.set('return_url', requestUrl.origin + '/payment/complete?session_id={CHECKOUT_SESSION_ID}');
+  const allowedHost = requestUrl.hostname === 'dahoodfarmer.com' || requestUrl.hostname.endsWith('.dahoodfarmer-website.pages.dev');
+  if (!allowedHost) return json({ error: 'This checkout domain is not authorized.' }, 400);\n  params.set('return_url', requestUrl.origin + '/payment/complete?session_id={CHECKOUT_SESSION_ID}');
   params.set('line_items[0][quantity]', '1');
   params.set('line_items[0][price_data][currency]', 'usd');
   params.set('line_items[0][price_data][unit_amount]', String(amount));
