@@ -82,7 +82,7 @@ test('booking retrieval does not promise a confirmed reservation', () => {
 });
 
 test('lead attribution accepts only UUIDs and approved conversion paths', async () => {
-  const { isApexConversationId, createApexAttributionToken, verifyApexAttributionToken, recordApexLead } = await import('../functions/lib/apex-analytics.js');
+  const { isApexConversationId, createApexAttributionToken, verifyApexAttributionToken, recordApexLead, getApexRateLimitSalt } = await import('../functions/lib/apex-analytics.js');
   const valid = '123e4567-e89b-42d3-a456-426614174000';
   assert.equal(isApexConversationId(valid), true);
   assert.equal(isApexConversationId('not-a-uuid'), false);
@@ -91,6 +91,10 @@ test('lead attribution accepts only UUIDs and approved conversion paths', async 
   assert.ok(token);
   assert.equal(await verifyApexAttributionToken(env, token), valid);
   assert.equal(await verifyApexAttributionToken(env, token + 'tamper'), null);
+  const kvEnv = { SESSIONS: { async get(key) { assert.equal(key, 'apex:internal:rate-limit-salt'); return env.APEX_RATE_LIMIT_SALT; } } };
+  assert.equal(await getApexRateLimitSalt(kvEnv), env.APEX_RATE_LIMIT_SALT);
+  const kvToken = await createApexAttributionToken(kvEnv, valid);
+  assert.equal(await verifyApexAttributionToken(kvEnv, kvToken), valid);
   let inserted = null;
   const dbEnv = { ...env, APEX_DB: { prepare(sql) { return { bind(...values) { return { async run() { inserted = { sql, values }; } }; } }; } } };
   assert.equal(await recordApexLead(dbEnv, token, '/booking'), true);
@@ -99,4 +103,34 @@ test('lead attribution accepts only UUIDs and approved conversion paths', async 
   assert.equal(inserted.values[3], '/booking');
   assert.equal(await recordApexLead(dbEnv, token, '/admin'), false);
   assert.equal(await recordApexLead(dbEnv, 'not-a-token', '/contact'), false);
+});
+
+test('daily inference budget uses an atomic database cap', async () => {
+  const { reserveDailyInference } = await import('../functions/api/apex/chat.js');
+  let count = 0;
+  const env = {
+    APEX_DAILY_REQUEST_LIMIT: '3',
+    APEX_DB: {
+      prepare(sql) {
+        assert.ok(sql.includes('ON CONFLICT'));
+        assert.ok(sql.includes('RETURNING request_count'));
+        return {
+          bind(day, cap) {
+            assert.match(day, /^\\d{4}-\\d{2}-\\d{2}$/);
+            assert.equal(cap, 3);
+            return { async first() { count += 1; return count <= 3 ? { request_count: count } : null; } };
+          }
+        };
+      }
+    }
+  };
+  assert.equal(await reserveDailyInference(env), true);
+  assert.equal(await reserveDailyInference(env), true);
+  assert.equal(await reserveDailyInference(env), true);
+  assert.equal(await reserveDailyInference(env), false);
+});
+
+test('daily inference budget fails closed when telemetry DB is unavailable', async () => {
+  const { reserveDailyInference } = await import('../functions/api/apex/chat.js');
+  assert.equal(await reserveDailyInference({}), false);
 });
