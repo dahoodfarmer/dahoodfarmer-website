@@ -22,7 +22,7 @@ function constantTimeEqual(a, b) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!env.STRIPE_WEBHOOK_SECRET || !env.DB) return json({ error: 'Webhook is not configured.' }, 503);
+  if (!env.STRIPE_WEBHOOK_SECRET || !env.PAYMENTS_DB) return json({ error: 'Webhook is not configured.' }, 503);
   const raw = await request.text();
   const valid = await verifyStripeSignature(raw, request.headers.get('Stripe-Signature'), env.STRIPE_WEBHOOK_SECRET);
   if (!valid) return json({ error: 'Invalid signature.' }, 400);
@@ -42,7 +42,7 @@ export async function onRequestPost({ request, env }) {
   if (!status) return json({ received: true });
 
   try {
-    const order = await env.DB.prepare(
+    const order = await env.PAYMENTS_DB.prepare(
       'SELECT order_id, amount, currency FROM dhf_payment_orders WHERE provider_session_id = ?'
     ).bind(session.id).first();
     if (!order) return json({ error: 'Order not found.' }, 404);
@@ -52,11 +52,11 @@ export async function onRequestPost({ request, env }) {
     }
 
     // Record event IDs for audit/deduplication. Reapplying the same state update is safe.
-    await env.DB.prepare(
+    await env.PAYMENTS_DB.prepare(
       "INSERT OR IGNORE INTO dhf_payment_events (event_id, event_type) VALUES (?, ?)"
     ).bind(event.id, event.type).run();
 
-    await env.DB.prepare(
+    await env.PAYMENTS_DB.prepare(
       "UPDATE dhf_payment_orders SET status = ?, customer_email = CASE WHEN ? <> '' THEN ? ELSE customer_email END, updated_at = datetime('now') WHERE provider_session_id = ?"
     ).bind(status, session.customer_details?.email || '', session.customer_details?.email || '', session.id).run();
     return json({ received: true });
