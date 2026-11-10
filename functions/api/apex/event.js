@@ -1,3 +1,4 @@
+import { getApexRateLimitSalt } from '../../lib/apex-analytics.js';
 const HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: HEADERS }); }
 async function hash(value) {
@@ -11,7 +12,8 @@ export async function onRequestPost({ request, env }) {
   const length = Number(request.headers.get('Content-Length') || 0);
   if (length > 2000) return json({ error: 'Event payload is too large.' }, 413);
   if (!env.APEX_DB) return json({ ok: true, recorded: false });
-  if (!env.SESSIONS || !env.APEX_RATE_LIMIT_SALT) return json({ error: 'Telemetry is not configured.' }, 503);
+  const salt = await getApexRateLimitSalt(env);
+  if (!env.SESSIONS || !salt) return json({ error: 'Telemetry is not configured.' }, 503);
   let data;
   try {
     const raw = await request.text();
@@ -23,7 +25,7 @@ export async function onRequestPost({ request, env }) {
   const conversationId = typeof data.conversationId === 'string' && /^[0-9a-f-]{36}$/i.test(data.conversationId) ? data.conversationId : crypto.randomUUID();
   const targetPath = ['/booking', '/contact', '/shop'].includes(data.targetPath) ? data.targetPath : null;
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const key = 'apex:event:' + await hash(env.APEX_RATE_LIMIT_SALT + ':' + ip);
+  const key = 'apex:event:' + await hash(salt + ':' + ip);
   const now = Math.floor(Date.now() / 1000);
   let state = null;
   try { state = await env.SESSIONS.get(key, 'json'); } catch {}
