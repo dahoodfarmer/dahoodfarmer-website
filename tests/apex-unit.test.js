@@ -129,6 +129,33 @@ test('APEX chat API remains disabled when the owner feature flag is off', async 
   assert.match((await response.json()).error, /not enabled/i);
 });
 
+
+test('APEX event and feedback endpoints reject submissions while disabled', async () => {
+  const { onRequestPost: recordEvent } = await import('../functions/api/apex/event.js');
+  const { onRequestPost: recordFeedback } = await import('../functions/api/apex/feedback.js');
+  const makeRequest = (path, body) => new Request('https://preview.example.com' + path, {
+    method: 'POST',
+    headers: { Origin: 'https://preview.example.com', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  let databaseTouched = false;
+  const env = {
+    APEX_ENABLED: 'false',
+    APEX_DB: { prepare() { databaseTouched = true; throw new Error('must not reach database'); } }
+  };
+  const eventResponse = await recordEvent({
+    request: makeRequest('/api/apex/event', { eventType: 'widget_open' }),
+    env
+  });
+  const feedbackResponse = await recordFeedback({
+    request: makeRequest('/api/apex/feedback', { conversationId: '123e4567-e89b-42d3-a456-426614174000', rating: 'helpful' }),
+    env
+  });
+  assert.equal(eventResponse.status, 404);
+  assert.equal(feedbackResponse.status, 404);
+  assert.equal(databaseTouched, false);
+});
+
 test('daily inference budget uses an atomic database cap', async () => {
   const { reserveDailyInference } = await import('../functions/api/apex/chat.js');
   let count = 0;
