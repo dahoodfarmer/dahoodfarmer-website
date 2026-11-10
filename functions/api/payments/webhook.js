@@ -42,11 +42,10 @@ export async function onRequestPost({ request, env }) {
   if (!status) return json({ received: true });
 
   try {
-    await env.DB.prepare(
+    const recorded = await env.DB.prepare(
       "INSERT OR IGNORE INTO dhf_payment_events (event_id, event_type) VALUES (?, ?)"
     ).bind(event.id, event.type).run();
-    const recorded = await env.DB.prepare('SELECT changes() AS count').first();
-    if (!recorded?.count) return json({ received: true, duplicate: true });
+    if (recorded?.meta?.changes === 0) return json({ received: true, duplicate: true });
 
     await env.DB.prepare(
       "UPDATE dhf_payment_orders SET status = ?, customer_email = CASE WHEN ? <> '' THEN ? ELSE customer_email END, updated_at = datetime('now') WHERE provider_session_id = ?"
