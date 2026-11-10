@@ -105,6 +105,30 @@ test('lead attribution accepts only UUIDs and approved conversion paths', async 
   assert.equal(await recordApexLead(dbEnv, 'not-a-token', '/contact'), false);
 });
 
+
+test('APEX chat API remains disabled when the owner feature flag is off', async () => {
+  const { onRequestPost } = await import('../functions/api/apex/chat.js');
+  const request = new Request('https://preview.example.com/api/apex/chat', {
+    method: 'POST',
+    headers: {
+      Origin: 'https://preview.example.com',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ message: 'Run a test' })
+  });
+  let inferenceCalled = false;
+  const response = await onRequestPost({
+    request,
+    env: {
+      APEX_ENABLED: 'false',
+      AI: { async run() { inferenceCalled = true; return { response: 'should not run' }; } }
+    }
+  });
+  assert.equal(response.status, 404);
+  assert.equal(inferenceCalled, false);
+  assert.match((await response.json()).error, /not enabled/i);
+});
+
 test('daily inference budget uses an atomic database cap', async () => {
   const { reserveDailyInference } = await import('../functions/api/apex/chat.js');
   let count = 0;
