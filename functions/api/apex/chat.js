@@ -1,4 +1,4 @@
-import { createApexAttributionToken } from '../../lib/apex-analytics.js';
+import { createApexAttributionToken, getApexRateLimitSalt } from '../../lib/apex-analytics.js';
 import { APEX_MODEL, buildSystemPrompt } from '../../lib/apex.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
@@ -46,10 +46,10 @@ async function verifyTurnstile(token, request, env) {
   } catch { return false; }
 }
 
-async function enforceRateLimit(request, env) {
-  if (!env.SESSIONS || !env.APEX_RATE_LIMIT_SALT) return false;
+async function enforceRateLimit(request, env, salt) {
+  if (!env.SESSIONS || !salt) return false;
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const key = 'apex:rate:' + await sha256(env.APEX_RATE_LIMIT_SALT + ':' + ip);
+  const key = 'apex:rate:' + await sha256(salt + ':' + ip);
   const now = Math.floor(Date.now() / 1000);
   let state = null;
   try { state = await env.SESSIONS.get(key, 'json'); } catch {}
@@ -60,6 +60,21 @@ async function enforceRateLimit(request, env) {
   if (state.count >= MAX_REQUESTS) return false;
   await env.SESSIONS.put(key, JSON.stringify({ start: state.start, count: state.count + 1 }), { expirationTtl: Math.max(60, WINDOW_SECONDS - (now - state.start)) });
   return true;
+}
+
+async function reserveDailyInference(env) {
+  if (!env.APEX_DB) return false;
+  const cap = Math.min(20, Math.max(1, Number(env.APEX_DAILY_REQUEST_LIMIT || 20)));
+  const day = new Date().toISOString().slice(0, 10);
+  try {
+    const row = await env.APEX_DB.prepare(
+      "INSERT INTO apex_daily_usage (usage_date, request_count) VALUES (?, 1) ON CONFLICT(usage_date) DO UPDATE SET request_count = request_count + 1, updated_at = datetime('now') WHERE request_count < ? RETURNING request_count"
+    ).bind(day, cap).first();
+    return Boolean(row);
+  } catch (error) {
+    console.error('APEX daily inference budget check failed:', error?.message || 'unknown');
+    return false;
+  }
 }
 
 async function recordEvent(env, event) {
@@ -83,7 +98,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const length = Number(request.headers.get('Content-Length') || 0);
   if (length > MAX_BODY) return json({ error: 'Message is too large.' }, 413);
   if (!env.AI) return json({ error: 'APEX is being prepared. Please try again soon.' }, 503);
-  if (!env.SESSIONS || !env.APEX_RATE_LIMIT_SALT) return json({ error: 'APEX is temporarily unavailable while its security settings are completed.' }, 503);
+  const rateLimitSalt = await getApexRateLimitSalt(env);
+  if (!env.SESSIONS || !rateLimitSalt || !env.APEX_DB) return json({ error: 'APEX is temporarily unavailable while its security settings are completed.' }, 503);
 
   let payload;
   try {
@@ -94,7 +110,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const message = typeof payload.message === 'string' ? payload.message.trim() : '';
   if (!message || message.length > MAX_MESSAGE) return json({ error: 'Enter a message of 1–2,200 characters.' }, 400);
-  if (!await enforceRateLimit(request, env)) return json({ error: 'Please wait a few minutes before sending another message.' }, 429);
+  if (!await enforceRateLimit(request, env, rateLimitSalt)) return json({ error: 'Please wait a few minutes before sending another message.' }, 429);
   if (!await verifyTurnstile(payload.turnstileToken, request, env)) return json({ error: 'Please complete the security check and try again.' }, 403);
 
   const conversationId = /^[0-9a-f-]{36}$/i.test(payload.conversationId || '') ? payload.conversationId : crypto.randomUUID();
@@ -113,6 +129,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (waitUntil) waitUntil(recordEvent(env, startEvent));
     else await recordEvent(env, startEvent);
   }
+
+  if (!await reserveDailyInference(env)) return json({ error: 'APEX has reached its preview evaluation limit for today. Please try again tomorrow.' }, 429);
 
   const started = Date.now();
   try {
