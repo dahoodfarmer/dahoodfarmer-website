@@ -1,6 +1,7 @@
 import { validateContact, getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { insertContact } from '../lib/db.js';
+import { sendSubmissionNotification } from '../lib/turnstile.js';
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
 export async function onRequestPost({ request, env }) {
   const ip = getClientIP(request);
@@ -12,6 +13,10 @@ export async function onRequestPost({ request, env }) {
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const validation = validateContact(data);
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
-  try { await insertContact(env.DB, { ...validation.sanitized, ip }); return json({ success: true, message: 'Thank you for reaching out!' }); }
-  catch (err) { return json({ error: 'Failed to save your message' }, 500); }
+  try {
+    await insertContact(env.DB, { ...validation.sanitized, ip });
+    const notice = await sendSubmissionNotification(env, 'New website contact inquiry', validation.sanitized, validation.sanitized.email);
+    if (!notice.sent) console.warn('Contact notification not sent:', notice.reason);
+    return json({ success: true, message: 'Thank you for reaching out!' });
+  } catch (err) { return json({ error: 'Failed to save your message' }, 500); }
 }
