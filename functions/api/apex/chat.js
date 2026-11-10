@@ -61,9 +61,9 @@ async function recordEvent(env, event) {
   if (!env.APEX_DB) return;
   try {
     await env.APEX_DB.prepare(
-      'INSERT INTO apex_events (id, conversation_id, event_type, specialist, model, status, latency_ms, input_tokens, output_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO apex_events (id, conversation_id, event_type, target_path, specialist, model, status, latency_ms, input_tokens, output_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
-      crypto.randomUUID(), event.conversationId, event.eventType, event.specialist || null,
+      crypto.randomUUID(), event.conversationId, event.eventType, event.targetPath || null, event.specialist || null,
       event.model || null, event.status || 'ok', event.latencyMs || null,
       event.inputTokens || 0, event.outputTokens || 0
     ).run();
@@ -102,6 +102,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (content) messages.push({ role: item.role, content });
   }
   messages.push({ role: 'user', content: message });
+
+  if (!history.length) {
+    const startEvent = { conversationId, eventType: 'chat_start', status: 'ok' };
+    if (waitUntil) waitUntil(recordEvent(env, startEvent));
+    else await recordEvent(env, startEvent);
+  }
 
   const started = Date.now();
   try {
