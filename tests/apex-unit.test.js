@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { chooseSpecialist, buildSystemPrompt, APEX_MODEL } from '../functions/lib/apex.js';
+import { chooseSpecialist, chooseSpecialists, buildSystemPrompt, APEX_MODEL } from '../functions/lib/apex.js';
 import { retrieveKnowledge } from '../functions/lib/apex-knowledge.js';
 
 test('APEX model adapter is explicit and replaceable', () => {
@@ -24,6 +24,21 @@ test('specialist routing selects the appropriate discipline', () => {
   for (const [prompt, expected] of cases) {
     assert.equal(chooseSpecialist(prompt), expected, prompt);
   }
+});
+
+
+test('mixed-domain questions receive up to two relevant specialist disciplines', () => {
+  assert.deepEqual(chooseSpecialists('How do I finance soil improvements for my farm?'), ['finance', 'agriculture']);
+  assert.deepEqual(chooseSpecialists('How do I improve soil fertility for tomatoes?'), ['agriculture']);
+  assert.deepEqual(chooseSpecialists('Tell me about the brand'), ['general']);
+});
+
+test('mixed-domain system prompt includes both specialist perspectives without changing the primary route', () => {
+  const result = buildSystemPrompt('How do I finance soil improvements for my farm?');
+  assert.equal(result.specialist, 'finance');
+  assert.deepEqual(result.specialists, ['finance', 'agriculture']);
+  assert.ok(result.prompt.includes('SPECIALIST MODE — FINANCE & ECONOMICS'));
+  assert.ok(result.prompt.includes('SPECIALIST MODE — AGRICULTURE & FARM SCIENCES'));
 });
 
 test('system prompt contains core privacy, truthfulness and authority boundaries', () => {
