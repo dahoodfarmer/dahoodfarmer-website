@@ -67,7 +67,7 @@ export async function onRequestGet({ env, request }) {
       readiness,
       summary: s,
       rates: {
-        response_rate_pct: s.chat_starts ? Number((Number(s.responses || 0) / Math.max(Number(s.chat_starts || 0), Number(s.responses || 0) + Number(s.errors || 0)) * 100).toFixed(1)) : null,
+        request_success_rate_pct: totalResponses ? Number((Number(s.responses || 0) / totalResponses * 100).toFixed(1)) : null,
         error_rate_pct: totalResponses ? Number((Number(s.errors || 0) / totalResponses * 100).toFixed(1)) : null,
         helpful_feedback_pct: rated ? Number((Number(helpful) / rated * 100).toFixed(1)) : null,
         feedback_sample_size: rated
