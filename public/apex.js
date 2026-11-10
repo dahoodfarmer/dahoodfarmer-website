@@ -2,7 +2,7 @@
   'use strict';
   if (document.getElementById('dhf-apex-root')) return;
   var conversationId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
-  var history = [], widgetId = null, turnstileToken = '', busy = false, opened = false;
+  var history = [], widgetId = null, turnstileToken = '', busy = false, opened = false, openedOnce = false;
   var root = document.createElement('div');
   root.id = 'dhf-apex-root';
   root.innerHTML = '<button class="apex-launcher" type="button" aria-label="Chat with DHF APEX" aria-expanded="false"><span class="apex-launcher-crown" aria-hidden="true">♛</span><span class="apex-launcher-label">Ask APEX</span></button>' +
@@ -29,8 +29,12 @@
     messages.scrollTop = messages.scrollHeight;
     return node;
   }
+  function logEvent(eventType, targetPath) {
+    fetch('/api/apex/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventType: eventType, targetPath: targetPath || null, conversationId: conversationId }) }).catch(function () {});
+  }
   function setOpen(value) {
-    opened = value; panel.hidden = !value;
+    opened = value;
+    if (value && !openedOnce) { openedOnce = true; logEvent('widget_open'); } panel.hidden = !value;
     launcher.setAttribute('aria-expanded', String(value));
     if (value) {
       input.focus();
@@ -101,6 +105,7 @@
     button.addEventListener('click', function () { input.value = button.getAttribute('data-prompt') || ''; input.focus(); });
   });
   form.addEventListener('submit', function (event) { event.preventDefault(); var value = input.value.trim(); if (value) submitMessage(value); });
+  root.querySelectorAll('.apex-links a').forEach(function (link) { link.addEventListener('click', function () { logEvent('cta_click', new URL(link.href).pathname); }); });
   input.addEventListener('keydown', function (event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
   if (window.turnstile) mountTurnstile();
   else {
