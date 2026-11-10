@@ -75,6 +75,14 @@ export async function enforceRateLimit(request, env, salt) {
   }
 }
 
+// Client history is never authoritative: accept only prior visitor turns, never client-supplied assistant messages.
+export function normalizeVisitorHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history.slice(-6).filter(item => item && item.role === 'user' && typeof item.content === 'string')
+    .map(item => ({ role: 'user', content: item.content.trim().slice(0, 1200) }))
+    .filter(item => item.content.length > 0);
+}
+
 export async function reserveDailyInference(env) {
   if (!env.APEX_DB) return false;
   const cap = Math.min(20, Math.max(1, Number(env.APEX_DAILY_REQUEST_LIMIT || 20)));
@@ -136,14 +144,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const conversationId = /^[0-9a-f-]{36}$/i.test(payload.conversationId || '') ? payload.conversationId : crypto.randomUUID();
   const { specialist, prompt, sources } = buildSystemPrompt(message);
-  const history = Array.isArray(payload.history) ? payload.history.slice(-6) : [];
-  const messages = [{ role: 'system', content: prompt }];
-  for (const item of history) {
-    if (!item || !['user', 'assistant'].includes(item.role) || typeof item.content !== 'string') continue;
-    const content = item.content.trim().slice(0, 1200);
-    if (content) messages.push({ role: item.role, content });
-  }
-  messages.push({ role: 'user', content: message });
+  const history = normalizeVisitorHistory(payload.history);
+  const messages = [{ role: 'system', content: prompt }, ...history, { role: 'user', content: message }];
 
   if (!history.length) {
     const startEvent = { conversationId, eventType: 'chat_start', status: 'ok' };
