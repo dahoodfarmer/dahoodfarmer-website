@@ -1,5 +1,6 @@
 import { createApexAttributionToken, getApexRateLimitSalt } from '../../lib/apex-analytics.js';
-import { APEX_MODEL, buildSystemPrompt } from '../../lib/apex.js';
+import { buildSystemPrompt } from '../../lib/apex.js';
+import { runApexModel } from '../../lib/apex-model.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 const MAX_BODY = 14000;
@@ -134,16 +135,11 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const started = Date.now();
   try {
-    const result = await env.AI.run(APEX_MODEL, {
-      messages,
-      max_tokens: 600,
-      temperature: 0.35,
-      top_p: 0.85
-    });
+    const result = await runApexModel(env, messages, { maxTokens: 600, temperature: 0.35, topP: 0.85 });
     const answer = typeof result?.response === 'string' ? result.response.trim() : '';
     if (!answer) throw new Error('Empty model response');
     const event = {
-      conversationId, eventType: 'chat_response', specialist, model: APEX_MODEL,
+      conversationId, eventType: 'chat_response', specialist, model: result.provider + '/' + result.model,
       status: 'success', latencyMs: Date.now() - started,
       inputTokens: result?.usage?.prompt_tokens || 0,
       outputTokens: result?.usage?.completion_tokens || 0
@@ -151,7 +147,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (waitUntil) waitUntil(recordEvent(env, event));
     else await recordEvent(env, event);
     const apexRef = await createApexAttributionToken(env, conversationId);
-    return json({ answer, conversationId, specialist, model: APEX_MODEL, sources, apexRef });
+    return json({ answer, conversationId, specialist, provider: result.provider, model: result.model, sources, apexRef });
   } catch (error) {
     console.error('APEX inference failed:', error?.message || 'unknown');
     if (waitUntil) waitUntil(recordEvent(env, {
