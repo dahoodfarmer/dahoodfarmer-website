@@ -1,3 +1,4 @@
+import { getApexRateLimitSalt } from '../../lib/apex-analytics.js';
 const HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: HEADERS }); }
 export async function onRequestPost({ request, env }) {
@@ -8,9 +9,10 @@ export async function onRequestPost({ request, env }) {
   const length = Number(request.headers.get('Content-Length') || 0);
   if (length > 2000) return json({ error: 'Feedback payload is too large.' }, 413);
   if (!env.APEX_DB) return json({ ok: true, recorded: false });
-  if (!env.SESSIONS || !env.APEX_RATE_LIMIT_SALT) return json({ error: 'Feedback is temporarily unavailable.' }, 503);
+  const salt = await getApexRateLimitSalt(env);
+  if (!env.SESSIONS || !salt) return json({ error: 'Feedback is temporarily unavailable.' }, 503);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(env.APEX_RATE_LIMIT_SALT + ':' + ip));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + ip));
   const ipHash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
   const rateKey = 'apex:feedback:' + ipHash;
   let rate = null;
