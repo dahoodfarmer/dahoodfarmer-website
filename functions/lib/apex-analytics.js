@@ -90,3 +90,29 @@ export async function recordApexLead(env, attributionToken, targetPath) {
     return false;
   }
 }
+
+export async function enforceApexTelemetryLimit(env, salt, ip, scope, maxRequests, windowSeconds) {
+  if (!env.APEX_DB || typeof salt !== 'string' || salt.length < 32) return false;
+  if (!/^[a-z_]{2,24}$/.test(scope) || !Number.isInteger(maxRequests) || maxRequests < 1 ||
+      !Number.isInteger(windowSeconds) || windowSeconds < 1) return false;
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + String(ip || 'unknown')));
+    const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    const key = scope + ':' + hash;
+    const now = Math.floor(Date.now() / 1000);
+    const cutoff = now - windowSeconds;
+    const row = await env.APEX_DB.prepare(
+      "INSERT INTO apex_rate_limits (rate_key, window_start, request_count) VALUES (?, ?, 1) " +
+      "ON CONFLICT(rate_key) DO UPDATE SET " +
+      "window_start = CASE WHEN apex_rate_limits.window_start <= ? THEN ? ELSE apex_rate_limits.window_start END, " +
+      "request_count = CASE WHEN apex_rate_limits.window_start <= ? THEN 1 ELSE apex_rate_limits.request_count + 1 END, " +
+      "updated_at = datetime('now') " +
+      "WHERE apex_rate_limits.window_start <= ? OR apex_rate_limits.request_count < ? " +
+      "RETURNING request_count"
+    ).bind(key, now, cutoff, now, cutoff, cutoff, maxRequests).first();
+    return Boolean(row);
+  } catch (error) {
+    console.error('APEX telemetry rate limit failed:', error?.message || 'unknown');
+    return false;
+  }
+}
