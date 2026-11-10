@@ -82,16 +82,21 @@ test('booking retrieval does not promise a confirmed reservation', () => {
 });
 
 test('lead attribution accepts only UUIDs and approved conversion paths', async () => {
-  const { isApexConversationId, recordApexLead } = await import('../functions/lib/apex-analytics.js');
+  const { isApexConversationId, createApexAttributionToken, verifyApexAttributionToken, recordApexLead } = await import('../functions/lib/apex-analytics.js');
   const valid = '123e4567-e89b-42d3-a456-426614174000';
   assert.equal(isApexConversationId(valid), true);
   assert.equal(isApexConversationId('not-a-uuid'), false);
+  const env = { APEX_RATE_LIMIT_SALT: 'unit-test-secret-value-with-at-least-32-characters' };
+  const token = await createApexAttributionToken(env, valid);
+  assert.ok(token);
+  assert.equal(await verifyApexAttributionToken(env, token), valid);
+  assert.equal(await verifyApexAttributionToken(env, token + 'tamper'), null);
   let inserted = null;
-  const env = { APEX_DB: { prepare(sql) { return { bind(...values) { return { async run() { inserted = { sql, values }; } }; } }; } } };
-  assert.equal(await recordApexLead(env, valid, '/booking'), true);
+  const dbEnv = { ...env, APEX_DB: { prepare(sql) { return { bind(...values) { return { async run() { inserted = { sql, values }; } }; } }; } } };
+  assert.equal(await recordApexLead(dbEnv, token, '/booking'), true);
   assert.equal(inserted.values[1], valid);
   assert.equal(inserted.values[2], 'lead_submit');
   assert.equal(inserted.values[3], '/booking');
-  assert.equal(await recordApexLead(env, valid, '/admin'), false);
-  assert.equal(await recordApexLead(env, 'not-a-uuid', '/contact'), false);
+  assert.equal(await recordApexLead(dbEnv, token, '/admin'), false);
+  assert.equal(await recordApexLead(dbEnv, 'not-a-token', '/contact'), false);
 });
