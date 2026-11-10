@@ -17,9 +17,12 @@ export async function onRequestGet({ request, env }) {
     });
     if (response.ok) {
       const session = await response.json();
+      if (session.metadata?.order_id !== order.order_id || Number(session.amount_total) !== Number(order.amount) || session.currency !== order.currency) {
+        return json({ error: 'Payment reference reconciliation failed.' }, 409);
+      }
       let status = order.status;
       if (session.payment_status === 'paid') status = 'paid';
-      else if (session.status === 'expired') status = 'expired';
+      else if (session.status === 'expired' && status !== 'paid') status = 'expired';
       if (status !== order.status) {
         await env.DB.prepare("UPDATE dhf_payment_orders SET status = ?, updated_at = datetime('now') WHERE provider_session_id = ?").bind(status, sessionId).run();
       }
