@@ -36,8 +36,12 @@ async function verifyTurnstile(token, request, env) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body
     });
+    if (!response.ok) return false;
     const result = await response.json();
-    return response.ok && result.success === true;
+    const expectedHostname = env.APEX_EXPECTED_HOSTNAME || new URL(request.url).hostname;
+    return result.success === true &&
+      result.hostname === expectedHostname &&
+      result.action === 'apex_chat';
   } catch { return false; }
 }
 
