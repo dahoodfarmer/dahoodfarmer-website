@@ -24,7 +24,7 @@ export async function onRequestGet({ env, request }) {
       summary: empty,
       specialists: [],
       feedback: [],
-      rates: { response_rate_pct: null, error_rate_pct: null, helpful_feedback_pct: null },
+      rates: { request_success_rate_pct: null, error_rate_pct: null, helpful_feedback_pct: null },
       limitations: [
         'APEX telemetry is not connected to a dedicated non-production D1 database.',
         'No prompts or response text are stored.',
