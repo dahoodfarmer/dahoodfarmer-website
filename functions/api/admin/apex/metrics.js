@@ -14,8 +14,8 @@ export async function onRequestGet({ env, request }) {
     model_provider: provider,
     telemetry_database_configured: Boolean(env.APEX_DB),
     rate_limit_configured: Boolean(env.SESSIONS && rateLimitSalt),
-    turnstile_site_key_configured: Boolean(env.TURNSTILE_SITE_KEY),
-    turnstile_secret_configured: Boolean(env.TURNSTILE_SECRET_KEY),
+    turnstile_site_key_configured: Boolean(env.APEX_TURNSTILE_SITE_KEY || env.TURNSTILE_SITE_KEY),
+    turnstile_secret_configured: Boolean(env.APEX_TURNSTILE_SECRET_KEY || env.TURNSTILE_SECRET_KEY),
     owner_access_configured: Boolean(env.ACCESS_ISSUER && env.ACCESS_AUD)
   };
 
