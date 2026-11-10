@@ -80,3 +80,18 @@ test('booking retrieval does not promise a confirmed reservation', () => {
   assert.ok(prompt.includes('Submitt'));
   assert.ok(prompt.includes('does not confirm a booking'));
 });
+
+test('lead attribution accepts only UUIDs and approved conversion paths', async () => {
+  const { isApexConversationId, recordApexLead } = await import('../functions/lib/apex-analytics.js');
+  const valid = '123e4567-e89b-42d3-a456-426614174000';
+  assert.equal(isApexConversationId(valid), true);
+  assert.equal(isApexConversationId('not-a-uuid'), false);
+  let inserted = null;
+  const env = { APEX_DB: { prepare(sql) { return { bind(...values) { return { async run() { inserted = { sql, values }; } }; } }; } } };
+  assert.equal(await recordApexLead(env, valid, '/booking'), true);
+  assert.equal(inserted.values[1], valid);
+  assert.equal(inserted.values[2], 'lead_submit');
+  assert.equal(inserted.values[3], '/booking');
+  assert.equal(await recordApexLead(env, valid, '/admin'), false);
+  assert.equal(await recordApexLead(env, 'not-a-uuid', '/contact'), false);
+});
