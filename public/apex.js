@@ -130,7 +130,7 @@
     button.addEventListener('click', function () { input.value = button.getAttribute('data-prompt') || ''; input.focus(); });
   });
   form.addEventListener('submit', function (event) { event.preventDefault(); var value = input.value.trim(); if (value) submitMessage(value); });
-  root.querySelectorAll('.apex-links a').forEach(function (link) { link.addEventListener('click', function () { logEvent('cta_click', new URL(link.href).pathname); }); });
+  root.querySelectorAll('.apex-links a').forEach(function (link) { link.addEventListener('click', function () { var target = new URL(link.href); target.searchParams.set('apex_ref', conversationId); link.href = target.toString(); logEvent('cta_click', target.pathname); }); });
   input.addEventListener('keydown', function (event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
   if (window.turnstile) mountTurnstile();
   else {
