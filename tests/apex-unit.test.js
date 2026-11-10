@@ -243,3 +243,53 @@ test('Anthropic adapter separates system prompt and conversation messages', asyn
   assert.equal(result.response, 'Anthropic answer');
   assert.equal(result.usage.completion_tokens, 35);
 });
+
+
+test('visitor rate limiting is atomic under concurrent requests and stores only a salted hash', async () => {
+  const { enforceRateLimit } = await import('../functions/api/apex/chat.js');
+  let count = 0;
+  let capturedKey = '';
+  let capturedSql = '';
+  const env = {
+    APEX_DB: {
+      prepare(sql) {
+        capturedSql = sql;
+        return {
+          bind(key, cutoff, now, resetCutoff, countCutoff, whereCutoff, maxRequests) {
+            capturedKey = key;
+            assert.equal(typeof cutoff, 'number');
+            assert.equal(now >= cutoff, true);
+            assert.equal(maxRequests, 12);
+            return {
+              async first() {
+                // Synchronous increment models the atomic serialization of the D1 UPSERT.
+                count += 1;
+                return count <= maxRequests ? { request_count: count } : null;
+              }
+            };
+          }
+        };
+      }
+    }
+  };
+  const request = new Request('https://preview.example.com/api/apex/chat', {
+    headers: { 'CF-Connecting-IP': '203.0.113.10' }
+  });
+  const results = await Promise.all(
+    Array.from({ length: 30 }, () => enforceRateLimit(request, env, 'unit-test-salt-with-more-than-32-characters'))
+  );
+  assert.equal(results.filter(Boolean).length, 12);
+  assert.equal(results.filter(value => !value).length, 18);
+  assert.match(capturedSql, /ON CONFLICT\\(rate_key\\) DO UPDATE/);
+  assert.match(capturedSql, /RETURNING request_count/);
+  assert.match(capturedKey, /^[a-f0-9]{64}$/);
+  assert.notEqual(capturedKey, '203.0.113.10');
+});
+
+test('visitor rate limiter fails closed if atomic storage is unavailable', async () => {
+  const { enforceRateLimit } = await import('../functions/api/apex/chat.js');
+  const request = new Request('https://preview.example.com/api/apex/chat', {
+    headers: { 'CF-Connecting-IP': '203.0.113.11' }
+  });
+  assert.equal(await enforceRateLimit(request, { APEX_DB: { prepare() { throw new Error('database unavailable'); } } }, 'unit-test-salt-with-more-than-32-characters'), false);
+});
