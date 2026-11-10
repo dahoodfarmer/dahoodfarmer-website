@@ -19,7 +19,7 @@ export async function onRequestPost({ request, env }) {
   if (!Number.isSafeInteger(amount) || amount < 100 || amount > 1000000) return json({ error: 'Enter an amount between $1.00 and $10,000.00.' }, 422);
   if (!purposes.has(purpose)) return json({ error: 'Choose a valid payment type.' }, 422);
   if (email && !isValidEmail(email)) return json({ error: 'Enter a valid email address.' }, 422);
-  if (!env.DB) return json({ error: 'Payment records are temporarily unavailable.' }, 503);
+  if (!env.PAYMENTS_DB) return json({ error: 'Payment records are temporarily unavailable.' }, 503);
 
   const orderId = crypto.randomUUID();
   const params = new URLSearchParams();
@@ -55,7 +55,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   try {
-    await env.DB.prepare(
+    await env.PAYMENTS_DB.prepare(
       "INSERT INTO dhf_payment_orders (order_id, provider, provider_session_id, purpose, description, amount, currency, status, customer_email) VALUES (?, 'stripe', ?, ?, ?, ?, 'usd', 'pending', ?)"
     ).bind(orderId, session.id, purpose, description, amount, email).run();
   } catch (error) {
