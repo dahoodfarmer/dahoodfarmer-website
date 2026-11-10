@@ -294,3 +294,43 @@ test('visitor rate limiter fails closed if atomic storage is unavailable', async
   });
   assert.equal(await enforceRateLimit(request, { APEX_DB: { prepare() { throw new Error('database unavailable'); } } }, 'unit-test-salt-with-more-than-32-characters'), false);
 });
+
+
+test('event and feedback telemetry use atomic, scope-separated D1 rate limits', async () => {
+  const { enforceApexTelemetryLimit } = await import('../functions/lib/apex-analytics.js');
+  const keys = [];
+  const sqls = [];
+  const counts = new Map();
+  const env = {
+    APEX_DB: {
+      prepare(sql) {
+        sqls.push(sql);
+        return {
+          bind(key, insertedAt, resetCutoff, resetAt, countResetCutoff, whereCutoff, maxRequests) {
+            keys.push(key);
+            return { async first() {
+              const count = (counts.get(key) || 0) + 1;
+              counts.set(key, count);
+              return count <= maxRequests ? { request_count: count } : null;
+            } };
+          }
+        };
+      }
+    }
+  };
+  const salt = 'unit-test-secret-value-with-at-least-32-characters';
+  const event = await Promise.all(Array.from({length: 70}, () =>
+    enforceApexTelemetryLimit(env, salt, '203.0.113.22', 'event', 60, 600)));
+  assert.equal(event.filter(Boolean).length, 60);
+  assert.equal(event.filter(value => !value).length, 10);
+  assert.equal(keys.every(key => key.startsWith('event:')), true);
+  const feedback = await enforceApexTelemetryLimit(env, salt, '203.0.113.22', 'feedback', 30, 86400);
+  assert.equal(feedback, true);
+  assert.notEqual(keys[0], 'event:203.0.113.22');
+  assert.ok(sqls.every(sql => sql.includes('ON CONFLICT(rate_key) DO UPDATE')));
+});
+
+test('telemetry rate limiting fails closed without D1', async () => {
+  const { enforceApexTelemetryLimit } = await import('../functions/lib/apex-analytics.js');
+  assert.equal(await enforceApexTelemetryLimit({}, 'unit-test-secret-value-with-at-least-32-characters', '203.0.113.22', 'event', 60, 600), false);
+});
