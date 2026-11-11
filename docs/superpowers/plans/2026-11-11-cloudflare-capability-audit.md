@@ -24,6 +24,7 @@ Scope: dahoodfarmer.com, Cloudflare Pages project `dahoodfarmer-website`, existi
 | DDoS protection | Cloudflare edge protection | Keep enabled |
 | Cloudflare Web Analytics | Existing RUM site; auto-install enabled; EU-exclusion/lite mode enabled | Keep; no duplicate beacon |
 | GitHub integration | Existing branch-based Preview deployments | Keep; PRs remain unmerged |
+| Stripe payment engine (PR #17) | Test-mode foundation with separate `PAYMENTS_DB`; Preview `DB`/`SESSIONS` isolation was corrected in this work | Keep test-only; checkout remains disabled until matching test publishable key and full product catalog exist |
 | Cloudflare CDN/cache | Pages served through Cloudflare edge | Keep; verify cache rules and headers during QA |
 | R2 | Not enabled in the account | Defer until uploads, media library or downloadable products require object storage |
 | Cloudflare Images | Not currently integrated | Evaluate after asset inventory and image-performance review |
@@ -74,6 +75,7 @@ Scope: dahoodfarmer.com, Cloudflare Pages project `dahoodfarmer-website`, existi
 ## Explicit exclusions
 
 - No R2 bucket creation, Stream activation, paid Images/AI/Email features, Workers Paid upgrade or other billing action in this phase.
+- PR #17 Preview now binds `DB` to `dahoodfarmer-preview-db`, `SESSIONS` to `dahoodfarmer-preview-sessions`, and `PAYMENTS_DB` to `dahoodfarmer-payments-test`; Production remains without `PAYMENTS_DB`. The Preview metadata does not include `STRIPE_PUBLISHABLE_KEY`, so checkout correctly remains unavailable. Secret values were not read.
 - No enabling a zone-wide WAF, Bot Fight Mode, Zaraz or cache rule that can alter live traffic without a separate Preview plan and approval.
 - No DNS, Access, secret, Production D1 or Production deployment changes.
 - No claim that a beta is free or production-ready without checking its current pricing, limits and availability.
