@@ -199,6 +199,11 @@
       attachForm({ form: document.querySelector('form.form-container'), endpoint: endpoint }, 'primary');
     }
 
+    var applicationForms = document.querySelectorAll('form[data-opportunity-form]');
+    applicationForms.forEach(function (form, index) {
+      attachForm({ form: form, endpoint: '/api/opportunity-application' }, 'opportunity-' + index);
+    });
+
     var newsletter = findNewsletterForm();
     if (newsletter) attachForm(newsletter, 'newsletter');
   });
