@@ -19,6 +19,9 @@
 - Preview D1/KV isolation verified; Turnstile widget domain list updated to the actual shortened branch alias.
 - 35 local tests passed with mocked D1/KV/Siteverify/email dependencies. Latest-head GitHub Actions status remains queued and is not yet a verified pass.
 - No live application submissions, production data changes, merges, production deployments, DNS changes, paid services or live payments were performed.
+- Internal sales kit, draft sponsorship prospectus and draft property-partnership proposal created under `docs/marketing/` for owner review; proposed prices are not published or active.
+- Existing payment engine PR #17 was reused as the planned checkout foundation. Its Preview `DB`/`SESSIONS`/`PAYMENTS_DB` bindings are now isolated; checkout remains disabled because the Preview `STRIPE_PUBLISHABLE_KEY` is absent. No Stripe session was created.
+- Cloudflare Web Analytics was already enabled with auto-install and EU-exclusion mode. CSP now permits its beacon; no duplicate analytics script was added.
 - Browser-level Preview review remains limited by the existing Cloudflare Access boundary; do not bypass Access.
 
 ## Global Constraints
