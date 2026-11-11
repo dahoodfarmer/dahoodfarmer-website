@@ -34,7 +34,7 @@ This is a first-party payment experience embedded in DaHoodFarmer.com. It is not
 - API secrets live only in Cloudflare Pages encrypted production/preview secrets; never in Git, browser code, logs, or chat.
 - Verify webhook signatures against the raw request body; enforce idempotency and replay protection.
 - Calculate all prices and totals on the server from trusted product/order records. Never trust a browser-supplied amount.
-- Apply rate limits, request validation, origin/CSRF protections as appropriate, and structured redacted logs.
+- Apply rate limits, request validation, same-origin checkout checks, and structured redacted logs. Contact, booking and newsletter Turnstile hostname validation derives from the active request URL.
 - Preserve existing contact form, Turnstile, analytics, AdSense, and DNS configuration.
 - Use least privilege for admin access; do not expose payment records publicly.
 - Test success, decline, cancellation, duplicate webhook, delayed webhook, QR tampering, amount tampering, and mobile wallet availability before launch.
@@ -48,14 +48,14 @@ This is a first-party payment experience embedded in DaHoodFarmer.com. It is not
 - Identify approved Da HoodFarmer logo asset and brand colors.
 
 ### Phase 1 — Test-mode MVP
-- Use a dedicated preview-only D1 database (`dahoodfarmer-payments-test`); do not point preview payment writes at the production database.
-- Initial checkout purpose is support contributions only; never accept customer-entered totals for product/service/invoice purchases.
+- Use three explicitly isolated Preview bindings: `DB` → `dahoodfarmer-preview-db`, `SESSIONS` → `dahoodfarmer-preview-sessions`, and `PAYMENTS_DB` → `dahoodfarmer-payments-test`. Do not point any Preview application or payment writes at Production.
+- Initial checkout purpose is support contributions only; product/service/invoice purposes are rejected until a trusted server-side product catalog and application/order association are implemented. Customer-entered amounts are allowed only for support contributions.
 - Create payment/order records.
 - Embedded checkout and branded payment page.
 - QR landing route for a payment/order reference.
 - Signed webhook processing and receipt/status page.
 - Minimal protected merchant transaction view.
-- Automated tests and test-mode end-to-end validation.
+- Automated mocked tests for amount/purpose validation, same-origin checks, Stripe session persistence, webhook signature/reconciliation and status reconciliation. Live test-card checkout remains unperformed unless separately necessary and authorized.
 
 ### Phase 2 — Production readiness
 - Review business/account identity, payout bank account, statement descriptor, refund/dispute process, tax and legal disclosures.
