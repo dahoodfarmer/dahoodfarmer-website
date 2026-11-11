@@ -35,6 +35,7 @@ function makeEnv(options = {}) {
           return {
             async run() {
               if (options.dbFail) throw new Error('D1 unavailable');
+              if (options.dbFail) throw new Error('D1 unavailable');
               writes.push({ sql, values });
               return { meta: { changes: 1, last_row_id: 41 } };
             }
@@ -130,6 +131,26 @@ test('keeps the application successful when optional email notification is not c
   assert.equal(response.status, 200);
   assert.equal(writes.length, 1);
 });
+
+test('does not send a client-supplied status into the application record', async () => {
+  const { response, writes } = await submit({ ...validApplication, status: 'approved', 'cf-turnstile-response': 'valid-token' });
+  assert.equal(response.status, 200);
+  assert.equal(writes.length, 1);
+  assert.doesNotMatch(writes[0].sql, /status/);
+});
+
+test('rejects a cross-origin Referer as the application source', async () => {
+  const { response, writes } = await submit({ ...validApplication, 'cf-turnstile-response': 'valid-token' }, { referer: 'https://attacker.example/sponsors' });
+  assert.equal(response.status, 200);
+  assert.ok(writes[0].values.includes('/'));
+});
+
+test('returns a save error when D1 fails and does not claim success', async () => {
+  const { response, writes } = await submit({ ...validApplication, 'cf-turnstile-response': 'valid-token' }, { dbFail: true });
+  assert.equal(response.status, 500);
+  assert.equal(writes.length, 0);
+});
+
 
 test('does not send a client-supplied status into the application record', async () => {
   const { response, writes } = await submit({ ...validApplication, status: 'approved', 'cf-turnstile-response': 'valid-token' });
