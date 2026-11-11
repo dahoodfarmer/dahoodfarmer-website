@@ -51,3 +51,9 @@ These tests mock Stripe and D1. They do not submit live or test-card transaction
 ## Production gate
 
 Production requires a separate production `PAYMENTS_DB` binding and the production migration, live-mode Stripe credentials, a production webhook endpoint, wallet/domain setup, customer disclosures, and explicit owner approval. Do not switch the Preview configuration to live mode.
+## Current configuration check — November 11, 2026
+
+- Preview `DB`, `SESSIONS` and `PAYMENTS_DB` bindings have been verified against the isolated Preview resources listed above.
+- Preview metadata shows secret bindings for `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and `TURNSTILE_SECRET_KEY`; secret values were not retrieved or displayed, so their contents and test/live mode cannot be independently verified here.
+- `STRIPE_PUBLISHABLE_KEY` is currently absent from Preview environment metadata. The payment endpoint therefore returns HTTP 503 and checkout remains disabled until the matching Stripe **test-mode** publishable key is added by the account owner.
+- No Stripe checkout session or live/test-card transaction was created during this review.
