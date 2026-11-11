@@ -16,6 +16,7 @@ const base = {
   event_interest: '',
   preferred_date: '',
   message: 'We would like to be considered for the directory.',
+  public_description: 'A family-operated farm offering specialty crops and agricultural education.',
   contact_consent: true,
   marketing_consent: false,
   public_listing_consent: true
@@ -88,6 +89,12 @@ test('keeps marketing consent separate and defaults it to false', () => {
   const result = validateOpportunityApplication(withoutMarketing, '/academy');
   assert.equal(result.valid, true);
   assert.equal(result.sanitized.marketing_consent, false);
+});
+
+test('requires a separate public description when a business listing requests publication', () => {
+  const result = validateOpportunityApplication({ ...base, public_description: '' }, '/business-directory');
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join(' '), /public description/i);
 });
 
 test('public listing consent is optional and defaults to false', () => {
