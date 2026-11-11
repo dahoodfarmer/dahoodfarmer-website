@@ -21,6 +21,7 @@ th{text-align:left;padding:0.75rem;border-bottom:1px solid #2a3f5c;color:#94a3b8
 td{padding:0.75rem;border-bottom:1px solid #2a3f5c;font-size:0.875rem}
 tr:hover{background:#243652}
 .table-wrap{overflow-x:auto}.filters,.pagination{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin:1rem 0}.filters select,.filters button,.pagination button,.app-status,.app-listing{background:#0f1c2e;color:#e0e6ed;border:1px solid #3b526e;border-radius:6px;padding:.55rem .7rem}.filters button,.pagination button,.app-save{cursor:pointer}.app-save{background:#4ade80;color:#0f1c2e;border:0;border-radius:5px;padding:.5rem .75rem;font-weight:700}.app-details{max-width:260px;white-space:normal;overflow-wrap:anywhere}.app-consent{font-size:.75rem;color:#94a3b8}
+.product-note{font-size:.85rem;color:#fbbf24;margin:.5rem 0 1rem;line-height:1.5}.product-price,.product-status{background:#0f1c2e;color:#e0e6ed;border:1px solid #3b526e;border-radius:6px;padding:.5rem;width:105px}.product-status{width:110px}.product-save{background:#4ade80;color:#0f1c2e;border:0;border-radius:5px;padding:.5rem .75rem;font-weight:700;cursor:pointer}.product-sub{font-size:.75rem;color:#94a3b8;margin-top:.35rem;max-width:300px;white-space:normal;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -35,6 +36,8 @@ tr:hover{background:#243652}
 <div class="stat-card"><div class="label">Total Applications</div><div class="value" id="s6">—</div></div>
 <div class="stat-card"><div class="label">New Applications</div><div class="value" id="s7">—</div></div>
 <div class="stat-card"><div class="label">Active Directory Listings</div><div class="value" id="s8">—</div></div>
+<div class="stat-card"><div class="label">Catalog Products</div><div class="value" id="s9">—</div></div>
+<div class="stat-card"><div class="label">Active Products</div><div class="value" id="s10">—</div></div>
 </div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Contacts</h2><table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Subject</th><th>Status</th></tr></thead><tbody id="ct"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Bookings</h2><table><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Pref Date</th><th>Status</th></tr></thead><tbody id="bt"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
@@ -55,6 +58,13 @@ tr:hover{background:#243652}
 <div class="table-wrap"><table id="applicationsTable"><thead><tr><th>Received</th><th>Type</th><th>Applicant</th><th>Organization</th><th>Location</th><th>Email</th><th>Interest / package</th><th>Application details</th><th>Proposed public profile</th><th>Status</th><th>Directory</th><th>Action</th></tr></thead><tbody id="appRows"><tr><td colspan="12" style="text-align:center;padding:2rem;color:#94a3b8">Loading applications...</td></tr></tbody></table></div>
 <div class="pagination"><button id="appPrev" type="button">Previous</button><span id="appPageLabel" style="color:#94a3b8">Page 1</span><button id="appNext" type="button">Next</button></div>
 </div>
+<div class="section">
+<h2 style="margin-bottom:.5rem">DHF Opportunity Network — Products & Pricing</h2>
+<p id="checkoutGate" class="product-note" role="status" aria-live="polite">Checking checkout readiness…</p>
+<p style="color:#94a3b8;font-size:.875rem;margin-bottom:1rem">The proposed founding catalog is internal and draft-only. Prices can be reviewed here, but products cannot be activated until the payment engine and matching test credentials are ready. No payment is collected from this dashboard.</p>
+<div class="table-wrap"><table id="productsTable"><thead><tr><th>Offer</th><th>Funnel</th><th>Type</th><th>Price (USD)</th><th>Status</th><th>Approval gate</th><th>Max quantity</th><th>Action</th></tr></thead><tbody id="productRows"><tr><td colspan="8" style="text-align:center;padding:2rem;color:#94a3b8">Loading product catalog…</td></tr></tbody></table></div>
+<span id="productMessage" role="status" aria-live="polite" style="color:#94a3b8"></span>
+</div>
 <script>
 function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 fetch('/api/admin/stats').then(r=>{if(r.status===401){window.location.href='/';return}return r.json()}).then(d=>{
@@ -67,6 +77,8 @@ document.getElementById('s5').textContent=d.stats.activeSubscribers;
 document.getElementById('s6').textContent=d.stats.totalApplications;
 document.getElementById('s7').textContent=d.stats.newApplications;
 document.getElementById('s8').textContent=d.stats.activeListings;
+document.getElementById('s9').textContent=d.stats.totalProducts;
+document.getElementById('s10').textContent=d.stats.activeProducts;
 }).catch(()=>{});
 fetch('/api/admin/contacts').then(r=>r.json()).then(d=>{
 document.getElementById('ct').innerHTML=d.contacts.map(function(c){return '<tr><td>'+esc(new Date(c.created_at).toLocaleDateString())+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+(c.subject?esc(c.subject):'—')+'</td><td>'+esc(c.status)+'</td></tr>'}).join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No contacts yet</td></tr>';
@@ -136,6 +148,53 @@ document.getElementById('appRows').addEventListener('click',function(event){
     .finally(function(){button.disabled=false});
 });
 loadOpportunityApplications();
+
+var productCheckoutEnabled=false;
+function loadOpportunityProducts(){
+  var message=document.getElementById('productMessage');
+  message.textContent='Loading…';
+  fetch('/api/admin/opportunity-products').then(function(r){
+    if(r.status===401){window.location.href='/';return null}
+    if(!r.ok)throw new Error('Could not load product catalog');
+    return r.json();
+  }).then(function(d){
+    if(!d)return;
+    productCheckoutEnabled=Boolean(d.checkout_enabled);
+    document.getElementById('checkoutGate').textContent=productCheckoutEnabled
+      ? 'Checkout is enabled in this environment. Keep products in draft until event inventory, deliverables and owner-approved prices are confirmed.'
+      : 'Checkout is disabled. Products must remain drafts until the payment engine, payment database and matching test keys are ready.';
+    var rows=(d.products||[]).map(function(p){
+      var options=['draft','inactive'];
+      if(productCheckoutEnabled||p.status==='active')options.unshift('active');
+      var statusOptions=options.map(function(v){return '<option value="'+v+'"'+(p.status===v?' selected':'')+'>'+v+'</option>'}).join('');
+      var approval=p.requires_approval?'Yes — '+esc(p.required_application_type):'No';
+      return '<tr data-product-id="'+esc(p.product_id)+'" data-requires-approval="'+Number(p.requires_approval)+'" data-required-application-type="'+esc(p.required_application_type||'')+'"><td><strong>'+esc(p.name)+'</strong><div class="product-sub">'+esc(p.description)+'</div></td><td>'+esc(p.funnel)+'</td><td>'+esc(p.product_type)+'</td><td><input class="product-price" data-product-price type="number" min="1" max="100000" step="0.01" value="'+(Number(p.price_cents)/100).toFixed(2)+'" aria-label="Price for '+esc(p.name)+'"></td><td><select class="product-status" data-product-status aria-label="Status for '+esc(p.name)+'">'+statusOptions+'</select></td><td>'+approval+'</td><td>'+Number(p.max_quantity)+'</td><td><button class="product-save" type="button" data-save-product>Save</button></td></tr>';
+    }).join('');
+    document.getElementById('productRows').innerHTML=rows||'<tr><td colspan="8" style="text-align:center;padding:2rem;color:#94a3b8">No catalog products found.</td></tr>';
+    message.textContent=(d.products||[]).length+' draft or active offer(s) in the catalog.';
+  }).catch(function(){message.textContent='Product catalog could not be loaded.'});
+}
+document.getElementById('productRows').addEventListener('click',function(event){
+  var button=event.target.closest('button[data-save-product]');
+  if(!button)return;
+  var row=button.closest('tr');
+  var price=Number(row.querySelector('[data-product-price]').value);
+  var payload={
+    product_id:row.getAttribute('data-product-id'),
+    status:row.querySelector('[data-product-status]').value,
+    price_cents:Math.round(price*100),
+    requires_approval:row.getAttribute('data-requires-approval')==='1',
+    required_application_type:row.getAttribute('data-required-application-type')||''
+  };
+  button.disabled=true;
+  document.getElementById('productMessage').textContent='Saving '+payload.product_id+'…';
+  fetch('/api/admin/opportunity-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Product update failed');return d})})
+    .then(function(){document.getElementById('productMessage').textContent='Product saved.';loadOpportunityProducts();fetch('/api/admin/stats').then(function(r){return r.json()}).then(function(d){if(d&&d.stats){document.getElementById('s9').textContent=d.stats.totalProducts;document.getElementById('s10').textContent=d.stats.activeProducts}}).catch(function(){})})
+    .catch(function(error){document.getElementById('productMessage').textContent=error.message})
+    .finally(function(){button.disabled=false});
+});
+loadOpportunityProducts();
 </script>
 </body>
 </html>
