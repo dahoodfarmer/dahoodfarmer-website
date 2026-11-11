@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://dahoodfarmer.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-<url><loc>https://dahoodfarmer.com/about</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-<url><loc>https://dahoodfarmer.com/agriculture</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-<url><loc>https://dahoodfarmer.com/media</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-<url><loc>https://dahoodfarmer.com/healing-aint-soft</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<url><loc>https://dahoodfarmer.com/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>1.0</priority><image:image><image:loc>https://dahoodfarmer.com/images/loopy-carter-family-history.jpg</image:loc><image:caption>Loopy Carter at a Carter family-history exhibit</image:caption></image:image></url>
+<url><loc>https://dahoodfarmer.com/loopy-carter</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>1.0</priority><image:image><image:loc>https://dahoodfarmer.com/images/loopy-carter-family-history.jpg</image:loc><image:caption>Loopy Carter — documentary family-history photograph</image:caption></image:image></url>
+<url><loc>https://dahoodfarmer.com/da-hoodfarmer</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>1.0</priority><image:image><image:loc>https://dahoodfarmer.com/images/farm.jpg</image:loc><image:caption>Da HoodFarmer — illustrated agricultural brand portrait</image:caption></image:image></url>
+<url><loc>https://dahoodfarmer.com/about</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+<url><loc>https://dahoodfarmer.com/agriculture</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.8</priority><image:image><image:loc>https://dahoodfarmer.com/images/farm.jpg</image:loc><image:caption>Da HoodFarmer agricultural brand portrait</image:caption></image:image></url>
+<url><loc>https://dahoodfarmer.com/media</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.8</priority><image:image><image:loc>https://dahoodfarmer.com/images/loopy-carter-family-history.jpg</image:loc><image:caption>Loopy Carter at a Carter family-history exhibit</image:caption></image:image><image:image><image:loc>https://dahoodfarmer.com/images/farm.jpg</image:loc><image:caption>Da HoodFarmer illustrated farm portrait</image:caption></image:image></url>
+<url><loc>https://dahoodfarmer.com/healing-aint-soft</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 <url><loc>https://dahoodfarmer.com/business</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-<url><loc>https://dahoodfarmer.com/press-kit</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+<url><loc>https://dahoodfarmer.com/press-kit</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.9</priority><image:image><image:loc>https://dahoodfarmer.com/images/loopy-carter-family-history.jpg</image:loc><image:caption>Loopy Carter at a Carter family-history exhibit</image:caption></image:image><image:image><image:loc>https://dahoodfarmer.com/images/farm.jpg</image:loc><image:caption>Da HoodFarmer illustrated farm portrait</image:caption></image:image></url>
 <url><loc>https://dahoodfarmer.com/shop</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-<url><loc>https://dahoodfarmer.com/booking</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://dahoodfarmer.com/booking</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://dahoodfarmer.com/community</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 <url><loc>https://dahoodfarmer.com/contact</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://dahoodfarmer.com/privacy-policy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 <url><loc>https://dahoodfarmer.com/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 <url><loc>https://dahoodfarmer.com/affiliate-disclosure</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+<url><loc>https://dahoodfarmer.com/the-journey</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.9</priority><image:image><image:loc>https://dahoodfarmer.com/images/loopy-carter-family-history.jpg</image:loc><image:caption>Loopy Carter — the story behind Da HoodFarmer</image:caption></image:image></url>
+<url><loc>https://dahoodfarmer.com/television-gallery.html</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+<url><loc>https://dahoodfarmer.com/photo-archive</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+<url><loc>https://dahoodfarmer.com/media-kit</loc><lastmod>2026-11-10</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
 </urlset>
