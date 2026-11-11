@@ -20,6 +20,7 @@ table{width:100%;border-collapse:collapse}
 th{text-align:left;padding:0.75rem;border-bottom:1px solid #2a3f5c;color:#94a3b8;font-size:0.75rem;text-transform:uppercase}
 td{padding:0.75rem;border-bottom:1px solid #2a3f5c;font-size:0.875rem}
 tr:hover{background:#243652}
+.table-wrap{overflow-x:auto}.filters,.pagination{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin:1rem 0}.filters select,.filters button,.pagination button,.app-status,.app-listing{background:#0f1c2e;color:#e0e6ed;border:1px solid #3b526e;border-radius:6px;padding:.55rem .7rem}.filters button,.pagination button,.app-save{cursor:pointer}.app-save{background:#4ade80;color:#0f1c2e;border:0;border-radius:5px;padding:.5rem .75rem;font-weight:700}.app-details{max-width:260px;white-space:normal;overflow-wrap:anywhere}.app-consent{font-size:.75rem;color:#94a3b8}
 </style>
 </head>
 <body>
@@ -31,9 +32,28 @@ tr:hover{background:#243652}
 <div class="stat-card"><div class="label">Total Bookings</div><div class="value" id="s3">—</div></div>
 <div class="stat-card"><div class="label">New Bookings</div><div class="value" id="s4">—</div></div>
 <div class="stat-card"><div class="label">Subscribers</div><div class="value" id="s5">—</div></div>
+<div class="stat-card"><div class="label">Total Applications</div><div class="value" id="s6">—</div></div>
+<div class="stat-card"><div class="label">New Applications</div><div class="value" id="s7">—</div></div>
+<div class="stat-card"><div class="label">Active Directory Listings</div><div class="value" id="s8">—</div></div>
 </div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Contacts</h2><table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Subject</th><th>Status</th></tr></thead><tbody id="ct"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Bookings</h2><table><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Pref Date</th><th>Status</th></tr></thead><tbody id="bt"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
+</div>
+<div class="section">
+<h2 style="margin-bottom:.5rem">DHF Opportunity Network — Applications</h2>
+<p style="color:#94a3b8;font-size:.875rem;margin-bottom:1rem">Review applications here. Approving an application does not publish a directory profile. Publication requires separate applicant consent and a separate owner action.</p>
+<div class="filters">
+<select id="appTypeFilter" aria-label="Filter by application type">
+<option value="">All application types</option>
+<option value="business_listing">Business listing</option><option value="vendor">Vendor</option><option value="sponsor">Sponsor</option><option value="speaker">Speaker</option><option value="academy">Academy</option><option value="property_partner">Property partner</option><option value="membership">Membership</option>
+</select>
+<select id="appStatusFilter" aria-label="Filter by application status">
+<option value="">All statuses</option><option value="new">New</option><option value="reviewing">Reviewing</option><option value="contacted">Contacted</option><option value="approved">Approved</option><option value="declined">Declined</option>
+</select>
+<button id="appFilterBtn" type="button">Apply filters</button><span id="appMessage" role="status" aria-live="polite" style="color:#94a3b8"></span>
+</div>
+<div class="table-wrap"><table id="applicationsTable"><thead><tr><th>Received</th><th>Type</th><th>Applicant</th><th>Organization</th><th>Location</th><th>Email</th><th>Details</th><th>Status</th><th>Directory</th><th>Action</th></tr></thead><tbody id="appRows"><tr><td colspan="10" style="text-align:center;padding:2rem;color:#94a3b8">Loading applications...</td></tr></tbody></table></div>
+<div class="pagination"><button id="appPrev" type="button">Previous</button><span id="appPageLabel" style="color:#94a3b8">Page 1</span><button id="appNext" type="button">Next</button></div>
 </div>
 <script>
 function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
@@ -44,6 +64,9 @@ document.getElementById('s2').textContent=d.stats.newContacts;
 document.getElementById('s3').textContent=d.stats.totalBookings;
 document.getElementById('s4').textContent=d.stats.newBookings;
 document.getElementById('s5').textContent=d.stats.activeSubscribers;
+document.getElementById('s6').textContent=d.stats.totalApplications;
+document.getElementById('s7').textContent=d.stats.newApplications;
+document.getElementById('s8').textContent=d.stats.activeListings;
 }).catch(()=>{});
 fetch('/api/admin/contacts').then(r=>r.json()).then(d=>{
 document.getElementById('ct').innerHTML=d.contacts.map(function(c){return '<tr><td>'+esc(new Date(c.created_at).toLocaleDateString())+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+(c.subject?esc(c.subject):'—')+'</td><td>'+esc(c.status)+'</td></tr>'}).join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No contacts yet</td></tr>';
@@ -51,6 +74,66 @@ document.getElementById('ct').innerHTML=d.contacts.map(function(c){return '<tr><
 fetch('/api/admin/bookings').then(r=>r.json()).then(d=>{
 document.getElementById('bt').innerHTML=d.bookings.map(function(b){return '<tr><td>'+esc(new Date(b.created_at).toLocaleDateString())+'</td><td>'+esc(b.name)+'</td><td>'+esc(b.inquiry_type)+'</td><td>'+(b.preferred_date?esc(b.preferred_date):'—')+'</td><td>'+esc(b.status)+'</td></tr>'}).join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No bookings yet</td></tr>';
 }).catch(()=>{});
+
+var appPage=1;
+var appLimit=25;
+var appTotal=0;
+function loadOpportunityApplications(){
+  var type=document.getElementById('appTypeFilter').value;
+  var status=document.getElementById('appStatusFilter').value;
+  var params=new URLSearchParams({page:String(appPage),limit:String(appLimit)});
+  if(type)params.set('type',type);
+  if(status)params.set('status',status);
+  var message=document.getElementById('appMessage');
+  message.textContent='Loading…';
+  fetch('/api/admin/opportunity-applications?'+params.toString()).then(function(r){
+    if(r.status===401){window.location.href='/';return null}
+    if(!r.ok)throw new Error('Could not load applications');
+    return r.json();
+  }).then(function(d){
+    if(!d)return;
+    appTotal=d.total||0;
+    var rows=(d.applications||[]).map(function(a){
+      var date=a.created_at?new Date(a.created_at).toLocaleDateString():'—';
+      var typeLabel=String(a.application_type||'').replaceAll('_',' ');
+      var location=[a.city,a.region,a.country].filter(Boolean).join(', ');
+      var statusOptions=['new','reviewing','contacted','approved','declined'].map(function(v){return '<option value="'+v+'"'+(a.status===v?' selected':'')+'>'+v+'</option>'}).join('');
+      var canPublish=a.application_type==='business_listing'&&Number(a.public_listing_consent)===1&&a.status==='approved';
+      var directoryControl=canPublish
+        ? '<select class="app-listing" data-listing-status="'+Number(a.id)+'" aria-label="Directory listing status"><option value="hidden"'+(a.listing_status==='active'?'':' selected')+'>Hidden</option><option value="active"'+(a.listing_status==='active'?' selected':'')+'>Published</option></select>'
+        : (a.application_type==='business_listing'?(Number(a.public_listing_consent)===1?'Approve first':'No publication consent'):'—');
+      var consent='<div class="app-consent">Contact: '+(Number(a.contact_consent)===1?'Yes':'No')+'<br>Marketing: '+(Number(a.marketing_consent)===1?'Yes':'No')+'<br>Public listing: '+(Number(a.public_listing_consent)===1?'Yes':'No')+'</div>';
+      return '<tr data-app-id="'+Number(a.id)+'"><td>'+esc(date)+'</td><td>'+esc(typeLabel)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.organization||'—')+'</td><td>'+esc(location||'—')+'</td><td>'+esc(a.email)+'</td><td class="app-details">'+esc(a.message)+'</td><td><select class="app-status" data-status="'+Number(a.id)+'" aria-label="Application status">'+statusOptions+'</select>'+consent+'</td><td>'+directoryControl+'</td><td><button class="app-save" type="button" data-save-app="'+Number(a.id)+'">Save</button></td></tr>';
+    }).join('');
+    document.getElementById('appRows').innerHTML=rows||'<tr><td colspan="10" style="text-align:center;padding:2rem;color:#94a3b8">No applications match these filters.</td></tr>';
+    var pages=Math.max(1,Math.ceil(appTotal/appLimit));
+    document.getElementById('appPageLabel').textContent='Page '+appPage+' of '+pages+' · '+appTotal+' applications';
+    document.getElementById('appPrev').disabled=appPage<=1;
+    document.getElementById('appNext').disabled=appPage>=pages;
+    message.textContent='';
+  }).catch(function(){message.textContent='Applications could not be loaded. Check Access and try again.'});
+}
+document.getElementById('appFilterBtn').addEventListener('click',function(){appPage=1;loadOpportunityApplications()});
+document.getElementById('appPrev').addEventListener('click',function(){if(appPage>1){appPage--;loadOpportunityApplications()}});
+document.getElementById('appNext').addEventListener('click',function(){if(appPage*appLimit<appTotal){appPage++;loadOpportunityApplications()}});
+document.getElementById('appRows').addEventListener('click',function(event){
+  var button=event.target.closest('button[data-save-app]');
+  if(!button)return;
+  var row=button.closest('tr');
+  var id=Number(button.getAttribute('data-save-app'));
+  var statusSelect=row.querySelector('select[data-status]');
+  var listingSelect=row.querySelector('select[data-listing-status]');
+  var payload={id:id,status:statusSelect.value};
+  if(listingSelect&&statusSelect.value==='approved')payload.listing_status=listingSelect.value;
+  button.disabled=true;
+  document.getElementById('appMessage').textContent='Saving application #'+id+'…';
+  fetch('/api/admin/opportunity-applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Update failed');return d})})
+    .then(function(){document.getElementById('appMessage').textContent='Application #'+id+' saved.';loadOpportunityApplications();fetch('/api/admin/stats').then(function(r){return r.json()}).then(function(d){if(d&&d.stats){document.getElementById('s6').textContent=d.stats.totalApplications;document.getElementById('s7').textContent=d.stats.newApplications;document.getElementById('s8').textContent=d.stats.activeListings}}).catch(function(){})})
+    .catch(function(error){document.getElementById('appMessage').textContent=error.message})
+    .finally(function(){button.disabled=false});
+});
+loadOpportunityApplications();
 </script>
 </body>
 </html>
