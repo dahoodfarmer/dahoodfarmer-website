@@ -61,6 +61,13 @@ test('requires applicant name, valid email, country, message and contact consent
   assert.ok(result.errors.some((e) => /contact/i.test(e)));
 });
 
+test('accepts email local parts containing the letter s and rejects whitespace', () => {
+  const good = validateOpportunityApplication({ ...base, email: 'sales@example.com' }, '/sponsors');
+  assert.equal(good.valid, true);
+  const bad = validateOpportunityApplication({ ...base, email: 'sales team@example.com' }, '/sponsors');
+  assert.equal(bad.valid, false);
+});
+
 test('accepts international Unicode names and regions without US-only restrictions', () => {
   const result = validateOpportunityApplication({
     ...base,
