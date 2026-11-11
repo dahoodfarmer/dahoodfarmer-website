@@ -41,6 +41,9 @@ test('admin dashboard inline JavaScript parses and exposes separate review field
   assert.match(html,/<th>Proposed public profile<\/th>/);
   assert.match(html,/a\.public_description/);
   assert.match(html,/colspan="12"/);
+  const rowTemplate=html.match(/return '<tr data-app-id=[^\\n]+/);
+  assert.ok(rowTemplate,'application row template exists');
+  assert.equal((rowTemplate[0].match(/<td>/g)||[]).length,12,'application row must match all 12 table columns');
 });
 
 test('directory renderer builds nodes without assigning untrusted data to innerHTML',()=>{
