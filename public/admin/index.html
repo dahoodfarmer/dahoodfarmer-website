@@ -95,7 +95,8 @@ function loadOpportunityApplications(){
     appTotal=d.total||0;
     var rows=(d.applications||[]).map(function(a){
       var date=a.created_at?new Date(a.created_at).toLocaleDateString():'—';
-      var typeLabels={business_listing:'Business listing',vendor:'Vendor',sponsor:'Sponsor',speaker:'Speaker',academy:'Academy',property_partner:'Property partner',membership:'Membership / event interest'};\n      var typeLabel=typeLabels[a.application_type]||String(a.application_type||'').replaceAll('_',' ');
+      var typeLabels={business_listing:'Business listing',vendor:'Vendor',sponsor:'Sponsor',speaker:'Speaker',academy:'Academy',property_partner:'Property partner',membership:'Membership / event interest'};
+      var typeLabel=typeLabels[a.application_type]||String(a.application_type||'').replaceAll('_',' ');
       var location=[a.city,a.region,a.country].filter(Boolean).join(', ');
       var statusOptions=['new','reviewing','contacted','approved','declined'].map(function(v){return '<option value="'+v+'"'+(a.status===v?' selected':'')+'>'+v+'</option>'}).join('');
       var canPublish=a.application_type==='business_listing'&&Number(a.public_listing_consent)===1&&a.status==='approved';
