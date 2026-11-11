@@ -27,7 +27,9 @@ export async function onRequestPost({ request, env }) {
   params.set('mode', 'payment');
   params.set('redirect_on_completion', 'if_required');
   const requestUrl = new URL(request.url);
-  const allowedHost = requestUrl.hostname === 'dahoodfarmer.com' || requestUrl.hostname.endsWith('.dahoodfarmer-website.pages.dev');
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== requestUrl.origin) return json({ error: 'Cross-origin checkout request rejected.' }, 403);
+  const allowedHost = requestUrl.hostname === 'dahoodfarmer.com' || requestUrl.hostname === 'www.dahoodfarmer.com' || requestUrl.hostname.endsWith('.dahoodfarmer-website.pages.dev');
   if (!allowedHost) return json({ error: 'This checkout domain is not authorized.' }, 400);
   params.set('return_url', requestUrl.origin + '/payment/complete?session_id={CHECKOUT_SESSION_ID}');
   params.set('line_items[0][quantity]', '1');
