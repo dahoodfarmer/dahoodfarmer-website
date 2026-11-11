@@ -7,7 +7,7 @@ This repository uses two separate D1 databases. Do **not** blindly apply every S
 Apply these migrations to the main application D1 database:
 
 - `0004_opportunity_network.sql` — private applications and approved public business directory.
-- `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; all seeded products remain draft.
+- `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; all seeded products remain draft.\n- `0006_land_experiences_catalog.sql` — adds the `experiences` catalog category while preserving all existing product records; seeds no unapproved prices or offers.
 
 Current Preview target: `dahoodfarmer-preview-db`  
 Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
