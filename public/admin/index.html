@@ -52,7 +52,7 @@ tr:hover{background:#243652}
 </select>
 <button id="appFilterBtn" type="button">Apply filters</button><span id="appMessage" role="status" aria-live="polite" style="color:#94a3b8"></span>
 </div>
-<div class="table-wrap"><table id="applicationsTable"><thead><tr><th>Received</th><th>Type</th><th>Applicant</th><th>Organization</th><th>Location</th><th>Email</th><th>Application details</th><th>Proposed public profile</th><th>Status</th><th>Directory</th><th>Action</th></tr></thead><tbody id="appRows"><tr><td colspan="11" style="text-align:center;padding:2rem;color:#94a3b8">Loading applications...</td></tr></tbody></table></div>
+<div class="table-wrap"><table id="applicationsTable"><thead><tr><th>Received</th><th>Type</th><th>Applicant</th><th>Organization</th><th>Location</th><th>Email</th><th>Interest / package</th><th>Application details</th><th>Proposed public profile</th><th>Status</th><th>Directory</th><th>Action</th></tr></thead><tbody id="appRows"><tr><td colspan="12" style="text-align:center;padding:2rem;color:#94a3b8">Loading applications...</td></tr></tbody></table></div>
 <div class="pagination"><button id="appPrev" type="button">Previous</button><span id="appPageLabel" style="color:#94a3b8">Page 1</span><button id="appNext" type="button">Next</button></div>
 </div>
 <script>
@@ -95,7 +95,7 @@ function loadOpportunityApplications(){
     appTotal=d.total||0;
     var rows=(d.applications||[]).map(function(a){
       var date=a.created_at?new Date(a.created_at).toLocaleDateString():'—';
-      var typeLabel=String(a.application_type||'').replaceAll('_',' ');
+      var typeLabels={business_listing:'Business listing',vendor:'Vendor',sponsor:'Sponsor',speaker:'Speaker',academy:'Academy',property_partner:'Property partner',membership:'Membership / event interest'};\n      var typeLabel=typeLabels[a.application_type]||String(a.application_type||'').replaceAll('_',' ');
       var location=[a.city,a.region,a.country].filter(Boolean).join(', ');
       var statusOptions=['new','reviewing','contacted','approved','declined'].map(function(v){return '<option value="'+v+'"'+(a.status===v?' selected':'')+'>'+v+'</option>'}).join('');
       var canPublish=a.application_type==='business_listing'&&Number(a.public_listing_consent)===1&&a.status==='approved';
