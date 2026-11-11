@@ -32,6 +32,7 @@ We own the customer relationship, program concepts, brand, event format, media a
 | Offer | Proposed pilot price | Notes |
 |---|---:|---|
 | Virtual exhibitor profile | $75 | Event-specific |
+| Featured digital exhibitor | $125 | Enhanced placement and agreed digital showcase deliverables |
 | Standard in-person vendor booth | $150 | Only after venue, permits, insurance and capacity are confirmed |
 | Premium booth placement | $250 | Subject to floor plan and venue |
 | Demonstration slot | $75 | Event-specific, not guaranteed until written approval |
@@ -101,7 +102,7 @@ This is a planning example, not a forecast or guarantee.
 | Workshop add-ons | 25 | $49 | $1,225 |
 | **Total** | | | **$8,100** |
 
-This excludes processor fees, refunds, taxes, speaker compensation, software costs and event delivery costs. The $125 vendor amount is a scenario assumption; the initial rate card above uses $75 for virtual exhibitor profiles. Final prices must be reconciled before a public offer is created.
+This excludes processor fees, refunds, taxes, speaker compensation, software costs and event delivery costs. The $125 vendor amount is a scenario assumption; the $125 scenario assumes a featured digital exhibitor package, distinct from the $75 standard profile. Final prices must be reconciled before a public offer is created.
 
 ## Customer acquisition funnel
 
