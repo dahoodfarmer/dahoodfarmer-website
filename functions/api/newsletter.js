@@ -1,5 +1,5 @@
 import { isValidEmail, sanitizeString, getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
-import { verifyTurnstile } from '../lib/turnstile.js';
+import { verifyTurnstile, getExpectedTurnstileHostname } from '../lib/turnstile.js';
 import { insertSubscriber } from '../lib/db.js';
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
 export async function onRequestPost({ request, env }) {
@@ -11,7 +11,7 @@ export async function onRequestPost({ request, env }) {
   const consentValue = data.consent;
   const hasConsent = consentValue === true || consentValue === 'true' || consentValue === 'on' || consentValue === 'yes' || consentValue === 1;
   if (!hasConsent) return json({ error: 'Explicit consent is required to subscribe. Please check the consent box.' }, 422);
-  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, env.EXPECTED_HOSTNAME || 'dahoodfarmer.com');
+  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, getExpectedTurnstileHostname(request));
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const email = sanitizeString(data.email, 254).toLowerCase();
   if (!email || !isValidEmail(email)) return json({ error: 'Valid email is required' }, 422);
