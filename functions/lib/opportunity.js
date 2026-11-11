@@ -20,7 +20,8 @@ const FIELD_LIMITS = {
   requested_package: 120,
   event_interest: 200,
   preferred_date: 50,
-  message: 5000
+  message: 5000,
+  public_description: 1200
 };
 
 function clean(value) {
@@ -85,9 +86,10 @@ export function validateOpportunityApplication(data, sourcePath) {
   const eventInterest = clean(data.event_interest);
   const preferredDate = clean(data.preferred_date);
   const message = clean(data.message);
+  const publicDescription = clean(data.public_description);
   const contactConsent = toConsent(data.contact_consent);
   const marketingConsent = toConsent(data.marketing_consent);
-  const publicListingConsent = toConsent(data.public_listing_consent);
+  const publicListingConsent = applicationType === 'business_listing' && toConsent(data.public_listing_consent);
 
   if (!name) errors.push('Applicant name is required');
   if (!email) errors.push('Email is required');
@@ -95,6 +97,7 @@ export function validateOpportunityApplication(data, sourcePath) {
   if (!country) errors.push('Country is required');
   if (!message) errors.push('Message is required');
   if (!contactConsent) errors.push('Consent to be contacted about this application is required');
+  if (publicListingConsent && !publicDescription) errors.push('Public description is required when requesting directory publication');
   if (website === null) errors.push('Website must be a valid http or https address');
 
   const sanitized = {
@@ -111,6 +114,7 @@ export function validateOpportunityApplication(data, sourcePath) {
     event_interest: eventInterest,
     preferred_date: preferredDate,
     message,
+    public_description: publicDescription,
     contact_consent: contactConsent,
     marketing_consent: marketingConsent,
     public_listing_consent: publicListingConsent,
