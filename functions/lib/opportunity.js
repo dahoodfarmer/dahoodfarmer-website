@@ -50,7 +50,7 @@ function normalizeSourcePath(sourcePath) {
 function normalizeWebsite(value) {
   const website = clean(value);
   if (!website) return '';
-  const candidate = /^https?:\/\//i.test(website) ? website : `https://${website}`;
+  const candidate = /^https?:\/\//i.test(website) ? website : 'https://' + website;
   try {
     const parsed = new URL(candidate);
     if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname.includes('.')) return null;
@@ -70,7 +70,7 @@ export function validateOpportunityApplication(data, sourcePath) {
   if (!APPLICATION_TYPES.has(applicationType)) errors.push('Valid application type is required');
 
   for (const [field, limit] of Object.entries(FIELD_LIMITS)) {
-    if (hasExcessLength(data[field], limit)) errors.push(`${field.replaceAll('_', ' ')} exceeds ${limit} characters`);
+    if (hasExcessLength(data[field], limit)) errors.push(field.replaceAll('_', ' ') + ' exceeds ' + limit + ' characters');
   }
 
   const name = clean(data.name);
@@ -91,7 +91,7 @@ export function validateOpportunityApplication(data, sourcePath) {
 
   if (!name) errors.push('Applicant name is required');
   if (!email) errors.push('Email is required');
-  else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > FIELD_LIMITS.email) errors.push('Valid email is required');
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > FIELD_LIMITS.email) errors.push('Valid email is required');
   if (!country) errors.push('Country is required');
   if (!message) errors.push('Message is required');
   if (!contactConsent) errors.push('Consent to be contacted about this application is required');
