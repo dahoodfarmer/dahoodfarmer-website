@@ -44,6 +44,16 @@ test('public product catalog rejects unsupported funnel filters',async()=>{
   assert.equal(db.calls.length,0);
 });
 
+test('Land & Experiences is a supported catalog filter without inventing an offer',async()=>{
+  const db=makeDb();
+  const response=await publicCatalog({request:new Request(origin+'/api/opportunity-products?funnel=experiences'),env:{DB:db}});
+  const body=await response.json();
+  assert.equal(response.status,200);
+  assert.equal(body.total,0);
+  assert.match(db.calls[0].sql,/funnel = \\?/);
+  assert.deepEqual(db.calls[0].values,['experiences']);
+});
+
 test('admin product list reports checkout disabled until all test bindings and gate are present',async()=>{
   const db=makeDb();
   const response=await adminCatalog({env:{DB:db,PAYMENTS_DB:{},STRIPE_SECRET_KEY:'sk_test'}});
