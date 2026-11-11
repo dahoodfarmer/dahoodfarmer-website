@@ -1,5 +1,5 @@
 import { getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
-import { verifyTurnstile, sendSubmissionNotification } from '../lib/turnstile.js';
+import { verifyTurnstile, sendSubmissionNotification, getExpectedTurnstileHostname } from '../lib/turnstile.js';
 import { validateOpportunityApplication } from '../lib/opportunity.js';
 
 function json(data, status = 200) {
@@ -43,7 +43,7 @@ export async function onRequestPost({ request, env }) {
   const validation = validateOpportunityApplication(data, sourcePath);
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
 
-  const expectedHostname = new URL(request.url).hostname;
+  const expectedHostname = getExpectedTurnstileHostname(request);
   const turnstile = await verifyTurnstile(
     data['cf-turnstile-response'],
     env.TURNSTILE_SECRET_KEY,
