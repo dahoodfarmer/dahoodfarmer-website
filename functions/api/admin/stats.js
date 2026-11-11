@@ -8,11 +8,18 @@ export async function onRequestGet({ env }) {
     const applications = await env.DB.prepare('SELECT COUNT(*) AS total FROM opportunity_applications').first();
     const newApplications = await env.DB.prepare("SELECT COUNT(*) AS total FROM opportunity_applications WHERE status = 'new'").first();
     const activeListings = await env.DB.prepare("SELECT COUNT(*) AS total FROM business_listings WHERE status = 'active'").first();
+    const totalProducts = await env.DB.prepare('SELECT COUNT(*) AS total FROM opportunity_products').first();
+    const activeProducts = await env.DB.prepare("SELECT COUNT(*) AS total FROM opportunity_products WHERE status = 'active'").first();
+    const draftProducts = await env.DB.prepare("SELECT COUNT(*) AS total FROM opportunity_products WHERE status = 'draft'").first();
     const enrichedStats = {
       ...stats,
       totalApplications: applications?.total || 0,
       newApplications: newApplications?.total || 0,
-      activeListings: activeListings?.total || 0
+      activeListings: activeListings?.total || 0,
+      totalProducts: totalProducts?.total || 0,
+      activeProducts: activeProducts?.total || 0,
+      draftProducts: draftProducts?.total || 0,
+      checkoutEnabled: env.DHF_CHECKOUT_ENABLED === 'true' && Boolean(env.PAYMENTS_DB) && Boolean(env.STRIPE_SECRET_KEY) && Boolean(env.STRIPE_PUBLISHABLE_KEY)
     };
     return new Response(JSON.stringify({
       stats: enrichedStats,
