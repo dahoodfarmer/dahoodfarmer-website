@@ -1,5 +1,5 @@
 import { validateContact, getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
-import { verifyTurnstile } from '../lib/turnstile.js';
+import { verifyTurnstile, getExpectedTurnstileHostname } from '../lib/turnstile.js';
 import { insertContact } from '../lib/db.js';
 import { sendSubmissionNotification } from '../lib/turnstile.js';
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
@@ -9,7 +9,7 @@ export async function onRequestPost({ request, env }) {
   if (!allowed) return json({ error: 'Too many requests. Please try again in a minute.' }, 429);
   let data; try { data = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   if (!isValidPayload(data)) return json({ error: 'Invalid request body' }, 400);
-  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, env.EXPECTED_HOSTNAME || 'dahoodfarmer.com');
+  const turnstile = await verifyTurnstile(data['cf-turnstile-response'], env.TURNSTILE_SECRET_KEY, ip, getExpectedTurnstileHostname(request));
   if (!turnstile.success) return json({ error: turnstile.error }, 403);
   const validation = validateContact(data);
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
