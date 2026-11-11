@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/dhf-opportunity-network-build
+      - feature/dhf-payment-engine-foundation
   pull_request:
     branches:
       - site-rebuild-v2
