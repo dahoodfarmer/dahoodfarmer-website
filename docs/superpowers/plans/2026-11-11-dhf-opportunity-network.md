@@ -19,6 +19,11 @@
 - Preview D1/KV isolation verified; Turnstile widget domain list updated to the actual shortened branch alias.
 - 35 local tests passed with mocked D1/KV/Siteverify/email dependencies. Latest-head GitHub Actions status remains queued and is not yet a verified pass.
 - No live application submissions, production data changes, merges, production deployments, DNS changes, paid services or live payments were performed.
+- Added the summit attendee early-access interest form and expanded the admin queue to show requested package, event interest, preferred date, category, website and proposed public profile.
+- Added a server-controlled product catalog with 14 seeded offers, all draft-only, plus public active-product API and Access-protected admin pricing/status management. Activation is blocked unless the checkout feature gate, payment database and matching Stripe keys are ready.
+- Applied migration `0005_opportunity_products.sql` to the isolated main Preview D1 only; verified 14 products are seeded and all remain in `draft` status. Added `migrations/README.md` to distinguish main `DB` migrations from payment-ledger `PAYMENTS_DB` migrations.
+- Added product API tests and static-page/admin-script checks. Local mirrored product API tests passed (7/7); static QA confirmed the admin inline script parses, 12 application columns match the row template, and the attendee form is present.
+- Existing payment engine PR #17 remains test-mode and support-only. Its Preview `DB`/`SESSIONS`/`PAYMENTS_DB` bindings are isolated; `STRIPE_PUBLISHABLE_KEY` is absent from Preview metadata, so checkout remains disabled.
 - Internal sales kit, draft sponsorship prospectus and draft property-partnership proposal created under `docs/marketing/` for owner review; proposed prices are not published or active.
 - Existing payment engine PR #17 was reused as the planned checkout foundation. Its Preview `DB`/`SESSIONS`/`PAYMENTS_DB` bindings are now isolated; checkout remains disabled because the Preview `STRIPE_PUBLISHABLE_KEY` is absent. No Stripe session was created.
 - Cloudflare Web Analytics was already enabled with auto-install and EU-exclusion mode. CSP now permits its beacon; no duplicate analytics script was added.
