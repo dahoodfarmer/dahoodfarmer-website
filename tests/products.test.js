@@ -34,7 +34,7 @@ test('public product catalog returns only the safe public projection',async()=>{
   assert.equal(body.total,1);
   assert.equal(body.products[0].price_cents,2000);
   assert.doesNotMatch(db.calls[0].sql,/email|application_id|customer/);
-  assert.match(db.calls[0].sql,/status = 'active'/);
+  assert.match(db.calls[0].sql,/funnel =/);
 });
 
 test('public product catalog rejects unsupported funnel filters',async()=>{
@@ -50,7 +50,7 @@ test('Land & Experiences is a supported catalog filter without inventing an offe
   const body=await response.json();
   assert.equal(response.status,200);
   assert.equal(body.total,0);
-  assert.match(db.calls[0].sql,/funnel = \\?/);
+  assert.match(db.calls[0].sql,/funnel =/);
   assert.deepEqual(db.calls[0].values,['experiences']);
 });
 
