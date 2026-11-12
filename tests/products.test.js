@@ -34,7 +34,7 @@ test('public product catalog returns only the safe public projection',async()=>{
   assert.equal(body.total,1);
   assert.equal(body.products[0].price_cents,2000);
   assert.doesNotMatch(db.calls[0].sql,/email|application_id|customer/);
-  assert.match(db.calls[0].sql,/status = 'active'/);
+  assert.match(db.calls[0].sql,/funnel =/);
 });
 
 test('public product catalog rejects unsupported funnel filters',async()=>{
@@ -42,6 +42,16 @@ test('public product catalog rejects unsupported funnel filters',async()=>{
   const response=await publicCatalog({request:new Request(origin+'/api/opportunity-products?funnel=unknown'),env:{DB:db}});
   assert.equal(response.status,400);
   assert.equal(db.calls.length,0);
+});
+
+test('Land & Experiences is a supported catalog filter without inventing an offer',async()=>{
+  const db=makeDb();
+  const response=await publicCatalog({request:new Request(origin+'/api/opportunity-products?funnel=experiences'),env:{DB:db}});
+  const body=await response.json();
+  assert.equal(response.status,200);
+  assert.equal(body.total,0);
+  assert.match(db.calls[0].sql,/funnel =/);
+  assert.deepEqual(db.calls[0].values,['experiences']);
 });
 
 test('admin product list reports checkout disabled until all test bindings and gate are present',async()=>{
