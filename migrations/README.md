@@ -7,7 +7,8 @@ This repository uses two separate D1 databases. Do **not** blindly apply every S
 Apply these migrations to the main application D1 database:
 
 - `0004_opportunity_network.sql` — private applications and approved public business directory.
-- `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; all seeded products remain draft.\n- `0006_land_experiences_catalog.sql` — adds the `experiences` catalog category while preserving all existing product records; seeds no unapproved prices or offers. The catalog may legitimately return zero active Land & Experiences offers until the owner approves a specific offer and its terms.
+- `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; all seeded products remain draft.
+- `0006_land_experiences_catalog.sql` — adds the `experiences` catalog category while preserving all existing product records; seeds no unapproved prices or offers. The catalog may legitimately return zero active Land & Experiences offers until the owner approves a specific offer and its terms.
 
 Current Preview target: `dahoodfarmer-preview-db`  
 Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
@@ -33,3 +34,7 @@ Preview database ID: `3ea269d0-4333-42d1-8fd6-43f42f62d708`
 - Before any future Production release, review each migration against its explicit target database and obtain the required owner approval.
 
 The separate migration targets are documented here because the current repository stores both databases' SQL files under one top-level `migrations/` folder. A future cleanup may split them into per-binding migration directories, but do not move already-applied migration files without a deliberate migration-history plan.
+
+## Verification for migration 0006
+
+Migration `0006_land_experiences_catalog.sql` rebuilds `opportunity_products` to change its SQLite `CHECK` constraint. Before applying it to any database, verify that the target is the intended application `DB` binding and record the existing row count and `product_id` values. After applying it in an approved Preview environment, verify that the row count and every existing `product_id`, `status`, `price_cents`, `inventory_limit`, `inventory_sold`, `created_at`, and `updated_at` value are unchanged; confirm the `experiences` funnel is accepted; and run `PRAGMA foreign_key_check` plus an index check. Do not treat a successful SQL execution alone as proof of data preservation. This verification is not authorization to apply the migration to Production.
