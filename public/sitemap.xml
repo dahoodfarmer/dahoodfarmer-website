@@ -3,6 +3,10 @@
 <url><loc>https://dahoodfarmer.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
 <url><loc>https://dahoodfarmer.com/about</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
 <url><loc>https://dahoodfarmer.com/agriculture</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://dahoodfarmer.com/resources</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+<url><loc>https://dahoodfarmer.com/resources/chicken-feed-cost</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://dahoodfarmer.com/resources/farm-fence-estimator</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://dahoodfarmer.com/advertise</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 <url><loc>https://dahoodfarmer.com/media</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://dahoodfarmer.com/healing-aint-soft</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://dahoodfarmer.com/business</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
