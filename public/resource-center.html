@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farm & Rural Resource Center | Da HoodFarmer</title>
+<meta name="description" content="Practical farm and rural-living planning tools from Da HoodFarmer: feed-cost, fencing-material, and farm-startup budget calculators.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin:1.5rem 0 2.5rem}
+.tool-card{background:var(--gray);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:1.25rem}
+.tool-card h3{font-family:var(--font-head);color:var(--gold);margin-bottom:.6rem}
+.tool-card p,.tool-note{color:var(--text-dim);font-size:.9rem}
+.tool-card label{display:block;color:var(--silver);font-size:.82rem;margin:.85rem 0 .25rem}
+.tool-card input{width:100%;padding:.7rem;background:#151515;border:1px solid #555;border-radius:5px;color:white;font:inherit}
+.tool-result{margin-top:1rem;padding:.85rem;background:var(--purple-dark);border-left:3px solid var(--gold);border-radius:4px;color:var(--text);min-height:3rem}
+.resource-intro{max-width:850px;margin:0 auto 2rem;text-align:center}
+.resource-intro p{color:var(--text-dim)}
+.resource-callout{border:1px solid rgba(212,175,55,.25);padding:1.2rem;border-radius:8px;margin:1.5rem 0;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div class="page-hero"><h1>★ Farm & Rural Resource Center ★</h1><p>Practical planning tools. Real-world perspective. No hype.</p></div>
+<main class="page-content" id="main-content">
+<div class="resource-intro"><h2>Tools for people doing the work</h2><p>This resource center is being built around practical farm operations, livestock, land care, equipment planning, and rural living. Start with the free calculators below. Enter your own prices and quantities; the estimates are based on your inputs, not hidden assumptions.</p></div>
+<div class="resource-callout"><strong>How to use these estimates:</strong> These tools are planning aids, not supplier quotes or veterinary, engineering, or financial advice. Actual material needs, animal feed requirements, local rules, taxes, delivery costs, waste, terrain, and installation requirements vary. Verify purchases and plans with the relevant supplier or qualified professional.</div>
+<h2>Free planning calculators</h2>
+<div class="tool-grid">
+<section class="tool-card" aria-labelledby="feed-title">
+<h3 id="feed-title">🐓 Feed Cost Planner</h3><p>Estimate feed quantity and cost using your flock size, your own daily feed estimate, and the price of the feed you buy.</p>
+<label for="feed-birds">Number of animals</label><input id="feed-birds" type="number" min="1" step="1" value="12">
+<label for="feed-per">Feed per animal per day (lb)</label><input id="feed-per" type="number" min="0" step="0.01" value="0.25">
+<label for="feed-days">Planning period (days)</label><input id="feed-days" type="number" min="1" step="1" value="30">
+<label for="feed-bag">Bag weight (lb)</label><input id="feed-bag" type="number" min="0.01" step="0.01" value="50">
+<label for="feed-price">Price per bag ($)</label><input id="feed-price" type="number" min="0" step="0.01" value="20">
+<div class="tool-result" id="feed-result" aria-live="polite">Enter your figures to estimate feed cost.</div>
+</section>
+<section class="tool-card" aria-labelledby="fence-title">
+<h3 id="fence-title">🪵 Fence Material Planner</h3><p>Estimate straight-run post count and line-wire length. Add your own allowance for corners, gates, braces, slopes, and waste.</p>
+<label for="fence-length">Fence run length (feet)</label><input id="fence-length" type="number" min="1" step="1" value="300">
+<label for="fence-spacing">Planned post spacing (feet)</label><input id="fence-spacing" type="number" min="1" step="1" value="8">
+<label for="fence-strands">Number of wire strands</label><input id="fence-strands" type="number" min="1" step="1" value="4">
+<label for="fence-waste">Extra material allowance (%)</label><input id="fence-waste" type="number" min="0" step="1" value="10">
+<div class="tool-result" id="fence-result" aria-live="polite">Enter your figures to estimate materials.</div>
+</section>
+<section class="tool-card" aria-labelledby="budget-title">
+<h3 id="budget-title">🌾 Farm Startup Budget</h3><p>Organize one-time startup costs into a simple total before you commit to purchases.</p>
+<label for="budget-land">Land/site preparation ($)</label><input id="budget-land" type="number" min="0" step="0.01" value="0">
+<label for="budget-fence">Fencing and gates ($)</label><input id="budget-fence" type="number" min="0" step="0.01" value="0">
+<label for="budget-shelter">Shelter and infrastructure ($)</label><input id="budget-shelter" type="number" min="0" step="0.01" value="0">
+<label for="budget-stock">Livestock and initial supplies ($)</label><input id="budget-stock" type="number" min="0" step="0.01" value="0">
+<label for="budget-other">Other costs / contingency ($)</label><input id="budget-other" type="number" min="0" step="0.01" value="0">
+<div class="tool-result" id="budget-result" aria-live="polite">Enter your figures to total the budget.</div>
+</section>
+</div>
+<h2>Resource topics</h2>
+<div class="tool-grid">
+<article class="tool-card"><h3>Livestock & animal care</h3><p>Planning routines, feed storage, water access, fencing, shelter, observation, and recordkeeping. Practical guides will be added after editorial and source review.</p></article>
+<article class="tool-card"><h3>Land & infrastructure</h3><p>Fence planning, gates, drainage, water systems, site preparation, and maintenance checklists.</p></article>
+<article class="tool-card"><h3>Equipment & rural work</h3><p>Equipment selection, ownership-cost comparisons, maintenance planning, and tool checklists.</p></article>
+<article class="tool-card"><h3>South Carolina agriculture</h3><p>State-specific resources, extension references, seasonal planning, and official program links.</p></article>
+</div>
+<p class="tool-note">The resource library will prioritize original, experience-informed material and link to authoritative sources. Product recommendations will be identified as affiliate links when a referral relationship is in place.</p>
+<div class="resource-callout"><strong>Have a resource question?</strong> <a class="text-gold" href="/contact">Send it to Da HoodFarmer</a>. Questions may help shape future guides and tools.</div>
+</main>
+<script src="/resource-center.js"></script><script src="/script.js"></script>
+</body></html>
