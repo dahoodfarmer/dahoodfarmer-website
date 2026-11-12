@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chicken Feed Cost Calculator: Estimate Monthly Flock Costs | Da HoodFarmer</title>
+<meta name="description" content="Use this free chicken feed cost calculator to estimate daily, weekly and monthly feed use and cost based on your flock size and actual feed price.">
+<link rel="canonical" href="https://dahoodfarmer.com/resources/chicken-feed-cost">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.calc{background:var(--gray);border:1px solid rgba(212,175,55,.25);border-radius:12px;padding:1.5rem;margin:2rem 0}.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem}.calc label{display:block;color:var(--gold);font-size:.85rem;margin-bottom:.35rem}.calc input{width:100%;padding:.8rem;background:#111;color:var(--text);border:1px solid #66552a;border-radius:6px;font:inherit}.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin-top:1.25rem}.result{background:#171717;border-radius:8px;padding:1rem}.result strong{display:block;color:var(--gold);font-size:1.25rem}.result span{font-size:.8rem;color:var(--text-dim)}.note{font-size:.85rem;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div class="page-hero"><h1>Chicken Feed Cost Calculator</h1><p>Estimate your flock's feed budget using your own numbers.</p></div>
+<main class="page-content">
+<p>Feed is a recurring expense, so it helps to estimate consumption before setting a flock budget. This calculator uses the daily feed amount you enter; it does not assume every bird, breed, age or season has the same needs.</p>
+<section class="calc" aria-label="Chicken feed cost calculator">
+<h2 style="margin-top:0">Your flock and feed</h2>
+<div class="calc-grid">
+<div><label for="birds">Number of chickens</label><input id="birds" type="number" min="1" max="10000" step="1" value="10"></div>
+<div><label for="daily">Feed per bird per day (lb)</label><input id="daily" type="number" min="0" max="5" step="0.01" value="0.25"></div>
+<div><label for="bag">Feed bag weight (lb)</label><input id="bag" type="number" min="1" max="500" step="0.1" value="50"></div>
+<div><label for="price">Price per bag ($)</label><input id="price" type="number" min="0" max="10000" step="0.01" value="20"></div>
+</div>
+<div class="results" aria-live="polite">
+<div class="result"><strong id="dailyCost">$0.00</strong><span>Estimated daily cost</span></div>
+<div class="result"><strong id="weeklyCost">$0.00</strong><span>Estimated weekly cost</span></div>
+<div class="result"><strong id="monthlyCost">$0.00</strong><span>Estimated 30-day cost</span></div>
+<div class="result"><strong id="bagsMonth">0.00</strong><span>Feed bags per 30 days</span></div>
+</div>
+<p class="note">Planning estimate only. Actual consumption and costs vary with bird age, size, breed, forage access, feed formulation, waste, weather and management. Follow the feed label and appropriate poultry guidance.</p>
+</section>
+<h2>How to use the estimate</h2>
+<ol>
+<li>Enter the number of birds you currently keep or plan to keep.</li>
+<li>Enter your expected average daily feed per bird. Use a value from your feed guidance or your own measured usage.</li>
+<li>Enter the actual bag weight and price you pay.</li>
+<li>Use the 30-day estimate as one line in a broader livestock budget, then add bedding, water, housing, health care, repairs and other costs.</li>
+</ol>
+<h2>What this calculator does not include</h2>
+<p>This is a feed-cost estimate, not a ration formulation or animal-health recommendation. It does not calculate protein, energy, calcium or other nutritional requirements. Those depend on the birds' age and purpose and should be checked against reliable poultry-extension guidance and the feed manufacturer's label.</p>
+<p><a href="/resources" class="text-gold">← Back to the Resource Center</a></p>
+</main>
+<script>
+(function(){
+ const ids=['birds','daily','bag','price'];
+ const money=n=>Number.isFinite(n)?n.toLocaleString('en-US',{style:'currency',currency:'USD'}):'—';
+ function update(){
+  const v=Object.fromEntries(ids.map(id=>[id,Number(document.getElementById(id).value)]));
+  const valid=ids.every(id=>Number.isFinite(v[id])&&v[id]>=0)&&v.birds>=1&&v.bag>0;
+  if(!valid){['dailyCost','weeklyCost','monthlyCost','bagsMonth'].forEach(id=>document.getElementById(id).textContent='Check inputs');return;}
+  const feedDay=v.birds*v.daily, bagsDay=feedDay/v.bag, costDay=bagsDay*v.price;
+  document.getElementById('dailyCost').textContent=money(costDay);
+  document.getElementById('weeklyCost').textContent=money(costDay*7);
+  document.getElementById('monthlyCost').textContent=money(costDay*30);
+  document.getElementById('bagsMonth').textContent=(bagsDay*30).toFixed(2);
+ }
+ ids.forEach(id=>document.getElementById(id).addEventListener('input',update));update();
+})();
+</script>
+<script src="/script.js"></script>
+</body>
+</html>
