@@ -34,8 +34,9 @@
 <li>We will not sell fake traffic, incentivized ad clicks, misleading placements or bot-generated engagement.</li>
 <li>All partnerships are subject to written terms and applicable platform policies.</li>
 </ul>
-<p class="text-center mt-2"><a href="/contact" class="btn btn-gold">Ask about advertising</a> <a href="/resources" class="btn btn-outline">Explore the Resource Center</a></p>
+<p class="text-center mt-2"><a href="/contact" id="sponsor-inquiry" class="btn btn-gold">Ask about advertising</a> <a href="/resources" class="btn btn-outline">Explore the Resource Center</a></p>
 </main>
+<script>document.getElementById("sponsor-inquiry")?.addEventListener("click",function(){if(typeof window.gtag==="function"){window.gtag("event","sponsor_inquiry_click",{page_type:"advertise"});}});</script>
 <script src="/script.js"></script>
 </body>
 </html>
