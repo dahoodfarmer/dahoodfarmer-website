@@ -58,7 +58,14 @@
   document.getElementById('monthlyCost').textContent=money(costDay*30);
   document.getElementById('bagsMonth').textContent=(bagsDay*30).toFixed(2);
  }
- ids.forEach(id=>document.getElementById(id).addEventListener('input',update));update();
+ let tracked=false;
+ ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  update();
+  const values=ids.map(key=>Number(document.getElementById(key).value));
+  const valid=values.every(Number.isFinite)&&values[0]>=1&&values[1]>=0&&values[2]>0&&values[3]>0;
+  if(valid&&!tracked&&typeof window.gtag==='function'){window.gtag('event','calculator_use',{calculator_name:'chicken_feed_cost'});tracked=true;}
+ }));
+ update();
 })();
 </script>
 <script src="/script.js"></script>
