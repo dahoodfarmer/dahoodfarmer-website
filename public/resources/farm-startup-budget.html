@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Small Farm Startup Budget Calculator | Da HoodFarmer</title>
+<meta name="description" content="Create a first-pass small farm startup budget by adding land preparation, fencing, shelter, equipment, livestock and other setup costs.">
+<link rel="canonical" href="https://dahoodfarmer.com/resources/farm-startup-budget">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css">
+<style>
+.budget-tool{background:var(--gray);border:1px solid rgba(212,175,55,.25);border-radius:12px;padding:1.5rem;margin:2rem 0}
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem}
+.budget-field label{display:block;color:var(--gold);font-size:.85rem;margin-bottom:.35rem}
+.budget-field input{width:100%;padding:.8rem;background:#111;color:var(--text);border:1px solid #66552a;border-radius:6px;font:inherit}
+.budget-total{margin-top:1.25rem;padding:1.1rem;background:#171717;border-left:3px solid var(--gold);border-radius:6px}
+.budget-total strong{display:block;color:var(--gold);font-size:1.6rem}
+.budget-note{font-size:.85rem;color:var(--text-dim);margin-top:1rem}
+</style>
+</head>
+<body>
+<div class="page-hero"><h1>Small Farm Startup Budget Calculator</h1><p>Add your own estimates to organize a first-pass setup budget.</p></div>
+<main class="page-content" id="main-content">
+<p>Before buying equipment, livestock or materials, organize the main setup costs. This calculator adds the amounts you enter; it does not estimate supplier prices, operating income, loan payments or whether a farm will be profitable.</p>
+<section class="budget-tool" aria-label="Small farm startup budget calculator">
+<h2 style="margin-top:0">Enter your estimated one-time costs</h2>
+<div class="budget-grid">
+<div class="budget-field"><label for="land">Land or site preparation ($)</label><input id="land" type="number" min="0" step="0.01" value="0"></div>
+<div class="budget-field"><label for="fencing">Fencing and gates ($)</label><input id="fencing" type="number" min="0" step="0.01" value="0"></div>
+<div class="budget-field"><label for="shelter">Shelter and infrastructure ($)</label><input id="shelter" type="number" min="0" step="0.01" value="0"></div>
+<div class="budget-field"><label for="equipment">Equipment and tools ($)</label><input id="equipment" type="number" min="0" step="0.01" value="0"></div>
+<div class="budget-field"><label for="livestock">Livestock and initial supplies ($)</label><input id="livestock" type="number" min="0" step="0.01" value="0"></div>
+<div class="budget-field"><label for="permits">Permits and professional services ($)</label><input id="permits" type="number" min="0" step="0.01" value="0"></div>
+<div class="budget-field"><label for="reserve">Startup contingency / reserve ($)</label><input id="reserve" type="number" min="0" step="0.01" value="0"></div>
+</div>
+<div class="budget-total" aria-live="polite"><span>Estimated one-time startup total</span><strong id="total">$0.00</strong><span id="line-count">7 cost categories included</span></div>
+<p class="budget-note">Enter actual local quotes where possible. This total excludes recurring feed, fuel, utilities, labor, insurance, taxes, rent, repairs and debt payments. Build a separate operating budget and cash-flow plan before committing funds.</p>
+</section>
+<h2>Use this total carefully</h2>
+<ul><li>Record the source and date for each estimate.</li><li>Include delivery, taxes, installation and required accessories in the relevant category.</li><li>Separate one-time setup costs from recurring operating expenses.</li><li>Check local rules, permits, property boundaries and insurance requirements.</li><li>Keep a reserve that reflects the risks and timing of your specific operation.</li></ul>
+<h2>Further planning resources</h2>
+<ul><li><a href="/resources/small-farm-startup-budget" class="text-gold">Read the small farm startup budget guide</a></li><li><a href="https://www.farmers.gov/your-business/beginning-farmers/business-plan" target="_blank" rel="noopener">USDA Farmers.gov: Plan Your New Farm Operation</a></li><li><a href="https://www.nal.usda.gov/economics-business-and-trade/small-farm-funding-guide" target="_blank" rel="noopener">USDA National Agricultural Library: Small Farm Funding Guide</a></li></ul>
+<p class="budget-note">This is a general educational planning tool, not legal, tax, lending or investment advice. Confirm costs, program eligibility and requirements with the relevant suppliers, agencies and qualified professionals.</p>
+<p><a href="/resources" class="text-gold">← Back to the Resource Center</a></p>
+</main>
+<script>
+(function(){
+ const ids=['land','fencing','shelter','equipment','livestock','permits','reserve'];
+ const total=document.getElementById('total');
+ const money=n=>n.toLocaleString('en-US',{style:'currency',currency:'USD'});
+ let tracked=false;
+ function update(){
+  const values=ids.map(id=>Number(document.getElementById(id).value));
+  const valid=values.every(v=>Number.isFinite(v)&&v>=0);
+  if(!valid){total.textContent='Check inputs';return;}
+  total.textContent=money(values.reduce((sum,v)=>sum+v,0));
+  if(!tracked && values.some(v=>v>0) && typeof window.gtag==='function'){
+   window.gtag('event','calculator_use',{calculator_name:'farm_startup_budget'});
+   tracked=true;
+  }
+ }
+ ids.forEach(id=>document.getElementById(id).addEventListener('input',update));
+ update();
+})();
+</script>
+<script src="/script.js"></script>
+</body>
+</html>
