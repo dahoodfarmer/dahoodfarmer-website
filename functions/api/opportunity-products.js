@@ -9,7 +9,7 @@ function json(data, status = 200) {
   });
 }
 
-const FUNNELS = new Set(['business', 'summits', 'marketplace', 'academy', 'sponsors']);
+const FUNNELS = new Set(['business', 'summits', 'marketplace', 'academy', 'experiences', 'sponsors']);
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
