@@ -33,6 +33,7 @@ function makePaymentsDb(options = {}) {
 
 function makeEnv(options = {}) {
   return {
+    DHF_CHECKOUT_ENABLED: options.checkoutEnabled === false ? 'false' : 'true',
     STRIPE_SECRET_KEY: options.secret ?? 'sk_test_mock',
     STRIPE_PUBLISHABLE_KEY: options.publishable ?? 'pk_test_mock',
     STRIPE_WEBHOOK_SECRET: options.webhookSecret ?? 'whsec_mock',
@@ -76,6 +77,25 @@ test('payment checkout fails closed when Stripe keys are not configured', async 
   const env = makeEnv({ secret: '', publishable: '' });
   const response = await createSession({ request: paymentRequest({ amount: 2500, purpose: 'support' }), env });
   assert.equal(response.status, 503);
+  assert.equal(env.PAYMENTS_DB.calls.length, 0);
+});
+
+test('payment checkout fails closed when the explicit checkout flag is false', async () => {
+  const env = makeEnv({ checkoutEnabled: false });
+  await withFetch(async () => { throw new Error('Stripe must not be called'); }, async () => {
+    const response = await createSession({ request: paymentRequest({ amount: 2500, purpose: 'support' }), env });
+    assert.equal(response.status, 503);
+  });
+  assert.equal(env.PAYMENTS_DB.calls.length, 0);
+});
+
+test('payment checkout fails closed when the checkout flag is missing', async () => {
+  const env = makeEnv();
+  delete env.DHF_CHECKOUT_ENABLED;
+  await withFetch(async () => { throw new Error('Stripe must not be called'); }, async () => {
+    const response = await createSession({ request: paymentRequest({ amount: 2500, purpose: 'support' }), env });
+    assert.equal(response.status, 503);
+  });
   assert.equal(env.PAYMENTS_DB.calls.length, 0);
 });
 
