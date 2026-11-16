@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Payment — Da HoodFarmer</title>
+<meta name="description" content="Securely support Da HoodFarmer through a test-mode checkout.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.payment-shell{max-width:680px;margin:3rem auto;padding:0 1rem}.payment-card{background:#151515;border:1px solid rgba(212,175,55,.35);border-radius:18px;padding:clamp(1.25rem,4vw,2.5rem);box-shadow:0 16px 55px #0005}.payment-brand{text-align:center;margin-bottom:2rem}.payment-brand .crown{font-size:2rem;color:#b99aff}.payment-brand h1{font-family:Cinzel,serif;color:#d8bd76;font-size:clamp(1.5rem,5vw,2rem);margin:.5rem 0}.payment-brand p,.payment-note{color:#aaa}.payment-field{display:grid;gap:.45rem;margin:1rem 0}.payment-field label{color:#eee;font-weight:600}.payment-field input,.payment-field select{width:100%;padding:.9rem;border-radius:9px;border:1px solid #555;background:#0d0d0d;color:#fff;font:inherit}.payment-action{width:100%;padding:1rem;border:0;border-radius:9px;background:linear-gradient(100deg,#b99aff,#d8bd76);color:#111;font-weight:800;font-size:1rem;cursor:pointer;margin-top:1rem}.payment-action:disabled{opacity:.5;cursor:not-allowed}.payment-error{color:#ff9d9d;min-height:1.5rem}.payment-note{font-size:.82rem;line-height:1.5;margin-top:1.2rem}.payment-logo{max-width:170px;max-height:72px;object-fit:contain;display:block;margin:0 auto .75rem}
+</style>
+</head>
+<body>
+<main class="payment-shell">
+<section class="payment-card">
+<header class="payment-brand">
+<div class="crown" aria-hidden="true">♛</div>
+<h1>Da HoodFarmer</h1>
+<p>Secure payment</p>
+</header>
+<div id="payment-form">
+<div class="payment-field"><label for="purpose">What are you paying for?</label><select id="purpose"><option value="support">Support Da HoodFarmer</option></select></div>
+<div class="payment-field"><label for="description">Description or invoice reference (optional)</label><input id="description" maxlength="120" placeholder="What is this payment for?"></div>
+<div class="payment-field"><label for="amount">Amount (USD)</label><input id="amount" type="number" min="1" max="10000" step="0.01" inputmode="decimal" placeholder="25.00" required></div>
+<div class="payment-field"><label for="email">Email for your receipt (optional)</label><input id="email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com"></div>
+<button class="payment-action" id="continue" type="button">Continue to secure checkout</button>
+<p class="payment-error" id="error" role="alert"></p>
+<p class="payment-note">Payments are securely processed by our payment provider. Card details are entered into the secure checkout and are never stored on this website. Wallet options such as Apple Pay or Google Pay appear when supported by your device and browser.</p>
+</div>
+<div id="checkout" hidden></div>
+</section>
+</main>
+<script>
+const button=document.getElementById('continue'), errorBox=document.getElementById('error');
+button.addEventListener('click',async()=>{
+  errorBox.textContent='';
+  const dollars=Number(document.getElementById('amount').value);
+  if(!Number.isFinite(dollars)||Math.round(dollars*100)<100||Math.round(dollars*100)>1000000){errorBox.textContent='Enter an amount from $1.00 to $10,000.00.';return;}
+  button.disabled=true;button.textContent='Preparing secure checkout…';
+  try{
+    const response=await fetch('/api/payments/create-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      amount:Math.round(dollars*100),
+      purpose:document.getElementById('purpose').value,
+      description:document.getElementById('description').value,
+      email:document.getElementById('email').value
+    })});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Checkout could not be started.');
+    const script=document.createElement('script');script.src='https://js.stripe.com/v3/';script.async=true;
+    script.onload=async()=>{
+      try{
+        const stripe=Stripe(data.publishableKey);
+        const checkout=await stripe.initEmbeddedCheckout({clientSecret:data.clientSecret});
+        document.getElementById('payment-form').hidden=true;
+        const target=document.getElementById('checkout');target.hidden=false;checkout.mount(target);
+      }catch(e){errorBox.textContent='Secure checkout could not load. Please refresh and try again.';button.disabled=false;button.textContent='Continue to secure checkout';}
+    };
+    script.onerror=()=>{errorBox.textContent='Secure checkout could not load. Please try again.';button.disabled=false;button.textContent='Continue to secure checkout';};
+    document.head.appendChild(script);
+  }catch(e){errorBox.textContent=e.message;button.disabled=false;button.textContent='Continue to secure checkout';}
+});
+</script>
+</body>
+</html>
