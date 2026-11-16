@@ -19,7 +19,7 @@ function escapeHtml(str) {
 
 function htmlResponse(title, message, showForm, email, token) {
   const formHtml = showForm
-    ? '<form method="POST" action="/api/unsubscribe" style="margin-top:1.5rem;">' +
+    ? '<form data-newsletter="false" method="POST" action="/api/unsubscribe" style="margin-top:1.5rem;">' +
       '<input type="hidden" name="email" value="' + escapeHtml(email) + '">' +
       '<input type="hidden" name="token" value="' + escapeHtml(token) + '">' +
       '<button type="submit" class="btn btn-gold">Confirm Unsubscribe</button></form>'
