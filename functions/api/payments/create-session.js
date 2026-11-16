@@ -4,6 +4,8 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 const purposes = new Set(['support']);
 
 export async function onRequestPost({ request, env }) {
+  // A configured Stripe key must never override the owner's explicit checkout gate.
+  if (env.DHF_CHECKOUT_ENABLED !== 'true') return json({ error: 'Online payments are disabled in this environment.' }, 503);
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PUBLISHABLE_KEY) return json({ error: 'Online payments are being prepared. Please check back soon.' }, 503);
   const ip = getClientIP(request);
   if (!await checkRateLimit(env.SESSIONS, ip, 'payment-create', 5, 60)) return json({ error: 'Too many payment attempts. Please wait and try again.' }, 429);
