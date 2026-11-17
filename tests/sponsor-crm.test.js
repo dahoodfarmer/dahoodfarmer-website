@@ -88,7 +88,7 @@ test('rejects insecure agreement and invoice links', async () => {
 
 test('requires a signed agreement before moving a partnership to contracted', async () => {
   const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'update', id: 4, stage: 'contracted', division: 'business_network', contract_status: 'draft', payment_status: 'not_requested' }), env: { DB } });
+  const response = await onRequestPost({ request: req({ action: 'update', id: 4, stage: 'contracted', division: 'business_network', contract_status: 'draft' }), env: { DB } });
   assert.equal(response.status, 409);
 });
 
