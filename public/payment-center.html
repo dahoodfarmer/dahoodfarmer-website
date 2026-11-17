@@ -10,19 +10,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css">
 <style>
 .payment-wrap{max-width:920px;margin:0 auto;padding:2rem 1rem 4rem}.payment-intro{text-align:center;max-width:720px;margin:0 auto 2rem}.payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin:1.5rem 0}.payment-option{border:1px solid rgba(201,164,84,.35);border-radius:14px;padding:1.25rem;background:rgba(12,15,25,.55)}.payment-option h2{font-size:1.15rem;margin:.2rem 0 .6rem}.payment-status{display:inline-block;border:1px solid #8a7b55;border-radius:999px;padding:.2rem .65rem;font-size:.75rem;letter-spacing:.04em}.payment-notice{border-left:3px solid #b99a56;padding:1rem 1.1rem;background:rgba(185,154,86,.08);margin:1.5rem 0}.payment-steps{display:grid;gap:.7rem;padding-left:1.25rem}.payment-muted{opacity:.8;font-size:.92rem}.payment-brand{text-align:center;margin-bottom:1rem;color:#d7bd7b;letter-spacing:.12em;text-transform:uppercase}
+ .qr-panel{max-width:420px;margin:2rem auto;padding:1.4rem;border:1px solid rgba(201,164,84,.4);border-radius:14px;text-align:center;background:#fff;color:#171717}.qr-panel #payment-center-qr{display:flex;justify-content:center;min-height:220px;margin:1rem auto}.qr-panel button{background:#292332;color:#fff;border:0;border-radius:8px;padding:.7rem 1rem;font-weight:700}.qr-panel .muted{font-size:.85rem;color:#555}
 </style>
 </head>
 <body>
 <div class="page-hero"><h1>★ Secure Payment Center ★</h1><p>Da HoodFarmer · Official business payments</p></div>
 <main class="payment-wrap">
   <div class="payment-intro"><div class="payment-brand">Da HoodFarmer Business Office</div><h2>Simple, secure business payments</h2><p>Use this center to understand the payment options planned for approved sponsorships, partnerships and invoices. A payment is never due simply because you submitted an inquiry.</p></div>
+  <section class="qr-panel" aria-labelledby="payment-qr-heading"><h2 id="payment-qr-heading">Permanent DHF Payment Center QR</h2><p class="muted">Scan to open this official DHF Payment Center. This QR does not collect money or start a payment.</p><div id="payment-center-qr" aria-label="QR code linking to the Da HoodFarmer Payment Center"></div><button type="button" id="download-payment-center-qr">Download QR image</button></section>
   <section aria-labelledby="methods-heading"><h2 id="methods-heading">Payment methods</h2><div class="payment-grid">
     <article class="payment-option"><h2>Apple Pay</h2><p>Fast checkout on supported Apple devices through an authorized payment provider.</p><span class="payment-status">Not activated</span></article>
     <article class="payment-option"><h2>Debit &amp; Credit Cards</h2><p>Secure card checkout hosted by the selected authorized payment provider. DHF will not store card numbers or security codes.</p><span class="payment-status">Not activated</span></article>
     <article class="payment-option"><h2>ACH / Bank Transfer</h2><p>Bank payment options for approved invoices, subject to provider support and confirmed settlement.</p><span class="payment-status">Not activated</span></article>
   </div></section>
-  <aside class="payment-notice"><strong>Payments are not being accepted through this page yet.</strong><p class="payment-muted">This page is an information and routing foundation. No payment form, bank details, card fields, QR payment link or live checkout is active. Do not email or submit banking credentials or card information.</p></aside>
+  <aside class="payment-notice"><strong>Payments are not being accepted through this page yet.</strong><p class="payment-muted">This page is an information and routing foundation. No payment form, bank details, card fields or live checkout is active. The QR above only opens this information page. Do not email or submit banking credentials or card information.</p></aside>
   <section><h2>How an approved sponsor payment will work</h2><ol class="payment-steps"><li>DHF and the sponsor agree to written partnership terms.</li><li>The owner records the signed agreement and approved amount in the private Sponsor CRM.</li><li>DHF issues a unique invoice and secure payment link. A matching QR code may be provided for convenience.</li><li>The sponsor chooses an available payment method on the authorized provider's secure checkout.</li><li>DHF records payment only after verified provider confirmation or owner-verified bank settlement.</li></ol></section>
   <p class="payment-muted">Questions about an existing agreement or invoice? Use the <a href="/contact">official contact page</a>. Never pay an invoice that you cannot independently verify with Da HoodFarmer.</p>
-</main><script src="/script.js"></script>
+</main><script src="/js/qrcode.min.js"></script><script>
+(function(){
+ var target=document.getElementById('payment-center-qr');
+ if(!target||typeof QRCode!=='function')return;
+ new QRCode(target,{text:'https://dahoodfarmer.com/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+ var button=document.getElementById('download-payment-center-qr');
+ button.addEventListener('click',function(){
+  var canvas=target.querySelector('canvas'),img=target.querySelector('img');
+  var url=canvas?canvas.toDataURL('image/png'):(img?img.src:'');
+  if(!url)return;
+  var link=document.createElement('a');link.href=url;link.download='DHF-Payment-Center-QR.png';link.click();
+ });
+})();
+</script><script src="/script.js"></script>
 </body></html>
