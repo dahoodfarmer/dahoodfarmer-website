@@ -23,9 +23,9 @@ The production branch remains site-rebuild-v2. Payment work is on feature/dhf-pr
 | DHF_CHECKOUT_ENABLED | false | Checkout disabled |
 | DHF_INVOICING_ENABLED | false | Provider invoicing disabled; DHF internal invoicing is separate |
 | DHF_RECEIPT_EMAIL_ENABLED | false | Customer email kill switch |
-| DHF_PAYPAL_PAYMENT_URL | Empty | Optional official PayPal business payment URL; HTTPS paypal.com / paypal.me host only |
-| DHF_VENMO_PAYMENT_URL | Empty | Optional official Venmo business-profile URL; HTTPS venmo.com host only |
-| DHF_CASH_APP_BUSINESS_URL | Empty | Optional official Cash App Business profile URL; HTTPS cash.app host only |
+| DHF_SQUARE_PAYMENT_URL | Empty | Optional official Square payment link; HTTPS square.link or checkout.square.site host only |
+| 
+| 
 | DHF_RECEIPT_TOKEN_SECRET | Preview secret only | Receipt URL signing key; never place in Git |
 | RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery unavailable |
 
@@ -44,7 +44,7 @@ Preview already has migrations 0010 through 0013 applied. Earlier migration 0008
 - Customer invoice pages are no-index, no-store and printable.
 - Invoice creation does not contact a payment provider, charge a customer, send an email or mark an invoice paid.
 - Apple Pay, cards, ACH and bank transfer are not activated.
-- PayPal, Venmo and Cash App Business destinations are supported by the UI but remain inactive until the owner verifies and configures an official business-profile URL. The UI validates provider hosts and renders provider QR codes locally; external payments still require owner-side settlement verification.
+- Square-hosted payment links are supported by the UI but remain inactive until the owner verifies and configures an official payment link. Adyen is reserved for a later per-invoice link flow. The UI validates provider hosts and renders provider QR codes locally; external payments still require owner-side settlement verification.
 - The permanent Payment Center QR and invoice-specific QR are generated locally in the browser and have dedicated download actions; scan and Preview-host verification remain.
 - Payment collection, checkout and receipt email remain disabled.
 
