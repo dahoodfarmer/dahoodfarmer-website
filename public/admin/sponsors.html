@@ -108,8 +108,9 @@ document.addEventListener('click',function(e){
  }
  if(b.hasAttribute('data-create-invoice')){
   var id=Number(b.getAttribute('data-create-invoice'));
+  var due=document.querySelector('[data-deal="'+id+'"] [data-field="invoice_due_date"]').value;
   b.disabled=true;
-  post({action:'create_invoice',partnership_id:id}).then(function(d){
+  post({action:'create_invoice',partnership_id:id,due_date:due}).then(function(d){
    return load().then(function(){message.innerHTML='Secure invoice issued: <a href="'+esc(d.invoice_url)+'" target="_blank" rel="noopener">open invoice</a>. Share this link only with the contracted sponsor.';});
   }).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
  }
