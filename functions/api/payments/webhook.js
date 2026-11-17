@@ -1,31 +1,15 @@
+import { getPaymentProviderConfig, createStripeInvoiceAdapter } from '../../lib/payment-provider.js';
+
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
 });
 
-async function verifyStripeSignature(payload, header, secret) {
-  if (!header || !secret) return false;
-  const parts = header.split(',').map(part => part.split('='));
-  const timestamp = parts.find(([key]) => key === 't')?.[1];
-  const signatures = parts.filter(([key]) => key === 'v1').map(([, value]) => value);
-  if (!timestamp || !/^\d+$/.test(timestamp) || !signatures.length) return false;
-  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const digest = await crypto.subtle.sign('HMAC', key, encoder.encode(timestamp + '.' + payload));
-  const expected = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
-  return signatures.some(signature => constantTimeEqual(signature, expected));
-}
-function constantTimeEqual(a, b) {
-  if (typeof a !== 'string' || a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
 export async function onRequestPost({ request, env }) {
-  if (!env.STRIPE_WEBHOOK_SECRET || !env.DB) return json({ error: 'Stripe invoice webhook is not configured.' }, 503);
+  const paymentConfig = getPaymentProviderConfig(env);
+  if (!paymentConfig.paymentsEnabled || paymentConfig.provider !== 'stripe' || !env.STRIPE_WEBHOOK_SECRET || !env.DB) return json({ error: 'The selected payment provider webhook is not enabled in this environment.' }, 503);
+  const provider = createStripeInvoiceAdapter(env);
   const raw = await request.text();
-  if (!await verifyStripeSignature(raw, request.headers.get('Stripe-Signature'), env.STRIPE_WEBHOOK_SECRET)) return json({ error: 'Invalid signature.' }, 400);
+  if (!await provider.verifyWebhook(raw, request.headers.get('Stripe-Signature'))) return json({ error: 'Invalid signature.' }, 400);
   let event;
   try { event = JSON.parse(raw); } catch { return json({ error: 'Invalid event.' }, 400); }
   const object = event.data?.object;
