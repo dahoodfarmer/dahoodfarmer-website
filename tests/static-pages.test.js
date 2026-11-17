@@ -76,3 +76,13 @@ test('privacy and terms disclose applications, separate consent and internationa
   assert.match(terms,/all 50 U\.S\. states and internationally/);
   assert.match(terms,/does not automatically publish a business profile/);
 });
+
+test('payment center is informational only until an authorized provider is approved',()=>{
+  const html=read('public/payment-center.html');
+  assert.match(html,/Apple Pay/);
+  assert.match(html,/Debit &amp; Credit Cards/);
+  assert.match(html,/ACH \/ Bank Transfer/);
+  assert.match(html,/Payments are not being accepted through this page yet/);
+  assert.match(html,/Not activated/);
+  assert.doesNotMatch(html,/<form\b/i);
+});
