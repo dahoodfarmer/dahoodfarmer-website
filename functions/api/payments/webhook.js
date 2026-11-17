@@ -93,7 +93,7 @@ export async function onRequestPost({ request, env }) {
         }
       } else if (event.type === 'invoice.finalized') {
         await env.DB.prepare(
-          "UPDATE sponsor_invoices SET status = CASE WHEN status IN ('paid','refunded','void') THEN status ELSE 'issued' END, stripe_status = ?, provider_id = 'stripe', provider_invoice_id = ?, provider_status = ?, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status <> 'void'"
+          "UPDATE sponsor_invoices SET status = CASE WHEN status IN ('paid','refunded','void') THEN status WHEN refund_amount_cents > 0 THEN 'paid' ELSE 'issued' END, stripe_status = ?, provider_id = 'stripe', provider_invoice_id = ?, provider_status = CASE WHEN refund_amount_cents >= amount_cents AND refund_amount_cents > 0 THEN 'refunded' WHEN refund_amount_cents > 0 THEN 'partially_refunded' WHEN status = 'paid' THEN 'paid' ELSE ? END, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status <> 'void'"
         ).bind(object.status || 'open', object.id, object.status || 'open', object.hosted_invoice_url || '', object.invoice_pdf || '', object.number || '', record.invoice_id).run();
         if (object.hosted_invoice_url) {
           await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = CASE WHEN payment_status IN ('paid','refunded','failed') THEN payment_status ELSE 'invoice_sent' END, payment_provider_id = 'stripe', invoice_url = ?, updated_at = datetime('now') WHERE id = ?")
@@ -102,7 +102,7 @@ export async function onRequestPost({ request, env }) {
       } else if (event.type === 'invoice.paid') {
         const paidAmount = Number(object.amount_paid ?? object.total);
         await env.DB.prepare(
-          "UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', provider_id = 'stripe', provider_invoice_id = ?, provider_status = CASE WHEN refund_amount_cents >= amount_cents THEN 'refunded' ELSE 'paid' END, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?"
+          "UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', provider_id = 'stripe', provider_invoice_id = ?, provider_status = CASE WHEN refund_amount_cents >= amount_cents AND refund_amount_cents > 0 THEN 'refunded' WHEN refund_amount_cents > 0 THEN 'partially_refunded' ELSE 'paid' END, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?"
         ).bind(object.id, object.hosted_invoice_url || '', object.invoice_pdf || '', object.number || '', record.invoice_id).run();
         await env.DB.prepare(
           "UPDATE sponsor_partnerships SET payment_status = CASE WHEN EXISTS (SELECT 1 FROM sponsor_invoices WHERE invoice_id = ? AND refund_amount_cents >= amount_cents) THEN 'refunded' ELSE 'paid' END, payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?"
@@ -124,7 +124,7 @@ export async function onRequestPost({ request, env }) {
         ).bind(object.hosted_invoice_url || '', record.partnership_id).run();
       } else if (event.type === 'invoice.voided') {
         await env.DB.prepare(
-          "UPDATE sponsor_invoices SET status = 'void', stripe_status = 'void', provider_id = 'stripe', provider_invoice_id = ?, provider_status = 'void', updated_at = datetime('now') WHERE invoice_id = ? AND status NOT IN ('paid','refunded')"
+          "UPDATE sponsor_invoices SET status = 'void', stripe_status = 'void', provider_id = 'stripe', provider_invoice_id = ?, provider_status = 'void', updated_at = datetime('now') WHERE invoice_id = ? AND status NOT IN ('paid','refunded') AND refund_amount_cents = 0"
         ).bind(object.id, record.invoice_id).run();
         await env.DB.prepare(
           "UPDATE sponsor_partnerships SET payment_status = 'not_requested', payment_provider_id = 'stripe', invoice_url = '', payment_reference = '', updated_at = datetime('now') WHERE id = ? AND payment_status NOT IN ('paid','refunded')"
