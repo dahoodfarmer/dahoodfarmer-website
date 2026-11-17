@@ -6,6 +6,7 @@ on:
       - site-rebuild-v2
       - feature/loopy-carter-dual-identity
       - feature/dhf-opportunity-network-build
+      - feature/dhf-sponsor-invoice-checkout
 
 permissions:
   contents: read
