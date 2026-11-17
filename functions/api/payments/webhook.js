@@ -1,6 +1,6 @@
-import { reconcileInvoice } from '../../lib/invoices.js';
-
-const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+const json = (data, status = 200) => new Response(JSON.stringify(data), {
+  status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
+});
 
 async function verifyStripeSignature(payload, header, secret) {
   if (!header || !secret) return false;
@@ -23,50 +23,77 @@ function constantTimeEqual(a, b) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!env.STRIPE_WEBHOOK_SECRET || !env.PAYMENTS_DB) return json({ error: 'Webhook is not configured.' }, 503);
+  if (!env.STRIPE_WEBHOOK_SECRET || !env.DB) return json({ error: 'Stripe invoice webhook is not configured.' }, 503);
   const raw = await request.text();
   if (!await verifyStripeSignature(raw, request.headers.get('Stripe-Signature'), env.STRIPE_WEBHOOK_SECRET)) return json({ error: 'Invalid signature.' }, 400);
   let event;
   try { event = JSON.parse(raw); } catch { return json({ error: 'Invalid event.' }, 400); }
-  const session = event.data?.object;
-  if (!session?.id) return json({ received: true });
-
-  const updates = {
-    'checkout.session.completed': session.payment_status === 'paid' ? 'paid' : 'processing',
-    'checkout.session.async_payment_succeeded': 'paid',
-    'checkout.session.async_payment_failed': 'failed',
-    'checkout.session.expired': 'expired'
-  };
-  const status = updates[event.type];
-  if (!status) return json({ received: true });
+  const object = event.data?.object;
+  if (!object) return json({ received: true });
 
   try {
-    const order = await env.PAYMENTS_DB.prepare(
-      'SELECT order_id, amount, currency, purpose, invoice_id, partnership_id FROM dhf_payment_orders WHERE provider_session_id = ?'
-    ).bind(session.id).first();
-    if (!order) return json({ error: 'Order not found.' }, 404);
-    if (session.metadata?.order_id !== order.order_id || Number(session.amount_total) !== Number(order.amount) || session.currency !== order.currency) {
-      console.error('Stripe webhook order reconciliation mismatch:', session.id);
-      return json({ error: 'Order reconciliation failed.' }, 400);
-    }
-    if (order.purpose === 'invoice' && (!env.DB || session.metadata?.invoice_id !== order.invoice_id || Number(session.metadata?.partnership_id) !== Number(order.partnership_id))) {
-      console.error('Stripe webhook invoice metadata mismatch:', session.id);
-      return json({ error: 'Invoice reconciliation failed.' }, 400);
+    if (event.type === 'charge.refunded') {
+      const stripeInvoiceId = typeof object.invoice === 'string' ? object.invoice : object.invoice?.id;
+      if (!stripeInvoiceId) return json({ received: true });
+      const record = await env.DB.prepare('SELECT invoice_id, partnership_id, amount_cents FROM sponsor_invoices WHERE stripe_invoice_id = ?').bind(stripeInvoiceId).first();
+      if (!record) return json({ received: true });
+      const refunded = Math.max(0, Number(object.amount_refunded || 0));
+      const fullyRefunded = refunded >= Number(record.amount_cents);
+      await env.DB.prepare(
+        "UPDATE sponsor_invoices SET refund_amount_cents = MAX(refund_amount_cents, ?), updated_at = datetime('now') WHERE invoice_id = ?"
+      ).bind(refunded, record.invoice_id).run();
+      if (fullyRefunded) {
+        await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'refunded', updated_at = datetime('now') WHERE id = ?").bind(record.partnership_id).run();
+      }
+      await env.DB.prepare('INSERT OR IGNORE INTO stripe_webhook_events (event_id, event_type) VALUES (?, ?)').bind(event.id, event.type).run();
+      return json({ received: true });
     }
 
-    await env.PAYMENTS_DB.prepare(
-      "INSERT OR IGNORE INTO dhf_payment_events (event_id, event_type) VALUES (?, ?)"
-    ).bind(event.id, event.type).run();
-    await env.PAYMENTS_DB.prepare(
-      "UPDATE dhf_payment_orders SET status = ?, customer_email = CASE WHEN ? <> '' THEN ? ELSE customer_email END, updated_at = datetime('now') WHERE provider_session_id = ?"
-    ).bind(status, session.customer_details?.email || '', session.customer_details?.email || '', session.id).run();
+    const supported = new Set(['invoice.finalized','invoice.paid','invoice.payment_failed','invoice.voided']);
+    if (!supported.has(event.type)) return json({ received: true });
+    const invoiceId = object.metadata?.dhf_invoice_id || '';
+    const partnershipMeta = object.metadata?.dhf_partnership_id || '';
+    const record = await env.DB.prepare(
+      'SELECT invoice_id, partnership_id, amount_cents FROM sponsor_invoices WHERE stripe_invoice_id = ? OR invoice_id = ? LIMIT 1'
+    ).bind(object.id, invoiceId).first();
+    if (!record) return json({ received: true });
+    if (invoiceId && invoiceId !== record.invoice_id) return json({ error: 'Invoice metadata mismatch.' }, 400);
+    if (partnershipMeta && Number(partnershipMeta) !== Number(record.partnership_id)) return json({ error: 'Partnership metadata mismatch.' }, 400);
 
-    if (order.purpose === 'invoice') {
-      await reconcileInvoice(env.DB, order.invoice_id, order.partnership_id, order.order_id, status);
+    await env.DB.prepare('INSERT OR IGNORE INTO stripe_webhook_events (event_id, event_type) VALUES (?, ?)').bind(event.id, event.type).run();
+    if (event.type === 'invoice.finalized') {
+      await env.DB.prepare(
+        "UPDATE sponsor_invoices SET status = 'issued', stripe_status = ?, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status <> 'void'"
+      ).bind(object.status || 'open', object.hosted_invoice_url || '', object.invoice_pdf || '', object.number || '', record.invoice_id).run();
+      if (object.hosted_invoice_url) {
+        await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'invoice_sent', invoice_url = ?, updated_at = datetime('now') WHERE id = ? AND payment_status <> 'paid'")
+          .bind(object.hosted_invoice_url, record.partnership_id).run();
+      }
+    } else if (event.type === 'invoice.paid') {
+      await env.DB.prepare(
+        "UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?"
+      ).bind(object.hosted_invoice_url || '', object.invoice_pdf || '', object.number || '', record.invoice_id).run();
+      await env.DB.prepare(
+        "UPDATE sponsor_partnerships SET payment_status = 'paid', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(object.id, object.hosted_invoice_url || '', record.partnership_id).run();
+    } else if (event.type === 'invoice.payment_failed') {
+      await env.DB.prepare(
+        "UPDATE sponsor_invoices SET stripe_status = ?, hosted_invoice_url = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status <> 'void'"
+      ).bind(object.status || 'open', object.hosted_invoice_url || '', record.invoice_id).run();
+      await env.DB.prepare(
+        "UPDATE sponsor_partnerships SET payment_status = 'failed', invoice_url = ?, updated_at = datetime('now') WHERE id = ? AND payment_status <> 'paid'"
+      ).bind(object.hosted_invoice_url || '', record.partnership_id).run();
+    } else if (event.type === 'invoice.voided') {
+      await env.DB.prepare(
+        "UPDATE sponsor_invoices SET status = 'void', stripe_status = 'void', updated_at = datetime('now') WHERE invoice_id = ?"
+      ).bind(record.invoice_id).run();
+      await env.DB.prepare(
+        "UPDATE sponsor_partnerships SET payment_status = 'not_requested', invoice_url = '', payment_reference = '', updated_at = datetime('now') WHERE id = ? AND payment_status <> 'paid'"
+      ).bind(record.partnership_id).run();
     }
     return json({ received: true });
   } catch (error) {
-    console.error('Stripe webhook database update failed:', error?.message || String(error));
+    console.error('Stripe invoice webhook reconciliation failed:', error?.message || String(error));
     return json({ error: 'Temporary processing error.' }, 500);
   }
 }
