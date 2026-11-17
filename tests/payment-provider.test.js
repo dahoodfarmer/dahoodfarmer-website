@@ -1,46 +1,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getPaymentProviderConfig, resolvePaymentProvider, isAllowedPaymentMethod } from '../functions/lib/payment-provider.js';
+import { getPaymentProviderConfig, isAllowedPaymentMethod } from '../functions/lib/payment-provider.js';
 
 test('payment configuration fails closed when no provider is selected', () => {
-  const config = getPaymentProviderConfig({ DHF_PAYMENTS_ENABLED: 'true', DHF_INVOICING_ENABLED: 'true', DHF_PAYMENT_METHODS: 'card,apple_pay' });
+  const config = getPaymentProviderConfig({ DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_METHODS: 'bank_transfer' });
   assert.equal(config.provider, 'none');
   assert.equal(config.paymentsEnabled, false);
   assert.deepEqual(config.methods, []);
 });
 
-test('payment methods remain disabled unless the owner enables a recognized provider', () => {
-  const config = getPaymentProviderConfig({ DHF_PAYMENT_PROVIDER: 'stripe', DHF_PAYMENT_METHODS: 'card,apple_pay,ach,unknown', DHF_INVOICING_ENABLED: 'true' });
-  assert.equal(config.provider, 'stripe');
-  assert.equal(config.paymentsEnabled, false);
-  assert.equal(config.invoicingEnabled, false);
-  assert.deepEqual(config.methods, []);
-});
-
-test('enabled provider exposes only explicitly configured supported methods', () => {
-  const config = getPaymentProviderConfig({ DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'stripe', DHF_PAYMENT_METHODS: 'card,apple_pay,ach,unknown', DHF_INVOICING_ENABLED: 'true' });
+test('manual bank transfer is only exposed when explicitly enabled', () => {
+  const config = getPaymentProviderConfig({
+    DHF_PAYMENT_PROVIDER: 'manual',
+    DHF_PAYMENTS_ENABLED: 'true',
+    DHF_PAYMENT_METHODS: 'bank_transfer'
+  });
+  assert.equal(config.provider, 'manual');
   assert.equal(config.paymentsEnabled, true);
-  assert.equal(config.invoicingEnabled, true);
-  assert.deepEqual(config.methods, ['card', 'apple_pay', 'ach']);
+  assert.deepEqual(config.methods, ['bank_transfer']);
+  assert.equal(config.checkoutEnabled, false);
+  assert.equal(config.invoicingEnabled, false);
 });
 
-test('unknown providers fail closed instead of falling back to Stripe', () => {
-  const config = getPaymentProviderConfig({ DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'some_gateway', DHF_PAYMENT_METHODS: 'card' });
-  assert.equal(config.provider, 'none');
-  assert.equal(config.paymentsEnabled, false);
+test('Stripe and unknown providers are rejected without fallback', () => {
+  for (const provider of ['stripe', 'flo', 'unknown']) {
+    const config = getPaymentProviderConfig({ DHF_PAYMENT_PROVIDER: provider, DHF_PAYMENTS_ENABLED: 'true' });
+    assert.equal(config.provider, 'none');
+    assert.equal(config.paymentsEnabled, false);
+  }
 });
 
-test('provider adapter must implement the complete server-side contract', () => {
-  const env = { DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'flo' };
-  assert.equal(resolvePaymentProvider(env, { flo: { createInvoice() {} } }), null);
-  const adapter = { createInvoice() {}, retrieveInvoice() {}, verifyWebhook() {} };
-  assert.equal(resolvePaymentProvider(env, { flo: adapter }), adapter);
-});
-
-test('supported payment method allowlist is explicit', () => {
-  assert.equal(isAllowedPaymentMethod('apple_pay'), true);
-  assert.equal(isAllowedPaymentMethod('card'), true);
-  assert.equal(isAllowedPaymentMethod('ach'), true);
+test('only owner-confirmed bank transfer is a supported manual method', () => {
   assert.equal(isAllowedPaymentMethod('bank_transfer'), true);
-  assert.equal(isAllowedPaymentMethod('cash_app'), false);
+  assert.equal(isAllowedPaymentMethod('apple_pay'), false);
+  assert.equal(isAllowedPaymentMethod('card'), false);
+  assert.equal(isAllowedPaymentMethod('ach'), false);
 });
