@@ -34,7 +34,7 @@ export async function createPaidReceipt({ DB, env, invoiceId, providerId, provid
   ).bind(invoiceId).first();
   if (!invoice) throw new Error('Paid invoice record was not found.');
   if (Number(invoice.amount_cents) !== amountCents) throw new Error('Receipt amount does not match the approved invoice.');
-  if (!invoice.recipient_email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(invoice.recipient_email)) {
+  if (!invoice.recipient_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(invoice.recipient_email)) {
     throw new Error('A valid customer email is required before a receipt can be issued.');
   }
 
