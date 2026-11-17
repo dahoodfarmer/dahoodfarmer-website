@@ -1,6 +1,7 @@
 const DESTINATIONS = [
   { id: 'paypal', label: 'PayPal', env: 'DHF_PAYPAL_PAYMENT_URL', hosts: new Set(['paypal.com', 'www.paypal.com', 'paypal.me']) },
-  { id: 'venmo', label: 'Venmo', env: 'DHF_VENMO_PAYMENT_URL', hosts: new Set(['venmo.com', 'www.venmo.com']) }
+  { id: 'venmo', label: 'Venmo', env: 'DHF_VENMO_PAYMENT_URL', hosts: new Set(['venmo.com', 'www.venmo.com']) },
+  { id: 'cash_app', label: 'Cash App Business', env: 'DHF_CASH_APP_BUSINESS_URL', hosts: new Set(['cash.app']) }
 ];
 
 function safeDestinationUrl(value, hosts) {
