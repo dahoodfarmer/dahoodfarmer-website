@@ -296,7 +296,7 @@ export async function onRequestPost({ request, env }) {
             paymentMethod: null
           });
           await env.DB.prepare("UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', provider_id = 'stripe', provider_invoice_id = ?, provider_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', invoiceId).run();
-          await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', stripeInvoice.id, partnershipId).run();
+          await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', partnershipId).run();
           await sendReceiptEmail({ DB: env.DB, env, receipt });
           return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url || '', amount_cents: amount, due_date: dueDate, payment_status: 'paid', receipt_id: receipt.receipt_id });
         }
