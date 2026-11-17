@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sponsor & Media Prospects — Da HoodFarmer Admin</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+.admin-wrap{max-width:1180px;margin:2rem auto;padding:1rem}
+.admin-panel{background:#111c2b;border:1px solid #33465f;border-radius:12px;padding:1rem;margin:1rem 0}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.8rem}
+.admin-field{display:flex;flex-direction:column;gap:.35rem}
+.admin-field label{font-size:.85rem;color:#d7e0ee}
+.admin-field input,.admin-field select,.admin-field textarea{width:100%;background:#0a1320;color:#fff;border:1px solid #455a75;border-radius:7px;padding:.65rem}
+.admin-field textarea{min-height:70px}
+.prospect-card{background:#0e1928;border:1px solid #34465e;border-radius:10px;padding:1rem;margin:.8rem 0}
+.prospect-card h3{margin:.1rem 0 .5rem;color:#f0d36b}
+.small{font-size:.82rem;color:#aebbd0}
+.actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem}
+.actions button{background:#d6b64c;color:#111827;border:0;border-radius:7px;padding:.65rem .9rem;font-weight:700;cursor:pointer}
+.actions button.secondary{background:#26384e;color:#fff;border:1px solid #526985}
+.actions button:disabled{opacity:.45;cursor:not-allowed}
+.pill{display:inline-block;border:1px solid #516783;border-radius:20px;padding:.2rem .55rem;font-size:.75rem;color:#d7e0ee}
+.warning{border-left:4px solid #d6b64c;padding:.75rem;background:#19283b;color:#e9e2c8}
+@media(max-width:600px){.admin-wrap{padding:.65rem}.actions button{width:100%}}
+</style>
+</head>
+<body>
+<main class="admin-wrap">
+ <header class="admin-panel">
+  <p class="small">Da HoodFarmer · Protected admin workspace</p>
+  <h1>Sponsor, Corporate & Media Prospects</h1>
+  <p class="warning">Research records are not approved for contact. External outreach requires an explicit owner approval recorded below. This workspace does not send emails, submit pitches or contact prospects.</p>
+  <div class="actions">
+   <a class="button" href="/admin/sponsors">Sponsor applications & partnerships</a>
+   <a class="button secondary" href="/sponsors">Public sponsor page</a>
+  </div>
+ </header>
+
+ <section class="admin-panel">
+  <h2>Add a prospect</h2>
+  <form id="add-form">
+   <div class="admin-grid">
+    <div class="admin-field"><label for="organization">Organization *</label><input id="organization" name="organization" required maxlength="180"></div>
+    <div class="admin-field"><label for="partner_type">Relationship type</label><select id="partner_type" name="partner_type"><option value="local_business">Local business</option><option value="corporate_sponsor">Corporate sponsor</option><option value="media_production">Media / production</option><option value="network_development">Network / development</option><option value="distribution">Distribution platform</option><option value="industry_association">Industry association</option><option value="funding">Funding / incentives</option><option value="service_provider">Service provider</option></select></div>
+    <div class="admin-field"><label for="division">DHF division</label><select id="division" name="division"><option value="cross_division">Cross-division</option><option value="business_network">Business Network</option><option value="summits_events">Summits & Events</option><option value="marketplace">Marketplace</option><option value="academy">Academy</option><option value="land_experiences">Land & Experiences</option><option value="media">Media</option></select></div>
+    <div class="admin-field"><label for="category">Category</label><input id="category" name="category" maxlength="120"></div>
+    <div class="admin-field"><label for="location">Location</label><input id="location" name="location" maxlength="180"></div>
+    <div class="admin-field"><label for="website">Website (HTTPS)</label><input id="website" name="website" type="url"></div>
+    <div class="admin-field"><label for="source_url">Research source (HTTPS)</label><input id="source_url" name="source_url" type="url"></div>
+    <div class="admin-field"><label for="contact_route">Public contact / submission route</label><input id="contact_route" name="contact_route" maxlength="500"></div>
+    <div class="admin-field"><label for="public_phone">Public phone</label><input id="public_phone" name="public_phone" maxlength="80"></div>
+    <div class="admin-field"><label for="public_email">Public email</label><input id="public_email" name="public_email" type="email" maxlength="254"></div>
+    <div class="admin-field"><label for="contact_name">Contact name (if verified)</label><input id="contact_name" name="contact_name" maxlength="120"></div>
+    <div class="admin-field"><label for="fit_score">Fit score (0–10)</label><input id="fit_score" name="fit_score" type="number" min="0" max="10" value="5"></div>
+    <div class="admin-field"><label for="estimated_value">Estimated opportunity ($)</label><input id="estimated_value" name="estimated_value" type="number" min="0" step="0.01"></div>
+    <div class="admin-field"><label for="next_follow_up_date">Next follow-up date</label><input id="next_follow_up_date" name="next_follow_up_date" type="date"></div>
+   </div>
+   <div class="admin-field"><label for="qualification_notes">Qualification notes</label><textarea id="qualification_notes" name="qualification_notes"></textarea></div>
+   <div class="admin-field"><label for="notes">Internal notes</label><textarea id="notes" name="notes"></textarea></div>
+   <div class="actions"><button type="submit">Add to research queue</button></div>
+  </form>
+ </section>
+
+ <section class="admin-panel">
+  <div class="admin-grid">
+   <div class="admin-field"><label for="search">Search prospects</label><input id="search" type="search" placeholder="Company, category, location…"></div>
+   <div class="admin-field"><label for="type-filter">Relationship type</label><select id="type-filter"><option value="">All types</option><option value="local_business">Local business</option><option value="corporate_sponsor">Corporate sponsor</option><option value="media_production">Media / production</option><option value="network_development">Network / development</option><option value="distribution">Distribution</option><option value="industry_association">Industry association</option><option value="funding">Funding</option><option value="service_provider">Service provider</option></select></div>
+   <div class="admin-field"><label for="stage-filter">Pipeline stage</label><select id="stage-filter"><option value="">All stages</option><option>research</option><option>qualified</option><option>contact_route_verified</option><option>owner_approved</option><option>contacted</option><option>responded</option><option>discovery</option><option>proposal</option><option>negotiating</option><option>contracted</option><option>nurture</option><option>closed_won</option><option>closed_lost</option></select></div>
+  </div>
+  <p id="status" class="small" role="status" aria-live="polite">Loading prospects…</p>
+  <div id="prospects"></div>
+ </section>
+
+ <section class="admin-panel">
+  <h2>Recent prospect activity</h2>
+  <div id="activities" class="small">Loading activity…</div>
+ </section>
+</main>
+<script>
+(function(){
+ 'use strict';
+ var status=document.getElementById('status'),list=document.getElementById('prospects'),activities=document.getElementById('activities'),state={prospects:[],activities:[]};
+ var stages=['research','qualified','contact_route_verified','owner_approved','contacted','responded','discovery','proposal','negotiating','contracted','nurture','closed_won','closed_lost'];
+ var types=['local_business','corporate_sponsor','media_production','network_development','distribution','industry_association','funding','service_provider'];
+ var divisions=['business_network','summits_events','marketplace','academy','land_experiences','media','cross_division'];
+ function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
+ function options(items,selected){return items.map(function(v){return '<option value="'+esc(v)+'"'+(v===selected?' selected':'')+'>'+esc(v.replaceAll('_',' '))+'</option>'}).join('')}
+ function dollars(cents){return cents==null?'':(Number(cents)/100).toFixed(2)}
+ function field(label,key,value,type){return '<div class="admin-field"><label>'+esc(label)+'</label><input data-field="'+key+'" type="'+(type||'text')+'" value="'+esc(value||'')+'"></div>'}
+ async function post(payload){var r=await fetch('/api/admin/sponsor-prospects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});var d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to save prospect.');return d}
+ function render(){
+  var q=document.getElementById('search').value.toLowerCase(),type=document.getElementById('type-filter').value,stage=document.getElementById('stage-filter').value;
+  var items=state.prospects.filter(function(p){var hay=[p.organization,p.category,p.location,p.notes,p.qualification_notes].join(' ').toLowerCase();return (!q||hay.includes(q))&&(!type||p.partner_type===type)&&(!stage||p.stage===stage)});
+  status.textContent=items.length+' of '+state.prospects.length+' prospects · No outreach is sent from this page.';
+  list.innerHTML=items.map(function(p){
+   var approved=Boolean(p.owner_approved_at),canApprove=!approved&&['qualified','contact_route_verified'].includes(p.stage);
+   var canContact=approved;
+   return '<article class="prospect-card" data-prospect="'+p.id+'">'+
+    '<h3>'+esc(p.organization)+'</h3>'+
+    '<p class="small"><span class="pill">'+esc(p.partner_type.replaceAll('_',' '))+'</span> <span class="pill">'+esc(p.division.replaceAll('_',' '))+'</span> · '+esc(p.location)+'</p>'+
+    '<p class="small">Fit score: <strong>'+esc(p.fit_score)+'/10</strong> · Stage: <strong>'+esc(p.stage.replaceAll('_',' '))+'</strong> · '+(approved?'Outreach approved '+esc(p.owner_approved_at):'Not approved for outreach')+'</p>'+
+    '<p class="small">'+(p.website?'<a href="'+esc(p.website)+'" target="_blank" rel="noopener">Website</a>':'No verified website')+' · '+(p.source_url?'<a href="'+esc(p.source_url)+'" target="_blank" rel="noopener">Research source</a>':'No source link')+' · '+esc(p.contact_route)+'</p>'+
+    '<div class="admin-grid">'+
+     '<div class="admin-field"><label>Relationship type</label><select data-field="partner_type">'+options(types,p.partner_type)+'</select></div>'+
+     '<div class="admin-field"><label>DHF division</label><select data-field="division">'+options(divisions,p.division)+'</select></div>'+
+     '<div class="admin-field"><label>Pipeline stage</label><select data-field="stage">'+options(stages,p.stage)+'</select></div>'+
+     field('Fit score','fit_score',p.fit_score,'number')+
+     field('Next follow-up','next_follow_up_date',p.next_follow_up_date,'date')+
+     field('Estimated value ($)','estimated_value',dollars(p.estimated_value_cents),'number')+
+     field('Public email','public_email',p.public_email,'email')+
+     field('Public phone','public_phone',p.public_phone)+
+    '</div>'+
+    '<div class="admin-field"><label>Qualification notes</label><textarea data-field="qualification_notes">'+esc(p.qualification_notes)+'</textarea></div>'+
+    '<div class="admin-field"><label>Internal notes</label><textarea data-field="notes">'+esc(p.notes)+'</textarea></div>'+
+    '<div class="actions"><button type="button" data-save="'+p.id+'">Save changes</button><button type="button" class="secondary" data-approve="'+p.id+'"'+(canApprove?'':' disabled')+'>Approve outreach</button><button type="button" class="secondary" data-log="'+p.id+'"'+(canContact?'':' disabled')+'>Log outreach</button></div>'+
+    '<p class="small">Last contact: '+esc(p.last_contacted_at||'None')+' · Source checked: '+esc(p.source_checked_at||'Not recorded')+'</p>'+
+    '</article>';
+  }).join('');
+  activities.innerHTML=state.activities.length?state.activities.map(function(a){return '<p><strong>'+esc(a.organization)+'</strong> · '+esc(a.activity_type)+' · '+esc(a.summary)+' <span class="small">('+esc(a.created_at)+')</span></p>'}).join(''):'No prospect activity recorded.';
+ }
+ async function load(){status.textContent='Loading prospects…';var r=await fetch('/api/admin/sponsor-prospects',{cache:'no-store'});var d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load prospects.');state=d;render()}
+ document.getElementById('add-form').addEventListener('submit',async function(e){
+  e.preventDefault();var form=e.currentTarget,fd=new FormData(form),payload={action:'add'};
+  fd.forEach(function(v,k){payload[k]=v});
+  payload.fit_score=Number(payload.fit_score||0);payload.estimated_value_cents=payload.estimated_value?Math.round(Number(payload.estimated_value)*100):null;delete payload.estimated_value;
+  try{await post(payload);form.reset();document.getElementById('fit_score').value='5';await load();status.textContent='Prospect added to the internal research queue.'}catch(err){status.textContent=err.message}
+ });
+ list.addEventListener('click',async function(e){
+  var b=e.target.closest('button');if(!b)return;var card=b.closest('[data-prospect]');if(!card)return;var id=Number(card.getAttribute('data-prospect'));
+  try{
+   if(b.hasAttribute('data-save')){
+    var payload={action:'update',id:id};
+    card.querySelectorAll('[data-field]').forEach(function(el){payload[el.getAttribute('data-field')]=el.value});
+    payload.fit_score=Number(payload.fit_score);payload.estimated_value_cents=payload.estimated_value?Math.round(Number(payload.estimated_value)*100):null;delete payload.estimated_value;
+    var prospect=state.prospects.find(function(p){return p.id===id});payload.organization=prospect.organization;payload.category=prospect.category;payload.location=prospect.location;payload.website=prospect.website;payload.source_url=prospect.source_url;payload.contact_route=prospect.contact_route;payload.public_phone=payload.public_phone||prospect.public_phone;payload.public_email=payload.public_email||prospect.public_email;payload.contact_name=prospect.contact_name;payload.qualification_notes=payload.qualification_notes||prospect.qualification_notes;payload.notes=payload.notes||prospect.notes;
+    await post(payload);await load();status.textContent='Prospect updated.';
+   }else if(b.hasAttribute('data-approve')){
+    await post({action:'approve_outreach',id:id});await load();status.textContent='Owner approval recorded. No outreach was sent.';
+   }else if(b.hasAttribute('data-log')){
+    var summary=window.prompt('Describe the outreach that you personally completed. The system will only record it; it will not contact the prospect.');
+    if(!summary)return;await post({action:'log_activity',id:id,activity_type:'outreach',summary:summary});await load();status.textContent='Outreach activity recorded.';
+   }
+  }catch(err){status.textContent=err.message}
+ });
+ ['search','type-filter','stage-filter'].forEach(function(id){document.getElementById(id).addEventListener('input',render)});
+ load().catch(function(err){status.textContent=err.message});
+})();
+</script>
+<script src="/script.js"></script>
+</body>
+</html>
