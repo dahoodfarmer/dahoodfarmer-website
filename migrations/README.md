@@ -1,6 +1,6 @@
 # D1 Migration Target Map
 
-The sponsor, Opportunity Network and Stripe Invoicing features use the main application D1 database binding `DB`. The current Stripe Invoicing design does not require a separate payment-ledger database.
+The sponsor, Opportunity Network and provider-neutral Payment Center features use the main application D1 database binding `DB`. The current sponsor-invoice design does not require a separate payment-ledger database.
 
 ## Main application database — binding `DB`
 
@@ -19,13 +19,13 @@ Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
 
 ## Payment database note
 
-The earlier experimental `PAYMENTS_DB` ledger is not used by the current Stripe Invoicing implementation and is not bound in this branch's Wrangler configuration. Its Preview test database may still contain dormant tables from prior work; do not use it for current sponsor invoice processing.
+The earlier experimental `PAYMENTS_DB` ledger is not used by the current sponsor-invoice implementation and is not bound in this branch's Wrangler configuration. Its Preview test database may still contain dormant tables from prior work; do not use it for current sponsor invoice processing.
 
 ## Important safeguards
 
 - The Preview `DB` binding points to `dahoodfarmer-preview-db`.
 - The Preview `SESSIONS` binding points to `dahoodfarmer-preview-sessions`.
-- Stripe invoice/customer IDs, hosted invoice URLs and webhook events are stored in the main Preview `DB`.
+- Provider invoice references, hosted invoice URLs and payment-provider event records are stored in the main Preview `DB`. Legacy Stripe-specific columns remain for compatibility.
 - Production has separate bindings and has not received these migrations as part of this work.
 - Do not apply Preview migrations to Production without a separate review and explicit owner approval.
 - Never copy Preview test credentials or invoice data into Production.
