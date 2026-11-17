@@ -27,7 +27,7 @@ The Pages project production branch remains `site-rebuild-v2`. The current payme
 | RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery remains unavailable |
 | PUBLIC_SITE_URL | `https://dahoodfarmer.com` | Base URL for customer receipt links |
 
-The Preview configuration contains Stripe secret bindings, but Cloudflare masks their values. Their actual key mode and webhook pairing have not yet been independently verified. No Stripe API request or payment transaction has been performed. Do not infer test-mode readiness from the existence of a secret binding alone.
+The Preview configuration contains Stripe secret bindings, but Cloudflare masks their values. The application now enforces the configured Stripe API-key mode before outbound API calls and rejects webhook events whose `livemode` flag does not match `DHF_STRIPE_EXPECT_LIVEMODE`. The actual key mode and webhook-secret pairing still require an authenticated provider test; no Stripe API request or payment transaction has been performed. Do not infer test-mode readiness from the existence of a secret binding alone.
 
 A paid webhook is deliberately rejected with a retryable error until the dedicated receipt-token secret is present. Receipt email remains off even when a receipt is created.
 
