@@ -6,7 +6,7 @@ const record={invoice_id:'inv-1',partnership_id:4,amount_cents:50000};
 function fakeDb(){
  const calls=[];
  return {calls,prepare(sql){return{bind(...values){return{
-  async first(){calls.push({kind:'first',sql,values});return record},
+  async first(){calls.push({kind:'first',sql,values});if(/JOIN sponsor_partnerships/.test(sql))return{invoice_id:'inv-1',partnership_id:4,description:'Corporate sponsorship',amount_cents:50000,recipient_name:'Buyer',recipient_email:'buyer@example.com',business_name:'Example Co'};if(/FROM payment_receipts/.test(sql))return{receipt_id:'DHF-20261117-ABCD1234',invoice_id:'inv-1',recipient_email:'buyer@example.com',amount_cents:50000,currency:'usd',paid_at:'2026-11-17T12:00:00.000Z',email_status:'not_configured'};return record},
   async run(){calls.push({kind:'run',sql,values});return{meta:{changes:1}}}
  }}}}};
 }
@@ -25,7 +25,7 @@ test('verified invoice.paid webhook marks invoice and partnership paid',async()=
  const DB=fakeDb();
  const event={id:'evt_paid_1',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,hosted_invoice_url:'https://invoice.stripe.com/i/test',invoice_pdf:'https://files.stripe.com/test.pdf',number:'INV-001',metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
- const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test',DHF_RECEIPT_TOKEN_SECRET:'test-only-secret-that-is-at-least-32-chars'}});
  assert.equal(response.status,200);
  assert.ok(DB.calls.some(c=>/UPDATE sponsor_invoices SET status = 'paid'/.test(c.sql)));
  assert.ok(DB.calls.some(c=>/UPDATE sponsor_partnerships SET payment_status = 'paid'/.test(c.sql)));
