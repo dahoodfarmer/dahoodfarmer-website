@@ -22,8 +22,8 @@ test('manual bank transfer is only exposed when explicitly enabled', () => {
   assert.equal(config.invoicingEnabled, false);
 });
 
-test('Stripe and unknown providers are rejected without fallback', () => {
-  for (const provider of ['stripe', 'flo', 'unknown']) {
+test('unsupported provider identifiers are rejected without fallback', () => {
+  for (const provider of ['legacy_processor', 'unknown', '']) {
     const config = getPaymentProviderConfig({ DHF_PAYMENT_PROVIDER: provider, DHF_PAYMENTS_ENABLED: 'true' });
     assert.equal(config.provider, 'none');
     assert.equal(config.paymentsEnabled, false);
