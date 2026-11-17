@@ -10,6 +10,7 @@ Apply these migrations to the main application D1 database:
 - `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; all seeded products remain draft.
 - `0006_sponsor_crm.sql` — sponsor pipeline, agreement tracking, payment status references, deliverables and activity history.
 - `0007_sponsor_invoices.sql` — owner-issued sponsor invoices after a signed agreement.
+- `0008_stripe_invoicing.sql` — Stripe customer/invoice references, hosted invoice URLs and webhook event audit.
 
 Payment ledger migrations are separate and must be applied only to `PAYMENTS_DB`; see `migrations/payments/`.
 
