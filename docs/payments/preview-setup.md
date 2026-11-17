@@ -32,6 +32,7 @@ Apply to the isolated Preview main DB in order:
 - 0009_sponsor_prospect_pipeline.sql
 - 0010_provider_neutral_payments.sql
 - 0011_provider_customer_reference.sql
+- 0012_payment_receipts.sql
 
 Do not apply these migrations to Production without separate review and explicit owner approval. The previous experimental PAYMENTS_DB is not used by this sponsor-invoice design.
 
@@ -43,6 +44,8 @@ Do not apply these migrations to Production without separate review and explicit
 - The Payment Center is informational only; Apple Pay, cards and ACH are shown as not activated.
 - The provider adapter contract and Stripe invoice adapter are implemented, but no provider is activated and no transaction is submitted.
 - QR codes are not yet generated; a QR is added only after a secure opaque invoice URL exists.
+- Migration 0012 adds a durable, invoice-idempotent receipt ledger. Verified paid webhooks create a branded customer receipt URL; the owner ledger exposes receipt links.
+- Customer receipt email delivery is not active. The current repository has no configured Resend sender credentials; no email is sent by this milestone. Configure and separately approve an email sender before enabling automatic receipt delivery.
 
 ## Preview verification completed
 
