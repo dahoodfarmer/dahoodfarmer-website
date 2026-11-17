@@ -25,7 +25,7 @@ tr:hover{background:#243652}
 </style>
 </head>
 <body>
-<div class="header"><h1>Da HoodFarmer — Admin</h1><span style="color:#94a3b8;font-size:0.875rem">Authenticated via Cloudflare Access</span></div>
+<div class="header"><h1>Da HoodFarmer — Admin</h1><div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"><a href="/admin/sponsors.html" style="color:#f1d77a;font-weight:700">Sponsor CRM ↗</a><span style="color:#94a3b8;font-size:0.875rem">Authenticated via Cloudflare Access</span></div></div>
 <div class="container">
 <div class="stats-grid" id="stats">
 <div class="stat-card"><div class="label">Total Contacts</div><div class="value" id="s1">—</div></div>
@@ -37,7 +37,7 @@ tr:hover{background:#243652}
 <div class="stat-card"><div class="label">New Applications</div><div class="value" id="s7">—</div></div>
 <div class="stat-card"><div class="label">Active Directory Listings</div><div class="value" id="s8">—</div></div>
 <div class="stat-card"><div class="label">Catalog Products</div><div class="value" id="s9">—</div></div>
-<div class="stat-card"><div class="label">Active Products</div><div class="value" id="s10">—</div></div>
+<div class="stat-card"><div class="label">Active Products</div><div class="value" id="s10">—</div></div>\n<div class="stat-card"><div class="label">New Sponsor Inquiries</div><div class="value" id="s11">—</div></div>\n<div class="stat-card"><div class="label">Tracked Partnerships</div><div class="value" id="s12">—</div></div>
 </div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Contacts</h2><table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Subject</th><th>Status</th></tr></thead><tbody id="ct"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
 <div class="section"><h2 style="margin-bottom:1rem">Recent Bookings</h2><table><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Pref Date</th><th>Status</th></tr></thead><tbody id="bt"><tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">Loading...</td></tr></tbody></table></div>
@@ -78,7 +78,7 @@ document.getElementById('s6').textContent=d.stats.totalApplications;
 document.getElementById('s7').textContent=d.stats.newApplications;
 document.getElementById('s8').textContent=d.stats.activeListings;
 document.getElementById('s9').textContent=d.stats.totalProducts;
-document.getElementById('s10').textContent=d.stats.activeProducts;
+document.getElementById('s10').textContent=d.stats.activeProducts;\ndocument.getElementById('s11').textContent=d.stats.sponsorApplications;\ndocument.getElementById('s12').textContent=d.stats.sponsorPartnerships;
 }).catch(()=>{});
 fetch('/api/admin/contacts').then(r=>r.json()).then(d=>{
 document.getElementById('ct').innerHTML=d.contacts.map(function(c){return '<tr><td>'+esc(new Date(c.created_at).toLocaleDateString())+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+(c.subject?esc(c.subject):'—')+'</td><td>'+esc(c.status)+'</td></tr>'}).join('')||'<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8">No contacts yet</td></tr>';
