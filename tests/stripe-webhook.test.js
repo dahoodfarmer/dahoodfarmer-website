@@ -160,5 +160,5 @@ test('late invoice.finalized event cannot downgrade a paid or refunded invoice',
  assert.equal(response.status,200);
  const update=DB.calls.find(c=>/UPDATE sponsor_invoices SET status = CASE/.test(c.sql));
  assert.ok(update);
- assert.match(update.sql,/status IN \\(\?'paid','refunded','void'/);
+ assert.ok(update.sql.includes("status IN ('paid','refunded','void')"));
 });
