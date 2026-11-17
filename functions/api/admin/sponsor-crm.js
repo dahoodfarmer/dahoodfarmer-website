@@ -186,7 +186,7 @@ export async function onRequestPost({ request, env }) {
       ).bind(partnershipId).first();
       if (!partnership) return json({ error: 'Partnership not found.' }, 404);
       if (partnership.payment_status === 'paid' || partnership.payment_status === 'refunded') return json({ error: 'This partnership has already been paid or refunded.' }, 409);
-      if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
+      if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100 || Number(partnership.agreed_amount_cents) > 100000000) {
         return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
       }
       if (!partnership.contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
