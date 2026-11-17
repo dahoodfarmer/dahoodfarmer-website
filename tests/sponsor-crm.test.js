@@ -110,7 +110,7 @@ test('cannot issue a sponsor invoice before a signed agreement and agreed amount
 });
 
 test('issues a secure sponsor invoice only after agreement is signed', async () => {
-  const DB = fakeDb({ partnership: { id: 4, application_id: 12, contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested' } });
+  const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested' } });
   const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB } });
   const body = await response.json();
   assert.equal(response.status, 200);
