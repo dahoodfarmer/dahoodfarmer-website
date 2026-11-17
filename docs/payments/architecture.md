@@ -1,59 +1,63 @@
-# DHF Sponsor Invoicing — Stripe Hosted Invoice Page
+# Da HoodFarmer Payment Center — Architecture
 
-**Status:** Preview implementation; invoice issuing is disabled by default.
-**Purpose:** Collect one-time sponsor payments only after an owner-approved written agreement has been signed.
+**Status:** Provider-neutral Preview foundation; payment collection is disabled.
+**Decision:** Level 2 is the DHF-owned payment experience, with Level 1 authorized processing infrastructure underneath it.
 
 ## Owner-controlled process
 
 1. A company submits the public sponsor inquiry form.
 2. The owner reviews the inquiry in the Cloudflare Access-protected Sponsor CRM.
 3. The owner qualifies the prospect, records the package and agreed amount, and stores the signed agreement link and date.
-4. The owner sets an invoice due date and clicks **Issue / resume Stripe invoice**.
-5. The backend creates or reuses a Stripe Customer, creates a one-time send-invoice invoice and invoice item, finalizes the invoice, and stores the Stripe invoice ID and hosted invoice URL in D1.
-6. The backend does not send an invoice email automatically. The owner reviews and shares the hosted invoice URL with the contracted sponsor.
-7. The sponsor pays on Stripe's hosted invoice page. DHF does not collect or store card numbers or security codes.
-8. A signed Stripe webhook updates the invoice and sponsor CRM. A browser redirect or screenshot is never treated as proof of payment.
-9. The owner tracks deliverables, evidence, payment status and renewal dates in the Sponsor CRM.
+4. The owner selects a future due date and issues an invoice only after the payment provider has been verified and explicitly enabled.
+5. The backend creates or resumes a provider invoice using a server-side amount from the signed agreement. The owner reviews and shares the payment link; DHF does not automatically email invoices.
+6. The sponsor pays through the provider's secure hosted checkout. DHF does not collect or store card numbers, security codes or bank login credentials.
+7. A signed provider webhook or owner-verified bank settlement updates payment status. A browser redirect, screenshot or remittance advice is never treated as proof of payment.
+8. The owner tracks deliverables, evidence, payment status and renewal dates in the Sponsor CRM.
 
-## Stripe integration
+## Level 2 — DHF-owned platform
 
-- Stripe Invoicing API: Customer, Invoice Item, Invoice create, and Invoice finalize operations.
-- Collection method: `send_invoice`.
-- Payment page: Stripe-hosted invoice page (`hosted_invoice_url`).
-- Automatic email sending is not invoked; the owner shares the link manually.
-- Invoice metadata includes DHF invoice, partnership and application identifiers.
-- Idempotency keys are used for customer, invoice, invoice-item and finalize requests.
-- Required webhook events: `invoice.finalized`, `invoice.paid`, `invoice.payment_failed`, `invoice.voided`, and `charge.refunded`.
-- The webhook signature is verified against the raw request body with a five-minute timestamp tolerance.
-- Webhook event IDs are retained in the main D1 database for audit and deduplication.
-- Payment status is updated only from verified Stripe webhook events, not by editing the CRM form.
+DHF owns the branded payment center, sponsor CRM, package pricing, invoices, payment-link routing, QR destinations, receipts, reconciliation workflow, reporting and sponsor relationship. The current public Payment Center is an informational foundation only. It displays Apple Pay, cards and ACH/bank transfer as not activated and has no payment form or live checkout.
+
+## Level 1 — Authorized provider
+
+An authorized payment provider/acquirer performs card and wallet processing, bank debits, settlement, fraud controls and card-network/chargeback obligations. DHF does not store primary account numbers, CVV/security codes, bank credentials or raw payment credentials.
+
+The payment-provider module supplies a fail-closed resolver and a Stripe invoice adapter behind a provider contract. Invoice creation and webhook handling require an explicitly selected Stripe provider and DHF_PAYMENTS_ENABLED=true. No provider is selected by default. The existing Stripe adapter is retained as the first candidate, not as a permanent lock-in.
+
+FLO Business Solutions remains a candidate, not an integrated provider. Its acquiring bank, gateway/API, webhook format, rates, ACH/Apple Pay support and settlement arrangements have not been verified. Do not invent endpoints or credentials. A FLO adapter requires written technical documentation and commercial terms.
+
+## Payment methods
+
+- Apple Pay: only through a provider/acquirer supporting the merchant's verified domain and account.
+- Debit/credit cards: through the selected provider's hosted checkout.
+- ACH: only after provider support, authorization requirements, return handling and settlement timing are verified.
+- Bank transfer/wire: may be offered as an owner-approved offline method. The owner must verify cleared funds in the business bank account before marking an invoice paid.
+
+## Provider configuration and launch gates
+
+All flags default to false. Preview currently sets DHF_PAYMENTS_ENABLED=false, DHF_PAYMENT_PROVIDER=none, DHF_PAYMENT_METHODS empty, DHF_INVOICING_ENABLED=false and DHF_CHECKOUT_ENABLED=false.
+
+Before activation, the owner must approve:
+- Correct legal merchant identity, tax classification, business address and payout bank account.
+- Written processing rates, monthly/minimum fees, reserves, payout schedule, chargeback/refund fees, contract term and termination conditions.
+- Separate confirmation of Apple Pay, card and ACH support.
+- Preview-only test credentials, signed webhook configuration and server-side test/live-mode verification.
+- Successful, declined, expired, duplicate, delayed, refunded and disputed payment tests.
+- Invoice amount/currency matching against the signed agreement and provider event.
+- ACH return handling, bank-transfer reconciliation, privacy, terms, tax and refund policy review.
+- Explicit owner approval before any live account, Production secret, migration, deployment or payment activation.
+
+## QR codes
+
+A QR code is only a visual encoding of an opaque DHF payment URL; it is not a processor. Generate a unique QR only after a secure invoice URL exists. It must not contain sponsor personal data, bank details, amount, secret tokens or payment credentials. The destination must be revocable and resolve to current invoice/payment state. No external QR image service is used in the current foundation.
 
 ## Data boundaries
 
-- Main D1 `DB`: sponsor applications, CRM partnerships, agreements, deliverables, activities, Stripe customer/invoice IDs, hosted invoice URLs and webhook event IDs.
-- `SESSIONS`: application and admin rate limiting.
-- No separate payment ledger database is required for Stripe Invoicing.
-- Production databases, secrets, DNS and deployments remain untouched by this Preview implementation.
+- Main D1 DB: sponsor applications, CRM partnerships, agreements, deliverables, activities and invoice/provider references.
+- SESSIONS: application and admin rate limiting.
+- Migration 0010 adds provider-neutral identifiers and an idempotent provider-event ledger. Existing Stripe-specific fields remain temporarily for compatibility.
+- Production databases, secrets, DNS and deployments remain untouched.
 
-## Tax and payment configuration gate
+## Explicit exclusions
 
-Automatic tax is not enabled in this implementation. Sponsor invoice tax treatment must be confirmed before enabling invoice creation. Stripe Tax requires appropriate tax registrations and configuration; do not assume sponsorship fees are tax-exempt or taxable without qualified accounting advice.
-
-The owner must also confirm:
-- Whether sponsor fees require sales tax, VAT or GST, and where.
-- Stripe account test-mode credentials and business/payout setup.
-- Invoice branding, payment methods, due-date policy and reminder settings.
-- The webhook endpoint and exact event subscriptions.
-- Refund, credit-note and cancellation handling.
-- Customer-facing invoice terms and applicable tax language.
-
-Keep `DHF_INVOICING_ENABLED=false` until these decisions and test-mode validation are complete.
-
-## Explicitly not included
-
-- Live-mode charges or automatic invoice emails.
-- Recurring sponsorship subscriptions.
-- Self-service sponsor package checkout.
-- Public marketplace or ticket checkout.
-- Electronic signatures or automatic contract generation.
-- FLO Business Solutions integration or replacement of Stripe.
+No live-mode charges, automatic invoice emails, recurring billing, public marketplace checkout, custom-amount donations, payment facilitation for third parties, split payouts, provider account creation or bank account changes. DHF may set sponsorship package prices and commercial terms. Any processing surcharge requires separate legal and card-network review; the default is to price processing costs into the package. Do not represent DHF as a payment processor or payment facilitator.
