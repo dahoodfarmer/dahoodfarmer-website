@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { onRequestPost } from '../functions/api/payments/webhook.js';
 
 const record={invoice_id:'inv-1',partnership_id:4,amount_cents:50000};
-function fakeDb({failPaidUpdateOnce=false}={}){
+function fakeDb({failPaidUpdateOnce=false,refundAmountCents=0}={}){
  const calls=[];
  const events=new Map();
  let shouldFailPaidUpdate=failPaidUpdateOnce;
@@ -12,7 +12,7 @@ function fakeDb({failPaidUpdateOnce=false}={}){
    calls.push({kind:'first',sql,values});
    if(/JOIN sponsor_partnerships/.test(sql))return{invoice_id:'inv-1',partnership_id:4,description:'Corporate sponsorship',amount_cents:50000,recipient_name:'Buyer',recipient_email:'buyer@example.com',business_name:'Example Co'};
    if(/FROM payment_receipts/.test(sql))return{receipt_id:'DHF-20261117-ABCD1234',invoice_id:'inv-1',recipient_email:'buyer@example.com',amount_cents:50000,currency:'usd',paid_at:'2026-11-17T12:00:00.000Z',email_status:'not_configured'};
-   return record;
+   return {...record,refund_amount_cents:refundAmountCents};
   },
   async run(){
    calls.push({kind:'run',sql,values});
@@ -137,4 +137,28 @@ test('failed webhook processing is marked failed and can be safely retried',asyn
  assert.equal(DB.calls.filter(c=>/UPDATE sponsor_invoices SET status = 'paid'/.test(c.sql)).length,2);
  assert.ok(DB.calls.some(c=>/SET status = 'failed'/.test(c.sql)));
  assert.ok(DB.calls.some(c=>/SET status = 'processed'/.test(c.sql)));
+});
+
+
+test('late invoice.paid event cannot overwrite an already-recorded full refund',async()=>{
+ const DB=fakeDb({refundAmountCents:50000}),event=paidEvent('evt_paid_after_refund'),payload=JSON.stringify(event);
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:baseEnv(DB)});
+ assert.equal(response.status,200);
+ const invoiceUpdate=DB.calls.find(c=>/UPDATE sponsor_invoices SET status = 'paid'/.test(c.sql));
+ const partnershipUpdate=DB.calls.find(c=>/UPDATE sponsor_partnerships SET payment_status = CASE WHEN EXISTS/.test(c.sql));
+ assert.ok(invoiceUpdate);
+ assert.match(invoiceUpdate.sql,/provider_status = CASE WHEN refund_amount_cents >= amount_cents THEN 'refunded' ELSE 'paid' END/);
+ assert.ok(partnershipUpdate);
+ assert.match(partnershipUpdate.sql,/refund_amount_cents >= amount_cents/);
+ assert.equal(partnershipUpdate.values[0],'inv-1');
+});
+
+test('late invoice.finalized event cannot downgrade a paid or refunded invoice',async()=>{
+ const DB=fakeDb(),event={livemode:false,id:'evt_finalized_late',type:'invoice.finalized',data:{object:{id:'in_test_1',status:'open',currency:'usd',total:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const payload=JSON.stringify(event);
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:baseEnv(DB)});
+ assert.equal(response.status,200);
+ const update=DB.calls.find(c=>/UPDATE sponsor_invoices SET status = CASE/.test(c.sql));
+ assert.ok(update);
+ assert.match(update.sql,/status IN \\(\?'paid','refunded','void'/);
 });
