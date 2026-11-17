@@ -9,6 +9,9 @@ Apply these migrations to the main application D1 database:
 - `0004_opportunity_network.sql` — private applications and approved public business directory.
 - `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; all seeded products remain draft.
 - `0006_sponsor_crm.sql` — sponsor pipeline, agreement tracking, payment status references, deliverables and activity history.
+- `0007_sponsor_invoices.sql` — owner-issued sponsor invoices after a signed agreement.
+
+Payment ledger migrations are separate and must be applied only to `PAYMENTS_DB`; see `migrations/payments/`.
 
 Current Preview target: `dahoodfarmer-preview-db`  
 Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
