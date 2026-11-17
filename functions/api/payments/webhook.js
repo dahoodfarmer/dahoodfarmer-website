@@ -57,16 +57,16 @@ export async function onRequestPost({ request, env }) {
           .bind(object.hosted_invoice_url, record.partnership_id).run();
       }
     } else if (event.type === 'invoice.paid') {
+      const paidAmount = Number(object.amount_paid ?? object.total);
+      if (!Number.isSafeInteger(paidAmount) || paidAmount !== Number(record.amount_cents)) {
+        return json({ error: 'Paid amount does not match the approved invoice.' }, 400);
+      }
       await env.DB.prepare(
         "UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', provider_id = 'stripe', provider_invoice_id = ?, provider_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?"
       ).bind(object.id, object.hosted_invoice_url || '', object.invoice_pdf || '', object.number || '', record.invoice_id).run();
       await env.DB.prepare(
         "UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?"
       ).bind(object.id, object.hosted_invoice_url || '', record.partnership_id).run();
-      const paidAmount = Number(object.amount_paid ?? object.total);
-      if (!Number.isSafeInteger(paidAmount) || paidAmount !== Number(record.amount_cents)) {
-        return json({ error: 'Paid amount does not match the approved invoice.' }, 400);
-      }
       await createPaidReceipt({
         DB: env.DB,
         env,
