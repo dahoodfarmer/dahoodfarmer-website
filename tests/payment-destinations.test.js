@@ -7,7 +7,7 @@ test('only configured official HTTPS PayPal and Venmo destinations are returned'
   const methods = getConfiguredPaymentDestinations({
     DHF_PAYPAL_PAYMENT_URL: 'https://www.paypal.com/paypalme/dhf',
     DHF_VENMO_PAYMENT_URL: 'https://venmo.com/u/dahoodfarmer',
-    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app.attacker.example/$dahoodfarmer'
+    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app/$dahoodfarmer'
   });
   assert.deepEqual(methods.map(item => item.id), ['paypal', 'venmo', 'cash_app']);
   assert.equal(methods[0].url, 'https://www.paypal.com/paypalme/dhf');
@@ -18,7 +18,7 @@ test('rejects lookalike hosts, non-HTTPS URLs, credentials and unsupported desti
   const methods = getConfiguredPaymentDestinations({
     DHF_PAYPAL_PAYMENT_URL: 'https://paypal.com.attacker.example/pay',
     DHF_VENMO_PAYMENT_URL: 'http://venmo.com/u/dhf',
-    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app/$dahoodfarmer'
+    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app.attacker.example/$dahoodfarmer'
   });
   assert.deepEqual(methods, []);
   assert.deepEqual(getConfiguredPaymentDestinations({
