@@ -66,9 +66,11 @@ export async function onRequestPost({ request, env }) {
       amountCents, currency: invoice.currency, paidAt: new Date().toISOString(), paymentMethod: 'bank_transfer'
     });
     await sendReceiptEmail({ DB: env.DB, env, receipt });
-    await env.DB.prepare(
-      "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
-    ).bind(invoice.partnership_id, 'Owner-verified bank transfer reconciled for DHF invoice ' + invoiceId + '. Receipt ' + receipt.receipt_id + '.').run();
+    if (!alreadyReconciled) {
+      await env.DB.prepare(
+        "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
+      ).bind(invoice.partnership_id, 'Owner-verified bank transfer reconciled for DHF invoice ' + invoiceId + '. Receipt ' + receipt.receipt_id + '.').run();
+    }
 
     return json({
       success: true,
