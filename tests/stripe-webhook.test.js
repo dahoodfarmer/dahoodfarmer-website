@@ -49,7 +49,7 @@ test('verified invoice.paid webhook marks invoice and partnership paid and creat
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:baseEnv(DB)});
  assert.equal(response.status,200);
  assert.ok(DB.calls.some(c=>/UPDATE sponsor_invoices SET status = 'paid'/.test(c.sql)));
- assert.ok(DB.calls.some(c=>/UPDATE sponsor_partnerships SET payment_status = 'paid'/.test(c.sql)));
+ assert.ok(DB.calls.some(c=>/UPDATE sponsor_partnerships SET payment_status = CASE WHEN EXISTS/.test(c.sql)));
  assert.ok(DB.calls.some(c=>/INSERT OR IGNORE INTO payment_provider_events/.test(c.sql)));
  assert.ok(DB.calls.some(c=>/INSERT OR IGNORE INTO payment_receipts/.test(c.sql)));
  assert.ok(DB.calls.some(c=>/SET status = 'processed'/.test(c.sql)));
