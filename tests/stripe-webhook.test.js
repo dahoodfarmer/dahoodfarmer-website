@@ -74,3 +74,12 @@ test('rejects mismatched invoice metadata and totals',async()=>{
  assert.equal(response.status,400);
  assert.equal(DB.calls.some(c=>/UPDATE sponsor_partnerships/.test(c.sql)),false);
 });
+
+
+test('webhook endpoint rejects events while provider payments are disabled',async()=>{
+ const DB=fakeDb();
+ const payload=JSON.stringify({id:'evt_disabled',type:'invoice.paid',data:{object:{id:'in_test_1'}}});
+ const response=await onRequestPost({request:eventRequest(payload,'t=1,v1=bad'),env:{DB,STRIPE_WEBHOOK_SECRET:'whsec_test'}});
+ assert.equal(response.status,503);
+ assert.equal(DB.calls.length,0);
+});
