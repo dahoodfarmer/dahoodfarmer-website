@@ -4,7 +4,7 @@ import { onRequestPost } from '../functions/api/admin/reconcile-payment.js';
 
 const tokenSecret = 'preview-only-test-secret-at-least-32-characters';
 function req(body, origin = 'https://preview.example') {
-  return new Request(origin + '/api/admin/reconcile-payment', {
+  return new Request('https://preview.example/api/admin/reconcile-payment', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify(body)
   });
 }
