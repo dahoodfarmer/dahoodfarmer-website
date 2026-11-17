@@ -176,7 +176,7 @@ test('blocks invoice regeneration when an existing invoice amount or due date di
     partnership:{id:4,application_id:12,stage:'contracted',contract_status:'signed',agreed_amount_cents:50000,package_name:'Corporate Partner',payment_status:'invoice_sent',contact_email:'buyer@example.com',contact_name:'Buyer',organization:'Example Sponsor'},
     openInvoice:{invoice_id:'inv-existing',partnership_id:4,amount_cents:40000,due_date:'2026-12-31',status:'issued',stripe_invoice_id:'in_existing'}
   });
-  const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',DHF_INVOICING_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_mock'}});
+  const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',DHF_INVOICING_ENABLED:'true',DHF_STRIPE_EXPECT_LIVEMODE:'false',STRIPE_SECRET_KEY:'sk_test_mock'}});
   assert.equal(response.status,409);
 });
 
@@ -219,14 +219,14 @@ test('refuses live or unrecognized Stripe keys before any provider request in Pr
 test('reconciling an already-paid provider invoice creates the missing receipt once', async () => {
   const DB = fakeDb({
     partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'invoice_sent', contact_email: 'buyer@example.com', contact_name: 'Buyer', organization: 'Example Sponsor', stripe_customer_id: 'cus_test_1' },
-    openInvoice: { invoice_id: 'inv-existing-paid', partnership_id: 4, amount_cents: 50000, due_date: '2026-12-31', status: 'issued', stripe_invoice_id: 'in_existing_paid' },
+    openInvoice: { invoice_id: 'inv-existing-paid', partnership_id: 4, amount_cents: 50000, due_date: '2026-12-31', status: 'issued', stripe_invoice_id: 'in_existingpaid' },
     receiptInvoice: { invoice_id: 'inv-existing-paid', partnership_id: 4, description: 'Corporate sponsorship', amount_cents: 50000, recipient_name: 'Buyer', recipient_email: 'buyer@example.com', business_name: 'Example Sponsor' },
     first: { receipt_id: 'DHF-20261117-ABCD1234', invoice_id: 'inv-existing-paid', recipient_email: 'buyer@example.com', amount_cents: 50000, currency: 'usd', paid_at: '2026-11-17T12:00:00.000Z', email_status: 'not_configured' }
   });
   const oldFetch = globalThis.fetch;
   globalThis.fetch = async url => new Response(JSON.stringify(String(url).endsWith('/account')
     ? { id: 'acct_test', livemode: false }
-    : { id: 'in_existing_paid', status: 'paid', amount_paid: 50000, total: 50000, currency: 'usd', payment_intent: 'pi_test_paid', status_transitions: { paid_at: 1794931200 } }), { status: 200 });
+    : { id: 'in_existingpaid', status: 'paid', amount_paid: 50000, total: 50000, currency: 'usd', payment_intent: 'pi_test_paid', status_transitions: { paid_at: 1794931200 } }), { status: 200 });
   try {
     const response = await onRequestPost({
       request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
