@@ -1,5 +1,5 @@
 import { hashInvoiceToken } from '../../lib/invoices.js';
-import { getPaymentProviderConfig } from '../../lib/payment-provider.js';
+import { getPaymentProviderConfig, resolvePaymentProvider, createStripeInvoiceAdapter } from '../../lib/payment-provider.js';
 const DIVISIONS = new Set(['business_network','summits_events','marketplace','academy','land_experiences','advertising_media']);
 const STAGES = new Set(['prospect','qualified','proposal_draft','proposal_sent','negotiating','contracted','fulfilling','completed','renewal_due','closed_lost']);
 const CONTRACT_STATES = new Set(['not_started','draft','sent','signed','declined']);
@@ -194,6 +194,8 @@ export async function onRequestPost({ request, env }) {
       if (!paymentConfig.invoicingEnabled) return json({ error: 'Sponsor invoice issuing is disabled. Payment activation requires an explicitly selected provider and owner-approved configuration.' }, 503);
       if (paymentConfig.provider !== 'stripe') return json({ error: 'The selected payment provider does not yet have an invoice adapter connected.' }, 503);
       if (!env.STRIPE_SECRET_KEY) return json({ error: 'The selected payment provider is not configured in this environment.' }, 503);
+      const paymentProvider = resolvePaymentProvider(env, { stripe: createStripeInvoiceAdapter(env) });
+      if (!paymentProvider) return json({ error: 'The selected provider adapter is not ready. Invoice issuing remains disabled.' }, 503);
       const partnershipId = Number(data.partnership_id);
       const dueDate = dateOrNull(data.due_date);
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
@@ -249,7 +251,7 @@ export async function onRequestPost({ request, env }) {
 
         let stripeInvoice = null;
         if (invoiceRecord.stripe_invoice_id) {
-          stripeInvoice = await stripeRequest('invoices/' + encodeURIComponent(invoiceRecord.stripe_invoice_id), env);
+          stripeInvoice = await paymentProvider.retrieveInvoice(invoiceRecord.stripe_invoice_id);
         } else {
           const invoiceParams = new URLSearchParams();
           invoiceParams.set('customer', customerId);
@@ -262,7 +264,7 @@ export async function onRequestPost({ request, env }) {
           invoiceParams.set('metadata[dhf_partnership_id]', String(partnershipId));
           invoiceParams.set('metadata[dhf_application_id]', String(partnership.application_id));
           invoiceParams.set('metadata[dhf_brand]', 'Da HoodFarmer');
-          stripeInvoice = await stripeRequest('invoices', env, 'POST', invoiceParams, 'dhf-invoice-' + invoiceId);
+          stripeInvoice = await paymentProvider.createInvoice({ params: invoiceParams, idempotencyKey: 'dhf-invoice-' + invoiceId });
           await env.DB.prepare("UPDATE sponsor_invoices SET stripe_invoice_id = ?, stripe_status = ?, updated_at = datetime('now') WHERE invoice_id = ?")
             .bind(stripeInvoice.id, stripeInvoice.status || 'draft', invoiceId).run();
         }
