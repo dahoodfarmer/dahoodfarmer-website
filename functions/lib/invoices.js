@@ -19,7 +19,7 @@ export async function reconcileInvoice(DB, invoiceId, partnershipId, orderId, st
   }
   if (status === 'paid') {
     await DB.prepare(
-      "UPDATE sponsor_invoices SET status = 'paid', payment_order_id = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ? AND status IN ('issued','pending')"
+      "UPDATE sponsor_invoices SET status = 'paid', payment_order_id = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ? AND status IN ('issued','pending','expired')"
     ).bind(orderId, invoiceId).run();
     await DB.prepare(
       "UPDATE sponsor_partnerships SET payment_status = 'paid', payment_reference = ?, updated_at = datetime('now') WHERE id = ?"
