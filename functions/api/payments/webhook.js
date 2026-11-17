@@ -59,6 +59,8 @@ export async function onRequestPost({ request, env }) {
     if (!record) return json({ received: true });
     if (invoiceId && invoiceId !== record.invoice_id) return json({ error: 'Invoice metadata mismatch.' }, 400);
     if (partnershipMeta && Number(partnershipMeta) !== Number(record.partnership_id)) return json({ error: 'Partnership metadata mismatch.' }, 400);
+    if (object.currency && object.currency !== 'usd') return json({ error: 'Invoice currency mismatch.' }, 400);
+    if (Number.isFinite(Number(object.total)) && Number(object.total) !== Number(record.amount_cents)) return json({ error: 'Invoice amount mismatch.' }, 400);
 
     await env.DB.prepare('INSERT OR IGNORE INTO stripe_webhook_events (event_id, event_type) VALUES (?, ?)').bind(event.id, event.type).run();
     if (event.type === 'invoice.finalized') {
