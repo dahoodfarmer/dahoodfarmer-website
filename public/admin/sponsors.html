@@ -56,7 +56,7 @@ var state={applications:[],partnerships:[],deliverables:[],activities:[]};
 var divisions=['business_network','summits_events','marketplace','academy','land_experiences','advertising_media'];
 var stages=['prospect','qualified','proposal_draft','proposal_sent','negotiating','contracted','fulfilling','completed','renewal_due','closed_lost'];
 var contracts=['not_started','draft','sent','signed','declined'];
-var payments=['not_requested','invoice_sent','pending','failed'];
+
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function options(list,current){return list.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+'>'+esc(v.replaceAll('_',' '))+'</option>'}).join('')}
 function field(label,name,value,type){return '<div class="field"><label>'+esc(label)+'</label><input data-field="'+esc(name)+'" type="'+(type||'text')+'" value="'+esc(value||'')+'"></div>'}
@@ -79,18 +79,19 @@ function render(){
    '<div class="field"><label>Agreement status</label><select data-field="contract_status">'+options(contracts,x.contract_status)+'</select></div>'+
    field('Agreement document HTTPS link','contract_url',x.contract_url)+
    field('Agreement signed date','contract_signed_at',x.contract_signed_at,'date')+
-   '<div class="field"><label>Payment status</label><select data-field="payment_status">'+options(payments,x.payment_status)+'</select></div>'+
-   field('Invoice HTTPS link','invoice_url',x.invoice_url)+
+   '<div class="field"><label>Payment status</label><div class="small">'+esc(x.payment_status||'not_requested')+'</div></div>'+
+   field('Invoice due date','invoice_due_date',x.invoice_due_date,'date')+
+   (x.invoice_url?'<div class="field"><label>Stripe hosted invoice</label><a href="'+esc(x.invoice_url)+'" target="_blank" rel="noopener">Open invoice '+esc(x.invoice_number||'')+'</a>'+(x.invoice_pdf_url?'<br><a href="'+esc(x.invoice_pdf_url)+'" target="_blank" rel="noopener">Invoice PDF</a>':'')+'</div>':'<div class="field"><label>Stripe hosted invoice</label><span class="small">No invoice issued yet.</span></div>')+
    field('Start date','start_date',x.start_date,'date')+field('End date','end_date',x.end_date,'date')+field('Renewal date','renewal_date',x.renewal_date,'date')+
    '<div class="field" style="grid-column:1/-1"><label>Internal notes</label><textarea data-field="notes">'+esc(x.notes)+'</textarea></div>'+
-   '</div><div class="actions"><button type="button" data-save="'+x.id+'">Save partnership</button><span class="small">Payment received is updated only by verified payment reconciliation.</span></div><div class="actions"><button type="button" data-create-invoice="'+x.id+'">Issue secure sponsor invoice</button>'+(x.invoice_url?'<a class="button" href="'+esc(x.invoice_url)+'" target="_blank" rel="noopener">Open saved invoice</a>':'')+'</div>'+
+   '</div><div class="actions"><button type="button" data-save="'+x.id+'">Save partnership</button><span class="small">Payment received is updated only by verified payment reconciliation.</span></div><div class="actions"><button type="button" data-create-invoice="'+x.id+'"'+((state.invoice_issuing_enabled&&x.contract_status==='signed'&&['contracted','fulfilling','completed','renewal_due'].includes(x.stage)&&Number(x.agreed_amount_cents)>=100)?'':' disabled')+'>Issue / resume Stripe invoice</button></div>'+
    '<h4>Deliverables</h4><div>'+ds.map(function(d){return '<div class="grid" style="align-items:end;border-top:1px solid #2b405b;padding:.6rem 0"><div><strong>'+esc(d.title)+'</strong><div class="small">'+esc(d.description)+' · Due: '+esc(d.due_date||'Not set')+'</div></div><div class="field"><label>Status</label><select data-delivery-status="'+d.id+'">'+options(['planned','in_progress','completed','waived'],d.status)+'</select></div><div class="field"><label>Proof / evidence link</label><input data-delivery-url="'+d.id+'" value="'+esc(d.evidence_url||'')+'"></div><button type="button" data-save-delivery="'+d.id+'">Update</button></div>'}).join('')+'</div>'+
    '<div class="grid"><div class="field"><label>New deliverable</label><input data-new-deliverable="'+x.id+'" placeholder="e.g. Homepage sponsor placement"></div><div class="field"><label>Due date</label><input type="date" data-new-due="'+x.id+'"></div><div class="field"><label>Description</label><input data-new-description="'+x.id+'" placeholder="Exact promised benefit"></div></div><div class="actions"><button type="button" data-add-deliverable="'+x.id+'">Add deliverable</button></div>'+
    '<h4>Recent activity</h4><ul>'+acts.map(function(a){return '<li class="small">'+esc(a.created_at)+' · '+esc(a.activity_type)+' — '+esc(a.summary)+(a.follow_up_at?' · Follow up: '+esc(a.follow_up_at):'')+'</li>'}).join('')+'</ul>'+
    '<div class="grid"><div class="field"><label>Activity type</label><select data-activity-type="'+x.id+'">'+options(['note','email','call','meeting','proposal','contract','payment','follow_up'],'note')+'</select></div><div class="field"><label>Follow-up date</label><input type="date" data-follow-up="'+x.id+'"></div><div class="field"><label>Activity note</label><input data-activity-summary="'+x.id+'" placeholder="What happened / next step"></div></div><div class="actions"><button type="button" data-add-activity="'+x.id+'">Log activity</button></div></article>';
  }).join(''):'<p class="muted">No sponsor partnerships have been created yet.</p>';
 }
-function load(){message.textContent='Loading sponsor records…';return fetch('/api/admin/sponsor-crm').then(function(r){if(!r.ok)throw new Error('Sponsor CRM could not load. Check Access.');return r.json()}).then(function(d){state=d;render();message.textContent='Loaded '+state.applications.length+' new inquiries and '+state.partnerships.length+' tracked partnerships.'}).catch(function(e){message.textContent=e.message})}
+function load(){message.textContent='Loading sponsor records…';return fetch('/api/admin/sponsor-crm').then(function(r){if(!r.ok)throw new Error('Sponsor CRM could not load. Check Access.');return r.json()}).then(function(d){state=d;render();message.textContent='Loaded '+state.applications.length+' new inquiries and '+state.partnerships.length+' tracked partnerships.'+(state.invoice_issuing_enabled?'':' Invoice issuing is disabled until tax treatment and test-mode Stripe settings are approved.')}).catch(function(e){message.textContent=e.message})}
 document.addEventListener('click',function(e){
  var b=e.target.closest('button');if(!b)return;
  if(b.hasAttribute('data-create')){
@@ -102,7 +103,7 @@ document.addEventListener('click',function(e){
   var card=b.closest('[data-deal]'),id=Number(b.getAttribute('data-save'));
   function val(k){return card.querySelector('[data-field="'+k+'"]')?.value||''}
   var prop=val('proposed_amount'),agree=val('agreed_amount');
-  var payload={action:'update',id:id,division:val('division'),stage:val('stage'),package_name:val('package_name'),proposed_amount_cents:prop?Math.round(Number(prop)*100):null,agreed_amount_cents:agree?Math.round(Number(agree)*100):null,contract_status:val('contract_status'),contract_url:val('contract_url'),contract_signed_at:val('contract_signed_at'),payment_status:val('payment_status'),invoice_url:val('invoice_url'),start_date:val('start_date'),end_date:val('end_date'),renewal_date:val('renewal_date'),notes:val('notes')};
+  var payload={action:'update',id:id,division:val('division'),stage:val('stage'),package_name:val('package_name'),proposed_amount_cents:prop?Math.round(Number(prop)*100):null,agreed_amount_cents:agree?Math.round(Number(agree)*100):null,contract_status:val('contract_status'),contract_url:val('contract_url'),contract_signed_at:val('contract_signed_at'),start_date:val('start_date'),end_date:val('end_date'),renewal_date:val('renewal_date'),notes:val('notes')};
   b.disabled=true;post(payload).then(load).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
  }
  if(b.hasAttribute('data-create-invoice')){
