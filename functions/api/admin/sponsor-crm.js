@@ -235,7 +235,7 @@ export async function onRequestPost({ request, env }) {
       }
 
       try {
-        let customerId = partnership.stripe_customer_id || '';
+        let customerId = partnership.provider_customer_id || partnership.stripe_customer_id || '';
         if (!customerId) {
           const customerParams = new URLSearchParams();
           customerParams.set('email', partnership.contact_email);
@@ -245,8 +245,8 @@ export async function onRequestPost({ request, env }) {
           customerParams.set('metadata[dhf_brand]', 'Da HoodFarmer');
           const customer = await stripeRequest('customers', env, 'POST', customerParams, 'dhf-customer-' + partnershipId);
           customerId = customer.id;
-          await env.DB.prepare("UPDATE sponsor_partnerships SET stripe_customer_id = ?, updated_at = datetime('now') WHERE id = ?")
-            .bind(customerId, partnershipId).run();
+          await env.DB.prepare("UPDATE sponsor_partnerships SET stripe_customer_id = ?, provider_customer_id = ?, payment_provider_id = 'stripe', updated_at = datetime('now') WHERE id = ?")
+            .bind(customerId, customerId, partnershipId).run();
         }
 
         let stripeInvoice = null;
