@@ -60,13 +60,13 @@ Do not apply these migrations to Production without separate review and explicit
 
 ## Verification completed
 
-- Migrations 0010, 0011, and 0012 are applied to the isolated Preview database only.
+- Migrations 0010, 0011, 0012, and 0013 are applied to the isolated Preview database only.
 - Preview D1 checks show zero invoice, receipt, and partnership records. This explains the zero totals currently displayed; it is an empty test ledger, not evidence of real-world payments.
 - `PRAGMA foreign_key_check` returned no rows.
-- Current Preview deployment `05f7c78d-b418-4c11-9cf0-6c818abb0189` completed successfully.
-- GitHub Actions Website CI run #225 completed successfully on commit `12d2c5c877f9d2ead5ed6a48d6eea24b2e9e87c0`.
+- Current Preview deployment `a8858eae-0250-48fe-af15-159100fc9f1e` completed successfully for commit `54a2d3a787d42988300603035733b2ba1fe83c50`.
+- GitHub Actions Website CI run #246 completed successfully with 115 passing tests on commit `54a2d3a787d42988300603035733b2ba1fe83c50`.
 - Production and Preview Access audiences are distinct, and the Preview/Production D1 and KV bindings are isolated.
-- Payment, invoicing, checkout, and receipt email flags remain disabled.
+- Payment, invoicing, checkout, and receipt email flags remain disabled. A read-only, Access-protected Stripe test-mode health endpoint is available at `/api/admin/payment-provider-health`; it makes only a GET request to Stripe's account endpoint and does not create invoices or charges.
 
 ## Remaining Preview gates
 
