@@ -29,7 +29,7 @@ The Pages project production branch remains `site-rebuild-v2`. The current payme
 
 The Preview configuration contains Stripe secret bindings, but Cloudflare masks their values. The application now enforces the configured Stripe API-key mode before outbound API calls and rejects webhook events whose `livemode` flag does not match `DHF_STRIPE_EXPECT_LIVEMODE`. The actual key mode and webhook-secret pairing still require an authenticated provider test; no Stripe API request or payment transaction has been performed. Do not infer test-mode readiness from the existence of a secret binding alone.
 
-A paid webhook is deliberately rejected with a retryable error until the dedicated receipt-token secret is present. Receipt email remains off even when a receipt is created.
+A paid webhook is deliberately rejected with a retryable error until the dedicated receipt-token secret is present. Webhook events now have durable processing states: completed duplicates are acknowledged without repeating side effects, and failed events can be retried. Stale processing claims can be reclaimed after five minutes. Receipt email remains off even when a receipt is created.
 
 ## Migrations
 
@@ -42,6 +42,7 @@ Apply to the isolated Preview main DB in order:
 - `0010_provider_neutral_payments.sql`
 - `0011_provider_customer_reference.sql`
 - `0012_payment_receipts.sql`
+- `0013_webhook_idempotency.sql`
 
 Do not apply these migrations to Production without separate review and explicit owner approval. The previous experimental `PAYMENTS_DB` is not used by this sponsor-invoice design.
 
