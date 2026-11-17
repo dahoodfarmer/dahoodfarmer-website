@@ -74,8 +74,8 @@ export async function onRequestPost({ request, env }) {
       if (!Number.isSafeInteger(applicationId) || applicationId < 1) return json({ error: 'Valid sponsor application is required.' }, 422);
       if (!DIVISIONS.has(division)) return json({ error: 'Invalid sponsor division.' }, 422);
       if (Number.isNaN(proposed)) return json({ error: 'Proposed amount must be between $1 and $1,000,000.' }, 422);
-      const application = await env.DB.prepare('SELECT id, application_type FROM opportunity_applications WHERE id = ?').bind(applicationId).first();
-      if (!application || application.application_type !== 'sponsor') return json({ error: 'Sponsor application not found.' }, 404);
+      const application = await env.DB.prepare('SELECT id, application_type, status FROM opportunity_applications WHERE id = ?').bind(applicationId).first();
+      if (!application || application.application_type !== 'sponsor') return json({ error: 'Sponsor application not found.' }, 404);\n      if (application.status === 'declined') return json({ error: 'A declined sponsor inquiry cannot be moved into the active pipeline.' }, 409);
       const result = await env.DB.prepare(
         "INSERT OR IGNORE INTO sponsor_partnerships (application_id, division, package_name, proposed_amount_cents) VALUES (?, ?, ?, ?)"
       ).bind(applicationId, division, packageName, proposed).run();
@@ -99,7 +99,7 @@ export async function onRequestPost({ request, env }) {
       const startDate = dateOrNull(data.start_date);
       const endDate = dateOrNull(data.end_date);
       const renewalDate = dateOrNull(data.renewal_date);
-      const contractSignedAt = text(data.contract_signed_at, 40);
+      const contractSignedAt = dateOrNull(data.contract_signed_at);
       const notes = text(data.notes, 5000);
       if (!STAGES.has(stage)) return json({ error: 'Invalid partnership stage.' }, 422);
       if (!DIVISIONS.has(division)) return json({ error: 'Invalid sponsor division.' }, 422);
@@ -107,7 +107,7 @@ export async function onRequestPost({ request, env }) {
       if (!PAYMENT_STATES.has(paymentStatus)) return json({ error: 'Payment status cannot be manually marked paid or refunded. It must be reconciled against a payment record.' }, 422);
       if (Number.isNaN(proposed) || Number.isNaN(agreed)) return json({ error: 'Amounts must be between $1 and $1,000,000.' }, 422);
       if (contractUrl === null || invoiceUrl === null) return json({ error: 'Agreement and invoice links must use HTTPS.' }, 422);
-      if (Number.isNaN(startDate) || Number.isNaN(endDate) || Number.isNaN(renewalDate)) return json({ error: 'Dates must use YYYY-MM-DD.' }, 422);
+      if (Number.isNaN(startDate) || Number.isNaN(endDate) || Number.isNaN(renewalDate) || Number.isNaN(contractSignedAt)) return json({ error: 'Dates must use YYYY-MM-DD.' }, 422);
       if (endDate && startDate && endDate < startDate) return json({ error: 'End date cannot precede start date.' }, 422);
       if (contractStatus === 'signed' && (!contractUrl || !contractSignedAt)) return json({ error: 'A signed agreement requires a secure document link and signed date.' }, 422);
       if (stage === 'contracted' && contractStatus !== 'signed') return json({ error: 'A partnership cannot be marked contracted until the agreement is recorded as signed.' }, 409);
@@ -117,7 +117,7 @@ export async function onRequestPost({ request, env }) {
       if (!existing) return json({ error: 'Partnership not found.' }, 404);
       await env.DB.prepare(
         "UPDATE sponsor_partnerships SET stage = ?, division = ?, package_name = ?, proposed_amount_cents = ?, agreed_amount_cents = ?, contract_status = ?, contract_url = ?, contract_signed_at = ?, payment_status = ?, invoice_url = ?, start_date = ?, end_date = ?, renewal_date = ?, notes = ?, updated_at = datetime('now') WHERE id = ?"
-      ).bind(stage, division, packageName, proposed, agreed, contractStatus, contractUrl, contractSignedAt || null, paymentStatus, invoiceUrl, startDate, endDate, renewalDate, notes, id).run();
+      ).bind(stage, division, packageName, proposed, agreed, contractStatus, contractUrl, contractSignedAt, paymentStatus, invoiceUrl, startDate, endDate, renewalDate, notes, id).run();
       return json({ success: true, partnership_id: id });
     }
 
