@@ -9,3 +9,9 @@ ALTER TABLE sponsor_invoices ADD COLUMN stripe_status TEXT NOT NULL DEFAULT 'dra
 ALTER TABLE sponsor_invoices ADD COLUMN refund_amount_cents INTEGER NOT NULL DEFAULT 0 CHECK (refund_amount_cents >= 0);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsor_invoices_stripe_invoice
   ON sponsor_invoices(stripe_invoice_id) WHERE stripe_invoice_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
