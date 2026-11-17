@@ -71,7 +71,7 @@ test('rejects mismatched invoice metadata and totals',async()=>{
  const DB=fakeDb();
  const event={id:'evt_mismatch',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:10000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
- const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test',DHF_RECEIPT_TOKEN_SECRET:'test-only-secret-that-is-at-least-32-chars'}});
  assert.equal(response.status,400);
  assert.equal(DB.calls.some(c=>/UPDATE sponsor_partnerships/.test(c.sql)),false);
 });
