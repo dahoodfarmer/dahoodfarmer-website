@@ -123,7 +123,7 @@ test('creates a finalized Stripe hosted invoice without sending an email', async
     throw new Error('Unexpected Stripe request: ' + String(url));
   };
   try {
-    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'stripe', DHF_PAYMENT_METHODS: 'card,apple_pay,ach', DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'stripe', DHF_INVOICING_ENABLED: 'true', DHF_STRIPE_EXPECT_LIVEMODE: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
+    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'stripe', DHF_PAYMENT_METHODS: 'card,apple_pay,ach', DHF_INVOICING_ENABLED: 'true', DHF_STRIPE_EXPECT_LIVEMODE: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(body.invoice_url, 'https://invoice.stripe.com/i/test_invoice');
@@ -145,7 +145,7 @@ test('creates a finalized Stripe hosted invoice without sending an email', async
 
 test('requires a due date and valid sponsor billing email before invoicing', async () => {
   const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested', contact_email: '', contact_name: 'Buyer', organization: 'Example Sponsor' } });
-  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4 }), env: { DB, DHF_INVOICING_ENABLED: 'true', STRIPE_SECRET_KEY: 'sk_test_mock' } });
+  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4 }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'stripe', DHF_INVOICING_ENABLED: 'true', STRIPE_SECRET_KEY: 'sk_test_mock' } });
   assert.equal(response.status, 422);
 });
 
@@ -158,7 +158,7 @@ test('resumes an existing open Stripe invoice instead of creating a duplicate', 
   const oldFetch=globalThis.fetch;
   globalThis.fetch=async(url)=>{calls++;return new Response(JSON.stringify(String(url).endsWith('/account')?{id:'acct_test',livemode:false}:{id:'in_existing',status:'open',amount_due:50000,hosted_invoice_url:'https://invoice.stripe.com/i/existing',invoice_pdf:'https://files.stripe.com/existing.pdf',number:'INV-EXISTING'}),{status:200})};
   try {
-    const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_INVOICING_ENABLED:'true',DHF_STRIPE_EXPECT_LIVEMODE:'false',STRIPE_SECRET_KEY:'sk_test_mock'}});
+    const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',DHF_INVOICING_ENABLED:'true',DHF_STRIPE_EXPECT_LIVEMODE:'false',STRIPE_SECRET_KEY:'sk_test_mock'}});
     const body=await response.json();
     assert.equal(response.status,200);
     assert.equal(body.invoice_url,'https://invoice.stripe.com/i/existing');
@@ -171,7 +171,7 @@ test('blocks invoice regeneration when an existing invoice amount or due date di
     partnership:{id:4,application_id:12,stage:'contracted',contract_status:'signed',agreed_amount_cents:50000,package_name:'Corporate Partner',payment_status:'invoice_sent',contact_email:'buyer@example.com',contact_name:'Buyer',organization:'Example Sponsor'},
     openInvoice:{invoice_id:'inv-existing',partnership_id:4,amount_cents:40000,due_date:'2026-12-31',status:'issued',stripe_invoice_id:'in_existing'}
   });
-  const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_INVOICING_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_mock'}});
+  const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',DHF_INVOICING_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_mock'}});
   assert.equal(response.status,409);
 });
 
