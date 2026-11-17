@@ -6,12 +6,17 @@ export async function hashInvoiceToken(token) {
 export async function findInvoiceByToken(DB, token) {
   const tokenHash = await hashInvoiceToken(token);
   return DB.prepare(
-    "SELECT i.invoice_id, i.partnership_id, i.amount_cents, i.currency, i.description, i.due_date, i.status, i.payment_order_id, s.package_name, s.contract_status, a.organization FROM sponsor_invoices i JOIN sponsor_partnerships s ON s.id = i.partnership_id JOIN opportunity_applications a ON a.id = s.application_id WHERE i.token_hash = ?"
+    "SELECT i.invoice_id, i.partnership_id, i.amount_cents, i.currency, i.description, i.due_date, i.status, i.payment_order_id, s.package_name, s.contract_status, a.organization, a.email AS contact_email FROM sponsor_invoices i JOIN sponsor_partnerships s ON s.id = i.partnership_id JOIN opportunity_applications a ON a.id = s.application_id WHERE i.token_hash = ?"
   ).bind(tokenHash).first();
 }
 
 export async function reconcileInvoice(DB, invoiceId, partnershipId, orderId, status) {
   if (!DB || !invoiceId || !partnershipId || !orderId) throw new Error('Invoice reconciliation data is incomplete.');
+  if (status === 'processing') {
+    await DB.prepare(\"UPDATE sponsor_invoices SET status = 'pending', payment_order_id = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status IN ('issued','pending')\").bind(orderId, invoiceId).run();
+    await DB.prepare(\"UPDATE sponsor_partnerships SET payment_status = 'pending', payment_reference = ?, updated_at = datetime('now') WHERE id = ? AND payment_status <> 'paid'\").bind(orderId, partnershipId).run();
+    return;
+  }
   if (status === 'paid') {
     await DB.prepare(
       "UPDATE sponsor_invoices SET status = 'paid', payment_order_id = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ? AND status IN ('issued','pending')"
