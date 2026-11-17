@@ -20,6 +20,7 @@
 | DHF_INVOICING_ENABLED | false | Sponsor invoice creation disabled |
 | DHF_CHECKOUT_ENABLED | false | General checkout disabled |
 | DHF_STRIPE_EXPECT_LIVEMODE | false | Existing Stripe test-mode expectation; no live-mode use |
+| DHF_RECEIPT_TOKEN_SECRET | Secret, at least 32 random characters | HMAC key for unguessable receipt URLs; do not commit or expose it |
 
 Existing Preview Stripe secret and webhook-secret bindings were previously observed, but their values and actual modes are not exposed here. Their presence does not enable payment processing. No payment API call or transaction has been made as part of this work.
 
@@ -44,6 +45,8 @@ Do not apply these migrations to Production without separate review and explicit
 - The Payment Center is informational only; Apple Pay, cards and ACH are shown as not activated.
 - The provider adapter contract and Stripe invoice adapter are implemented, but no provider is activated and no transaction is submitted.
 - QR codes are not yet generated; a QR is added only after a secure opaque invoice URL exists.
+- Migration 0012 adds a durable receipt ledger. Verified paid webhooks create one receipt per invoice; the owner ledger exposes the matching customer receipt page.
+- Receipt email delivery is not active. No Resend sender credentials are currently configured, and this milestone sends no customer email. Email delivery requires a separately approved sender configuration.
 - Migration 0012 adds a durable, invoice-idempotent receipt ledger. Verified paid webhooks create a branded customer receipt URL; the owner ledger exposes receipt links.
 - Customer receipt email delivery is not active. The current repository has no configured Resend sender credentials; no email is sent by this milestone. Configure and separately approve an email sender before enabling automatic receipt delivery.
 
