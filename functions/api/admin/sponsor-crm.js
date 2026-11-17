@@ -256,6 +256,12 @@ export async function onRequestPost({ request, env }) {
             .bind(stripeInvoice.id, stripeInvoice.status || 'draft', invoiceId).run();
         }
 
+        if (stripeInvoice.status === 'paid') {
+          await env.DB.prepare(\"UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?\").bind(stripeInvoice.hosted_invoice_url || '', stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', invoiceId).run();
+          await env.DB.prepare(\"UPDATE sponsor_partnerships SET payment_status = 'paid', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?\").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', partnershipId).run();
+          return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url || '', amount_cents: amount, due_date: dueDate, payment_status: 'paid' });
+        }
+        if (stripeInvoice.status === 'void' || stripeInvoice.status === 'uncollectible') return json({ error: 'The existing Stripe invoice is void or uncollectible. Review it in Stripe before issuing a replacement.' }, 409);
         if (stripeInvoice.status !== 'draft' && Number(stripeInvoice.amount_due) !== amount) throw new Error('Existing Stripe invoice amount does not match the approved amount.');
         if (stripeInvoice.status === 'draft') {
           const itemParams = new URLSearchParams();
@@ -276,10 +282,10 @@ export async function onRequestPost({ request, env }) {
         if (!stripeInvoice.hosted_invoice_url) throw new Error('Stripe finalized the invoice but did not return a hosted invoice URL.');
         if (Number(stripeInvoice.amount_due) !== amount) throw new Error('Finalized Stripe invoice amount does not match the approved amount.');
         await env.DB.prepare(
-          "UPDATE sponsor_invoices SET status = 'issued', stripe_status = ?, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, due_date = ?, updated_at = datetime('now') WHERE invoice_id = ?"
+          "UPDATE sponsor_invoices SET status = CASE WHEN status IN ('paid','void') THEN status ELSE 'issued' END, stripe_status = ?, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, due_date = ?, updated_at = datetime('now') WHERE invoice_id = ?"
         ).bind(stripeInvoice.status || 'open', stripeInvoice.hosted_invoice_url, stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', dueDate, invoiceId).run();
         await env.DB.prepare(
-          "UPDATE sponsor_partnerships SET payment_status = 'invoice_sent', invoice_url = ?, payment_reference = ?, updated_at = datetime('now') WHERE id = ?"
+          "UPDATE sponsor_partnerships SET payment_status = CASE WHEN payment_status IN ('paid','failed','refunded') THEN payment_status ELSE 'invoice_sent' END, invoice_url = ?, payment_reference = ?, updated_at = datetime('now') WHERE id = ?"
         ).bind(stripeInvoice.hosted_invoice_url, stripeInvoice.id, partnershipId).run();
         await env.DB.prepare(
           "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
