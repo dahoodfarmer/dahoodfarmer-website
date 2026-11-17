@@ -32,6 +32,15 @@ test('verified invoice.paid webhook marks invoice and partnership paid',async()=
  assert.ok(DB.calls.some(c=>/INSERT OR IGNORE INTO payment_provider_events/.test(c.sql)));
 });
 
+test('paid webhook remains retryable until receipt-token security is configured',async()=>{
+ const DB=fakeDb();
+ const event={id:'evt_paid_no_receipt_secret',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const payload=JSON.stringify(event);
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
+ assert.equal(response.status,503);
+ assert.equal(DB.calls.length,0);
+});
+
 test('invoice.payment_failed records failed payment without closing the invoice',async()=>{
  const DB=fakeDb();
  const event={id:'evt_failed_1',type:'invoice.payment_failed',data:{object:{id:'in_test_1',status:'open',currency:'usd',total:50000,hosted_invoice_url:'https://invoice.stripe.com/i/test',metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
