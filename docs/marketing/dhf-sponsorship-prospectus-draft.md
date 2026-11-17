@@ -14,12 +14,12 @@ We welcome prospective partners from all 50 U.S. states and consider internation
 | Package | Proposed pilot investment | Availability | Core benefits |
 |---|---:|---:|---|
 | Community Partner | $250 | Limited | Sponsor recognition on the event page and one social recognition |
-| Supporting Sponsor | $500 | Up to 5 | Logo placement, one newsletter mention and one social mention |
-| Founding Sponsor | $1,000 | Up to 3 | Supporting benefits plus sponsor interview or short presentation and two admissions |
+| Featured Partner | $500 | Up to 5 | Logo placement, one newsletter mention and one social mention |
+| Corporate Partner | $1,000 | Up to 3 | Supporting benefits plus sponsor interview or short presentation and two admissions |
 | Presenting Partner | $2,500 | One per event | “Presented by” placement, opening/closing recognition, premium digital exhibit, sponsor interview, up to three social mentions and four admissions |
 | In-kind Partner | Negotiated | By fit | Defined contribution and agreed recognition/deliverables |
 
-All amounts are proposed pilot rates, not yet approved for public sale. The final offer may vary by event format, geography, audience, deliverables and costs.
+These are working pilot rate anchors approved for planning, not active checkout products or binding offers. Each final offer remains subject to confirmed inventory, deliverables, timing, fulfillment capacity, and a written agreement. The final offer may vary by event format, geography, audience, deliverables and costs.
 
 ## Potential sponsor alignment
 
