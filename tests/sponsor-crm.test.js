@@ -123,7 +123,7 @@ test('creates a finalized Stripe hosted invoice without sending an email', async
     throw new Error('Unexpected Stripe request: ' + String(url));
   };
   try {
-    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_INVOICING_ENABLED: 'true', DHF_STRIPE_EXPECT_LIVEMODE: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
+    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'stripe', DHF_PAYMENT_METHODS: 'card,apple_pay,ach', DHF_INVOICING_ENABLED: 'true', DHF_STRIPE_EXPECT_LIVEMODE: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(body.invoice_url, 'https://invoice.stripe.com/i/test_invoice');
