@@ -30,10 +30,10 @@ test('secure invoice page resolves the opaque token and renders the signed-agree
   assert.equal(response.status, 200);
   assert.match(html, /DHF-2026-000042/);
   assert.match(html, /\$500\.00/);
-  assert.match(html, /Online payment is not activated/);
-  assert.match(html, /Apple Pay — not activated/);
-  assert.match(html, /ACH bank debit — not activated/);
-  assert.match(html, /Bank transfer — request verified DHF instructions/);
+  assert.match(html, /Available payment destinations/);
+  assert.match(html, /external-payment-options/);
+  assert.match(html, /exact invoice amount/);
+  assert.match(html, /independently verifies cleared funds/);
   assert.match(response.headers.get('Cache-Control'), /no-store/);
   assert.match(response.headers.get('X-Robots-Tag'), /noindex/);
 });
