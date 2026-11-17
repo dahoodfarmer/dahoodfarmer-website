@@ -189,7 +189,7 @@ export async function onRequestPost({ request, env }) {
       if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
         return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
       }
-      if (!partnership.contact_email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
+      if (!partnership.contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
 
       const amount = Number(partnership.agreed_amount_cents);
       const openInvoice = await env.DB.prepare(
@@ -203,7 +203,7 @@ export async function onRequestPost({ request, env }) {
       const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
       let binary = '';
       for (const byte of tokenBytes) binary += String.fromCharCode(byte);
-      const token = btoa(binary).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
+      const token = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
       const tokenHash = await hashInvoiceToken(token);
       const description = 'Da HoodFarmer — ' + (text(partnership.package_name, 160) || 'Sponsorship partnership');
       let invoiceRowId = openInvoice?.id;
@@ -219,7 +219,7 @@ export async function onRequestPost({ request, env }) {
         "UPDATE sponsor_invoices SET token_hash = ?, invoice_number = ?, due_date = ?, status = 'issued', provider_id = 'unconfigured', provider_status = 'not_applicable', updated_at = datetime('now') WHERE invoice_id = ?"
       ).bind(tokenHash, invoiceNumber, dueDate, invoiceId).run();
 
-      const origin = (env.PUBLIC_SITE_URL || new URL(request.url).origin).replace(/\\/$/, '');
+      const origin = (env.PUBLIC_SITE_URL || new URL(request.url).origin).replace(/\/$/, '');
       const invoiceUrl = origin + '/invoice/' + token;
       await env.DB.prepare(
         "UPDATE sponsor_partnerships SET payment_status = 'invoice_sent', payment_provider_id = 'unconfigured', invoice_url = ?, payment_reference = '', updated_at = datetime('now') WHERE id = ?"
