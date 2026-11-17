@@ -7,7 +7,7 @@ test('test-mode Preview refuses a live Stripe API key before any network request
     STRIPE_SECRET_KEY: 'sk_live_placeholder',
     DHF_STRIPE_EXPECT_LIVEMODE: 'false'
   });
-  await assert.rejects(adapter.retrieveInvoice('in_test_123'), /test-mode API key required/);
+  await assert.rejects(adapter.retrieveInvoice('in_test123'), /test-mode API key required/);
 });
 
 test('live-mode environment refuses a test Stripe API key before any network request', async () => {
@@ -15,7 +15,7 @@ test('live-mode environment refuses a test Stripe API key before any network req
     STRIPE_SECRET_KEY: 'sk_test_placeholder',
     DHF_STRIPE_EXPECT_LIVEMODE: 'true'
   });
-  await assert.rejects(adapter.retrieveInvoice('in_test_123'), /live-mode API key required/);
+  await assert.rejects(adapter.retrieveInvoice('in_test123'), /live-mode API key required/);
 });
 
 test('Stripe adapter rejects unrecognized key prefixes', async () => {
@@ -23,5 +23,5 @@ test('Stripe adapter rejects unrecognized key prefixes', async () => {
     STRIPE_SECRET_KEY: 'placeholder',
     DHF_STRIPE_EXPECT_LIVEMODE: 'false'
   });
-  await assert.rejects(adapter.retrieveInvoice('in_test_123'), /test-mode API key required/);
+  await assert.rejects(adapter.retrieveInvoice('in_test123'), /test-mode API key required/);
 });
