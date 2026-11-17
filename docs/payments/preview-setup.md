@@ -41,15 +41,14 @@ Preview already has migrations 0010 through 0013 applied. Earlier migration 0008
 - Customer invoice pages are no-index, no-store and printable.
 - Invoice creation does not contact a payment provider, charge a customer, send an email or mark an invoice paid.
 - Apple Pay, cards, ACH and bank transfer are not activated.
-- The permanent Payment Center QR and invoice QR remain to be implemented and tested.
+- The permanent Payment Center QR and invoice-specific QR are generated locally in the browser and have dedicated download actions; scan and Preview-host verification remain.
 - Payment collection, checkout and receipt email remain disabled.
 
 ## Preview acceptance work remaining
 
-1. Add QR generation for the permanent Payment Center URL and each secure invoice URL.
-2. Add owner-only bank-transfer reconciliation with amount matching and explicit confirmation of cleared funds.
-3. Add the receipt creation flow after verified manual settlement.
-4. Test invoice token rotation, expiry/revocation, QR scan routing and receipt display with synthetic Preview records.
-5. Research compliant Apple Pay options without creating accounts or enabling payments.
+1. Test both QR types on actual phones, including the permanent /pay redirect and invoice-token routing.
+2. Test invoice token rotation/revocation and QR refresh behavior with synthetic Preview records.
+3. Test owner-only bank-transfer reconciliation, amount matching and receipt display with synthetic Preview records.
+4. Research compliant Apple Pay options without creating accounts or enabling payments.
 
 No Production release, customer email, live payment or real-money transaction is authorized by this Preview setup.
