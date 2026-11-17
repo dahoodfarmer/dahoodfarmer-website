@@ -181,3 +181,31 @@ test('adds a dated follow-up activity', async () => {
   assert.equal(response.status, 200);
   assert.ok(DB.calls.some(c => /INSERT INTO sponsor_activities/.test(c.sql)));
 });
+
+
+test('refuses live or unrecognized Stripe keys before any provider request in Preview', async () => {
+  for (const key of ['sk_live_mock', 'not-a-stripe-key']) {
+    const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested', contact_email: 'buyer@example.com', contact_name: 'Buyer', organization: 'Example Sponsor', stripe_customer_id: '' } });
+    const oldFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => { calls += 1; throw new Error('Provider must not be called'); };
+    try {
+      const response = await onRequestPost({
+        request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+        env: {
+          DB,
+          DHF_PAYMENTS_ENABLED: 'true',
+          DHF_PAYMENT_PROVIDER: 'stripe',
+          DHF_INVOICING_ENABLED: 'true',
+          DHF_STRIPE_EXPECT_LIVEMODE: 'false',
+          STRIPE_SECRET_KEY: key
+        }
+      });
+      assert.equal(response.status, 503);
+      assert.equal(calls, 0);
+      assert.equal(DB.calls.some(c => /INSERT INTO sponsor_invoices/.test(c.sql)), false);
+    } finally {
+      globalThis.fetch = oldFetch;
+    }
+  }
+});
