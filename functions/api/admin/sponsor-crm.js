@@ -208,15 +208,15 @@ export async function onRequestPost({ request, env }) {
         "SELECT * FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
       ).bind(partnershipId).first();
       if (openInvoice?.status === 'paid') return json({ error: 'This partnership is already paid.' }, 409);
+      let invoiceRecord = openInvoice;
+      let invoiceId = openInvoice?.invoice_id || crypto.randomUUID();
+      const amount = Number(partnership.agreed_amount_cents);
+      if (openInvoice && (Number(openInvoice.amount_cents) !== amount || openInvoice.due_date !== dueDate)) return json({ error: 'An existing invoice has a different amount or due date. Void it in Stripe before issuing a replacement.' }, 409);
       if (!['true','false'].includes(env.DHF_STRIPE_EXPECT_LIVEMODE)) return json({ error: 'Expected Stripe test/live mode is not configured.' }, 503);
       let stripeAccount;
       try { stripeAccount = await stripeRequest('account', env); }
       catch { return json({ error: 'Stripe account mode could not be verified.' }, 503); }
       if (stripeAccount.livemode !== (env.DHF_STRIPE_EXPECT_LIVEMODE === 'true')) return json({ error: 'Stripe key mode does not match this environment. Invoice creation blocked.' }, 409);
-
-      let invoiceRecord = openInvoice;
-      let invoiceId = openInvoice?.invoice_id || crypto.randomUUID();
-      const amount = Number(partnership.agreed_amount_cents);
       const description = 'Da HoodFarmer — ' + (text(partnership.package_name, 160) || 'Sponsorship partnership');
       const dueTimestamp = Math.floor(Date.parse(dueDate + 'T23:59:59Z') / 1000);
       if (!invoiceRecord) {
