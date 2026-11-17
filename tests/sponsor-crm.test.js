@@ -110,3 +110,34 @@ test('does not create a replacement invoice when an open invoice has a different
   assert.equal(response.status, 409);
   assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
 });
+
+test('resumes an open DHF invoice by rotating its opaque URL token', async () => {
+  const DB = fakeDb({
+    partnership: validPartnership,
+    openInvoice: { invoice_id: 'existing-invoice', amount_cents: 50000, due_date: '2026-12-31', status: 'issued', id: 41 }
+  });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.invoice_id, 'existing-invoice');
+  assert.equal(body.invoice_number, 'DHF-2026-000041');
+  assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
+  const rotate = DB.calls.find(call => /UPDATE sponsor_invoices SET token_hash =/.test(call.sql));
+  assert.ok(rotate);
+  assert.equal(rotate.values[0].length, 64);
+  assert.equal(rotate.values[1], 'DHF-2026-000041');
+  assert.equal(rotate.values[3], 'existing-invoice');
+});
+
+test('rejects an agreed amount above the invoice database limit', async () => {
+  const DB = fakeDb({ partnership: { ...validPartnership, agreed_amount_cents: 100000001 } });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  assert.equal(response.status, 409);
+  assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
+});
