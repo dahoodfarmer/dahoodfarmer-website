@@ -116,7 +116,8 @@ test('issues a secure sponsor invoice only after agreement is signed', async () 
   assert.equal(response.status, 200);
   assert.equal(body.success, true);
   assert.equal(body.amount_cents, 50000);
-  assert.match(body.invoice_url, /^https:\/\/preview\\.example\\/pay\\/invoice\\?token=[a-f0-9]{64}$/);
+  assert.ok(body.invoice_url.startsWith('https://preview.example/pay/invoice?token='));
+  assert.match(body.invoice_url.split('token=')[1], /^[a-f0-9]{64}$/);
   const insert = DB.calls.find(c => /INSERT INTO sponsor_invoices/.test(c.sql));
   assert.ok(insert);
   assert.notEqual(insert.values[6], body.invoice_url.split('token=')[1]);
