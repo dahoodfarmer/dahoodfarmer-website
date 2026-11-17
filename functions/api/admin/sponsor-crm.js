@@ -1,3 +1,4 @@
+import { hashInvoiceToken } from '../../lib/invoices.js';
 const DIVISIONS = new Set(['business_network','summits_events','marketplace','academy','land_experiences','advertising_media']);
 const STAGES = new Set(['prospect','qualified','proposal_draft','proposal_sent','negotiating','contracted','fulfilling','completed','renewal_due','closed_lost']);
 const CONTRACT_STATES = new Set(['not_started','draft','sent','signed','declined']);
@@ -166,6 +167,41 @@ export async function onRequestPost({ request, env }) {
         'INSERT INTO sponsor_activities (partnership_id, activity_type, summary, follow_up_at) VALUES (?, ?, ?, ?)'
       ).bind(partnershipId, activityType, summary, followUp).run();
       return json({ success: true, activity_id: result.meta?.last_row_id || null });
+    }
+
+    if (action === 'create_invoice') {
+      const partnershipId = Number(data.partnership_id);
+      const dueDate = dateOrNull(data.due_date);
+      if (!Number.isSafeInteger(partnershipId) || partnershipId < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
+      if (Number.isNaN(dueDate)) return json({ error: 'Due date must use YYYY-MM-DD.' }, 422);
+      const partnership = await env.DB.prepare(
+        "SELECT s.*, a.organization FROM sponsor_partnerships s JOIN opportunity_applications a ON a.id = s.application_id WHERE s.id = ?"
+      ).bind(partnershipId).first();
+      if (!partnership) return json({ error: 'Partnership not found.' }, 404);
+      if (partnership.contract_status !== 'signed' || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
+        return json({ error: 'A signed agreement and agreed amount are required before issuing an invoice.' }, 409);
+      }
+      if (partnership.payment_status === 'paid') return json({ error: 'This partnership is already marked paid.' }, 409);
+      const openInvoice = await env.DB.prepare(
+        "SELECT invoice_id FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
+      ).bind(partnershipId).first();
+      if (openInvoice) return json({ error: 'An unpaid invoice already exists for this partnership. Use the saved invoice link or void it before issuing another.' }, 409);
+      const invoiceId = crypto.randomUUID();
+      const token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
+      const tokenHash = await hashInvoiceToken(token);
+      const amount = Number(partnership.agreed_amount_cents);
+      const description = 'Da HoodFarmer — ' + (text(partnership.package_name, 160) || 'Sponsorship partnership');
+      await env.DB.prepare(
+        "INSERT INTO sponsor_invoices (invoice_id, partnership_id, amount_cents, currency, description, due_date, status, token_hash) VALUES (?, ?, ?, 'usd', ?, ?, 'issued', ?)"
+      ).bind(invoiceId, partnershipId, amount, description, dueDate, tokenHash).run();
+      const invoiceUrl = new URL('/pay/invoice?token=' + encodeURIComponent(token), request.url).toString();
+      await env.DB.prepare(
+        "UPDATE sponsor_partnerships SET payment_status = 'invoice_sent', invoice_url = ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(invoiceUrl, partnershipId).run();
+      await env.DB.prepare(
+        "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
+      ).bind(partnershipId, 'Invoice ' + invoiceId + ' issued for ' + amount + ' cents.').run();
+      return json({ success: true, invoice_id: invoiceId, invoice_url: invoiceUrl, amount_cents: amount, due_date: dueDate });
     }
 
     return json({ error: 'Unknown sponsor CRM action.' }, 400);
