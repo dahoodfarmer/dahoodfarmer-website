@@ -46,9 +46,9 @@ Do not apply these migrations to Production without separate review and explicit
 
 ## Preview verification completed
 
-- Migration 0010 was applied on November 17, 2026 to the isolated Preview main DB `dahoodfarmer-preview-db` only.
-- Verified the new provider columns, provider-event table and both provider indexes.
-- `PRAGMA foreign_key_check` returned no rows. No Production database was touched.
+- Migrations 0010 and 0011 were applied on November 17, 2026 to the isolated Preview main DB `dahoodfarmer-preview-db` only.
+- Verified the provider invoice/customer columns, provider-event table and both provider indexes.
+- `PRAGMA foreign_key_check` returned no rows after migration 0010. No Production database was touched.
 - Preview payment flags remain disabled; no provider is selected and no payment methods are active.
 
 ## Remaining Preview gates
