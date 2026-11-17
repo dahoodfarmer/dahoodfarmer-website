@@ -221,6 +221,9 @@ export async function onRequestPost({ request, env }) {
         return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
       }
       if (!partnership.contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
+      try { assertStripeKeyMode(env); }
+      catch { return json({ error: 'Stripe test/live API-key mode does not match this environment. Invoice creation blocked.' }, 503); }
+
       const openInvoice = await env.DB.prepare(
         "SELECT * FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
       ).bind(partnershipId).first();
