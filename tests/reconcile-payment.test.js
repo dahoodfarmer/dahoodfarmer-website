@@ -34,7 +34,7 @@ function db(initialStatus = 'issued') {
           async run() {
             calls.push({ kind: 'run', sql, values });
             if (/UPDATE sponsor_invoices SET status = 'paid'/.test(sql)) { invoiceStatus = 'paid'; providerId = 'manual'; }
-            if (/INSERT OR IGNORE INTO payment_receipts/.test(sql)) {
+            if (/INSERT OR IGNORE INTO payment_receipts/.test(sql) && !receipt) {
               receipt = { receipt_id: values[0], invoice_id: values[1], recipient_email: values[5], amount_cents: values[8], currency: values[9], paid_at: values[13], email_status: 'not_configured' };
             }
             return { meta: { changes: 1 } };
