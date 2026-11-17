@@ -31,6 +31,7 @@ Apply to the isolated Preview main DB in order:
 - 0008_stripe_invoicing.sql
 - 0009_sponsor_prospect_pipeline.sql
 - 0010_provider_neutral_payments.sql
+- 0011_provider_customer_reference.sql
 
 Do not apply these migrations to Production without separate review and explicit owner approval. The previous experimental PAYMENTS_DB is not used by this sponsor-invoice design.
 
