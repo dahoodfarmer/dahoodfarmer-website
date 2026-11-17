@@ -133,6 +133,7 @@ export async function onRequestPost({ request, env }) {
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1 || !title) return json({ error: 'Partnership and deliverable title are required.' }, 422);
       if (Number.isNaN(dueDate)) return json({ error: 'Due date must use YYYY-MM-DD.' }, 422);
       if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Invoice due date cannot be in the past.' }, 422);
+      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Invoice due date cannot be in the past.' }, 422);
       const exists = await env.DB.prepare('SELECT id FROM sponsor_partnerships WHERE id = ?').bind(partnershipId).first();
       if (!exists) return json({ error: 'Partnership not found.' }, 404);
       const result = await env.DB.prepare(
