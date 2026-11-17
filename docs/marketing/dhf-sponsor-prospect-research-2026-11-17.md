@@ -8,8 +8,9 @@
 
 | Prospect | Fit / division | Why it belongs on the research list | Qualification status |
 |---|---|---|---|
-| Tractor Supply Co. — 7831 Garners Ferry Rd, Columbia | Business Network; Marketplace; Land & Experiences | Local farm-equipment dealer; direct relevance to growers, acreage owners, and equipment education | Category fit only; sponsorship policy and decision-maker not verified |
-| The Tractor Mart — Columbia | Business Network; Marketplace; Land & Experiences | Tractor, outdoor-power, and light-construction equipment relevance | Category fit only; sponsorship policy and decision-maker not verified |
+| Tractor Supply Co. — 7831 Garners Ferry Rd, Columbia | Business Network; Marketplace; Land & Experiences | Local rural-lifestyle store serving farm, ranch, livestock, fencing, workwear, and property-maintenance needs; official company sponsorship process exists | Local-store route is published; confirm event eligibility and whether support is cash or in-kind |
+| The Tractor Mart — Columbia | Business Network; Marketplace; Land & Experiences | Local tractor and farm-equipment dealer relevant to growers, acreage owners, and equipment education | Category fit only; sponsorship policy and decision-maker not verified |
+| Carolina Power Equipment — Cayce / Columbia metro | Business Network; Marketplace; Summits & Events | Tractor, outdoor-power, and light-construction equipment relevance | Category fit only; sponsorship policy and decision-maker not verified |
 | Catoe's Power Equipment — Columbia | Business Network; Marketplace; Academy | Local equipment sales, service, and repair relevance to practical farm/property content | Category fit only; sponsorship policy and decision-maker not verified |
 | CB Forrest Workwear — Cayce | Marketplace; Land & Experiences | Work boots and durable workwear are relevant to farm, ranch, and outdoor audiences | Category fit only; sponsorship policy and decision-maker not verified |
 | Mast General Store — Columbia | Marketplace; Land & Experiences | Outdoor gear, apparel, footwear, and regional lifestyle alignment | Category fit only; sponsorship policy and decision-maker not verified |
