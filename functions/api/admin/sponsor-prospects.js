@@ -96,12 +96,14 @@ export async function onRequestPost({ request, env }) {
       if (!text(data.organization, 180)) return json({ error: 'Organization name is required.' }, 422);
       if (!STAGES.has(stage) || !TYPES.has(partnerType) || !DIVISIONS.has(division)) return json({ error: 'Choose valid prospect type, division and pipeline stage.' }, 422);
       if (website === null || sourceUrl === null) return json({ error: 'Website and source links must use HTTPS.' }, 422);
+      const publicEmail = text(data.public_email, 254).toLowerCase();
+      if (publicEmail && !isValidEmail(publicEmail)) return json({ error: 'Public email must be valid.' }, 422);
       if (!Number.isInteger(fitScore) || fitScore < 0 || fitScore > 10 || Number.isNaN(value) || Number.isNaN(followUp)) return json({ error: 'Fit score, value or follow-up date is invalid.' }, 422);
       if (stage === 'owner_approved' && !existing.owner_approved_at) return json({ error: 'Use the explicit outreach approval action to authorize contact.' }, 409);
       if (CONTACTED_STAGES.has(stage) && !existing.owner_approved_at) return json({ error: 'Owner approval is required before recording outreach or advancing this prospect.' }, 409);
       await env.DB.prepare(
         "UPDATE sponsor_prospects SET organization = ?, partner_type = ?, division = ?, category = ?, location = ?, website = ?, source_url = ?, contact_route = ?, public_phone = ?, public_email = ?, contact_name = ?, fit_score = ?, stage = ?, estimated_value_cents = ?, next_follow_up_date = ?, qualification_notes = ?, notes = ?, updated_at = datetime('now') WHERE id = ?"
-      ).bind(text(data.organization, 180), partnerType, division, text(data.category, 120), text(data.location, 180), website, sourceUrl, text(data.contact_route, 500), text(data.public_phone, 80), text(data.public_email, 254), text(data.contact_name, 120), fitScore, stage, value, followUp, text(data.qualification_notes, 2000), text(data.notes, 3000), id).run();
+      ).bind(text(data.organization, 180), partnerType, division, text(data.category, 120), text(data.location, 180), website, sourceUrl, text(data.contact_route, 500), text(data.public_phone, 80), publicEmail, text(data.contact_name, 120), fitScore, stage, value, followUp, text(data.qualification_notes, 2000), text(data.notes, 3000), id).run();
       return json({ success: true, id });
     }
 
