@@ -110,7 +110,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === 'update') {
-      if (Object.prototype.hasOwnProperty.call(data, 'payment_status') || Object.prototype.hasOwnProperty.call(data, 'invoice_url')) return json({ error: 'Payment status and Stripe invoice links are system-managed.' }, 422);
+      if (Object.prototype.hasOwnProperty.call(data, 'payment_status') || Object.prototype.hasOwnProperty.call(data, 'invoice_url')) return json({ error: 'Payment status and provider invoice links are system-managed.' }, 422);
       const id = Number(data.id);
       if (!Number.isSafeInteger(id) || id < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
       const stage = text(data.stage, 40);
