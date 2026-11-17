@@ -12,7 +12,7 @@ body{background:#0a0f18;color:#e5e7eb}.wrap{max-width:1280px;margin:2rem auto;pa
 <header class="top"><div><h1 style="margin:0">Payment & Receipt Ledger</h1><p class="muted">Private owner workspace · Verified invoice and receipt records</p></div><nav><a href="/admin/sponsors">Sponsor CRM</a> · <a href="/admin/">Main admin</a></nav></header>
 <p id="message" class="muted" role="status" aria-live="polite">Loading payment records…</p>
 <section class="panel"><div class="stats" id="stats"></div></section>
-<section class="panel"><h2>Invoices and receipts</h2><p class="muted">Paid status is sourced from verified provider events or owner-verified bank settlement. Refunds are shown separately from gross and net recorded payments. A missing receipt link means receipt-token configuration or Preview migration is incomplete.</p><div class="table-wrap"><table><thead><tr><th>Invoice / Receipt</th><th>Customer</th><th>Amount / Refund</th><th>Status</th><th>Provider</th><th>Payment date / Due</th><th>Customer receipt</th></tr></thead><tbody id="rows"><tr><td colspan="7">Loading…</td></tr></tbody></table></div></section>
+<section class="panel"><h2>Invoices and receipts</h2><p class="muted">Paid status is sourced from verified provider events or owner-verified bank settlement. Refunds are shown separately from gross and net recorded payments. A missing receipt link means receipt-token configuration or Preview migration is incomplete.</p><div class="table-wrap"><table><thead><tr><th>Invoice / Receipt</th><th>Customer</th><th>Amount / Refund</th><th>Status</th><th>Provider</th><th>Payment date / Due</th><th>Customer receipt</th><th>Owner action</th></tr></thead><tbody id="rows"><tr><td colspan="8">Loading…</td></tr></tbody></table></div></section>
 </main>
 <script>
 (function(){
@@ -21,10 +21,28 @@ var msg=document.getElementById('message'),stats=document.getElementById('stats'
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function usd(c){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(c||0)/100)}
 function date(v){if(!v)return '—';var d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleDateString()}
+
+document.addEventListener('click',function(event){
+ var button=event.target.closest('[data-reconcile]');
+ if(!button)return;
+ var invoiceId=button.getAttribute('data-reconcile');
+ var reference=document.querySelector('[data-bank-ref="'+invoiceId+'"]');
+ var confirmed=document.querySelector('[data-cleared="'+invoiceId+'"]');
+ if(!confirmed || !confirmed.checked){msg.textContent='Check the confirmation only after independently verifying cleared funds in the business bank account.';return;}
+ button.disabled=true;
+ fetch('/api/admin/reconcile-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+  invoice_id:invoiceId,amount_cents:Number(button.getAttribute('data-amount')),
+  payment_method:'bank_transfer',payment_reference:reference?reference.value:'',
+  cleared_funds_confirmed:true
+ })}).then(function(response){return response.json().then(function(data){if(!response.ok)throw new Error(data.error||'Reconciliation failed');return data})})
+ .then(function(data){msg.textContent='Payment recorded. Receipt '+data.receipt_id+' created.';return window.location.reload();})
+ .catch(function(error){msg.textContent=error.message;button.disabled=false;});
+});
+
 fetch('/api/admin/payment-ledger?limit=150',{headers:{'Accept':'application/json'},cache:'no-store'}).then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data.error||'Could not load ledger');return data})}).then(function(data){
  var s=data.summary||{};
  stats.innerHTML='<div class="stat"><span class="muted">Paid invoices</span><strong>'+esc(s.paid_count||0)+'</strong></div><div class="stat"><span class="muted">Gross recorded payments</span><strong>'+usd(s.gross_paid_cents)+'</strong></div><div class="stat"><span class="muted">Refunds recorded</span><strong>'+usd(s.refunded_cents)+'</strong></div><div class="stat"><span class="muted">Net recorded payments</span><strong>'+usd(s.net_paid_cents)+'</strong></div><div class="stat"><span class="muted">Outstanding invoices</span><strong>'+esc(s.outstanding_count||0)+'</strong></div><div class="stat"><span class="muted">Outstanding balance</span><strong>'+usd(s.outstanding_cents)+'</strong></div>';
- rows.innerHTML=(data.invoices||[]).map(function(x){var refund=Number(x.refund_amount_cents||0);return '<tr><td><strong>'+esc(x.invoice_number||x.invoice_id)+'</strong><br><span class="muted">'+esc(x.receipt_id||'Receipt pending')+'</span></td><td>'+esc(x.business_name||x.customer_name)+'<br><span class="muted">'+esc(x.customer_name)+' · '+esc(x.customer_email)+'</span></td><td>'+usd(x.amount_cents)+(refund>0?'<br><span class="muted">Refunded: '+usd(refund)+'</span>':'')+'</td><td>'+esc(x.invoice_status)+'<br><span class="muted">'+esc(x.payment_status)+'</span></td><td>'+esc(x.provider_id||'—')+'</td><td>'+date(x.paid_at||x.due_date)+'</td><td>'+(x.receipt_url?'<a href="'+esc(x.receipt_url)+'" target="_blank" rel="noopener">Open customer receipt</a>':'<span class="muted">Not available</span>')+'</td></tr>'}).join('')||'<tr><td colspan="7">No invoice records yet.</td></tr>';
+ rows.innerHTML=(data.invoices||[]).map(function(x){var refund=Number(x.refund_amount_cents||0);return '<tr><td><strong>'+esc(x.invoice_number||x.invoice_id)+'</strong><br><span class="muted">'+esc(x.receipt_id||'Receipt pending')+'</span></td><td>'+esc(x.business_name||x.customer_name)+'<br><span class="muted">'+esc(x.customer_name)+' · '+esc(x.customer_email)+'</span></td><td>'+usd(x.amount_cents)+(refund>0?'<br><span class="muted">Refunded: '+usd(refund)+'</span>':'')+'</td><td>'+esc(x.invoice_status)+'<br><span class="muted">'+esc(x.payment_status)+'</span></td><td>'+esc(x.provider_id||'—')+'</td><td>'+date(x.paid_at||x.due_date)+'</td><td>'+(x.receipt_url?'<a href="'+esc(x.receipt_url)+'" target="_blank" rel="noopener">Open customer receipt</a>':'<span class="muted">Not available</span>')+'</td><td>'+(['issued','pending'].includes(x.invoice_status)?'<input type="text" data-bank-ref="'+esc(x.invoice_id)+'" placeholder="Bank reference" aria-label="Bank transfer reference" style="max-width:180px;margin-bottom:.4rem"><label class="muted"><input type="checkbox" data-cleared="'+esc(x.invoice_id)+'"> I verified cleared funds</label><br><button type="button" data-reconcile="'+esc(x.invoice_id)+'" data-amount="'+Number(x.amount_cents||0)+'">Confirm bank transfer</button>':'<span class="muted">No action</span>')+'</td></tr>'}).join('')||'<tr><td colspan="7">No invoice records yet.</td></tr>';
  msg.textContent='Loaded '+(data.invoices||[]).length+' invoice records. This view is read-only.';
 }).catch(function(e){msg.textContent=e.message;rows.innerHTML='<tr><td colspan="7">Payment ledger could not be loaded.</td></tr>'});
 })();
