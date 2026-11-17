@@ -43,10 +43,16 @@ Do not apply these migrations to Production without separate review and explicit
 - The provider adapter contract and Stripe invoice adapter are implemented, but no provider is activated and no transaction is submitted.
 - QR codes are not yet generated; a QR is added only after a secure opaque invoice URL exists.
 
+## Preview verification completed
+
+- Migration 0010 was applied on November 17, 2026 to the isolated Preview main DB `dahoodfarmer-preview-db` only.
+- Verified the new provider columns, provider-event table and both provider indexes.
+- `PRAGMA foreign_key_check` returned no rows. No Production database was touched.
+- Preview payment flags remain disabled; no provider is selected and no payment methods are active.
+
 ## Remaining Preview gates
 
-1. Apply migration 0010 to the isolated Preview DB and verify schema/indexes.
-2. Run the full GitHub Actions test suite and review the result.
+1. Run the full GitHub Actions test suite and review the result.
 3. Confirm the protected Preview can be opened by the owner for mobile visual review.
 4. If the owner chooses Stripe, verify the existing account and Preview test-mode keys without creating a duplicate account. If the owner chooses FLO, obtain its written API/acquirer specifications first.
 5. Complete test-mode payment, webhook, refund and ACH/bank-transfer reconciliation tests only after separate authorization to configure and test the provider.
