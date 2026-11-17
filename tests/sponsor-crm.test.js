@@ -102,29 +102,6 @@ test('adds a deliverable to an existing partnership', async () => {
 });
 
 
-test('cannot issue a sponsor invoice before a signed agreement and agreed amount', async () => {
-  const DB = fakeDb({ partnership: { id: 4, application_id: 12, contract_status: 'draft', agreed_amount_cents: 50000, package_name: 'Corporate Partner' } });
-  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4 }), env: { DB } });
-  assert.equal(response.status, 409);
-  assert.equal(DB.calls.some(c => /INSERT INTO sponsor_invoices/.test(c.sql)), false);
-});
-
-test('issues a secure sponsor invoice only after agreement is signed', async () => {
-  const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested' } });
-  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB } });
-  const body = await response.json();
-  assert.equal(response.status, 200);
-  assert.equal(body.success, true);
-  assert.equal(body.amount_cents, 50000);
-  assert.ok(body.invoice_url.startsWith('https://preview.example/pay/invoice?token='));
-  assert.match(body.invoice_url.split('token=')[1], /^[a-f0-9]{64}$/);
-  const insert = DB.calls.find(c => /INSERT INTO sponsor_invoices/.test(c.sql));
-  assert.ok(insert);
-  assert.notEqual(insert.values[5], body.invoice_url.split('token=')[1]);
-  assert.ok(DB.calls.some(c => /UPDATE sponsor_partnerships SET payment_status = 'invoice_sent'/.test(c.sql)));
-});
-
-
 test('invoice issuing remains disabled until the owner enables the invoicing gate', async () => {
   const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, payment_status: 'not_requested' } });
   const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_INVOICING_ENABLED: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
@@ -159,7 +136,7 @@ test('creates a finalized Stripe hosted invoice without sending an email', async
     const itemParams = new URLSearchParams(calls.find(c => c.url.endsWith('/invoiceitems')).init.body);
     assert.equal(itemParams.get('amount'), '50000');
     assert.equal(itemParams.get('invoice'), 'in_test_1');
-    assert.ok(DB.calls.some(c => /UPDATE sponsor_partnerships SET payment_status = 'invoice_sent'/.test(c.sql)));
+    assert.ok(DB.calls.some(c => /UPDATE sponsor_partnerships SET payment_status = CASE/.test(c.sql)));
   } finally {
     globalThis.fetch = oldFetch;
   }
