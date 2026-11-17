@@ -5,9 +5,15 @@ import { onRequestPost } from '../functions/api/payments/webhook.js';
 const record={invoice_id:'inv-1',partnership_id:4,amount_cents:50000};
 function fakeDb(){
  const calls=[];
+ const seenEvents=new Set();
  return {calls,prepare(sql){return{bind(...values){return{
   async first(){calls.push({kind:'first',sql,values});if(/JOIN sponsor_partnerships/.test(sql))return{invoice_id:'inv-1',partnership_id:4,description:'Corporate sponsorship',amount_cents:50000,recipient_name:'Buyer',recipient_email:'buyer@example.com',business_name:'Example Co'};if(/FROM payment_receipts/.test(sql))return{receipt_id:'DHF-20261117-ABCD1234',invoice_id:'inv-1',recipient_email:'buyer@example.com',amount_cents:50000,currency:'usd',paid_at:'2026-11-17T12:00:00.000Z',email_status:'not_configured'};return record},
-  async run(){calls.push({kind:'run',sql,values});return{meta:{changes:1}}}
+  async run(){
+   calls.push({kind:'run',sql,values});
+   if(/INSERT OR IGNORE INTO payment_provider_events/.test(sql)){const id=values[0];if(seenEvents.has(id))return{meta:{changes:0}};seenEvents.add(id);return{meta:{changes:1}}}
+   if(/UPDATE payment_provider_events SET status = 'processing'/.test(sql))return{meta:{changes:0}};
+   return{meta:{changes:1}};
+  }
  }}}}};
 }
 async function signature(payload,secret='whsec_test'){
@@ -101,4 +107,20 @@ test('webhook endpoint rejects events while provider payments are disabled',asyn
  const response=await onRequestPost({request:eventRequest(payload,'t=1,v1=bad'),env:{DB,STRIPE_WEBHOOK_SECRET:'whsec_test'}});
  assert.equal(response.status,503);
  assert.equal(DB.calls.length,0);
+});
+
+
+test('duplicate Stripe event is acknowledged without repeating invoice or receipt processing',async()=>{
+ const DB=fakeDb();
+ const event={livemode:false,id:'evt_paid_duplicate',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const payload=JSON.stringify(event),sig=await signature(payload);
+ const env={DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test',DHF_RECEIPT_TOKEN_SECRET:'test-only-secret-that-is-at-least-32-chars'};
+ const first=await onRequestPost({request:eventRequest(payload,sig),env});
+ const second=await onRequestPost({request:eventRequest(payload,sig),env});
+ assert.equal(first.status,200);
+ assert.equal(second.status,200);
+ assert.equal((await second.json()).duplicate,true);
+ assert.equal(DB.calls.filter(c=>/UPDATE sponsor_invoices SET status = 'paid'/.test(c.sql)).length,1);
+ assert.equal(DB.calls.filter(c=>/INSERT OR IGNORE INTO payment_receipts/.test(c.sql)).length,1);
+ assert.ok(DB.calls.some(c=>/SET status = 'processed'/.test(c.sql)));
 });
