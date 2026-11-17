@@ -64,13 +64,13 @@ No property is advertised as available or booked until the owner has authorized 
 
 | Tier | Proposed price | Suggested inventory | Draft deliverables |
 |---|---:|---:|---|
-| Community Partner | $250 | Up to 6 | Name/logo on sponsor page, one social recognition |
-| Featured Partner | $500 | Up to 5 | Logo on event page, one newsletter mention, one social mention |
-| Corporate Partner | $1,000 | Up to 3 | Supporting benefits plus sponsor interview or short presentation and two admissions |
-| Presenting Partner | $2,500 | One per event | “Presented by” placement, opening/closing recognition, premium digital exhibit, sponsor interview, up to three social mentions and four admissions |
+| Community Partner | $250/month | Up to 6 | Sponsor directory recognition and one agreed monthly recognition placement |
+| Featured Partner | $500/month | Up to 5 | Featured sponsor placement, organization profile, and one agreed monthly promotional feature |
+| Corporate Partner | $1,000/month | Up to 3 | Premium placement across an agreed division, defined brand integration, and one agreed content or program participation opportunity |
+| Presenting Partner | $2,500+ per campaign/event | One per campaign/event | “Presented by” placement, opening/closing recognition, premium digital exhibit, sponsor interview, up to three social mentions and four admissions, as applicable to the confirmed format |
 | In-kind Partner | Negotiated value | Limited | Documented value and specific deliverables; no assumed cash equivalency |
 
-All sponsorship benefits must be listed in a written agreement. Category exclusivity is not promised unless expressly negotiated. Paid media and sponsored interviews must be labeled as advertising or sponsorship.
+Monthly platform sponsorship and event-specific presenting sponsorship are separate inventory types. Any event-specific supporting package outside these monthly tiers must be separately scoped and quoted. All sponsorship benefits must be listed in a written agreement. Category exclusivity is not promised unless expressly negotiated. Paid media and sponsored interviews must be labeled as advertising or sponsorship.
 
 ## First pilot event recommendation
 
@@ -91,7 +91,7 @@ No event date, speaker, audience size, venue or sponsor is confirmed yet. Publis
 
 ## Illustrative gross revenue scenario
 
-This is a planning example, not a forecast or guarantee.
+This is an event-planning example, not a forecast or guarantee. It is not a monthly recurring-revenue scenario.
 
 | Revenue source | Quantity | Price | Gross |
 |---|---:|---:|---:|
