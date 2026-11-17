@@ -26,7 +26,7 @@ The production branch remains site-rebuild-v2. Payment work is on feature/dhf-pr
 | DHF_RECEIPT_TOKEN_SECRET | Preview secret only | Receipt URL signing key; never place in Git |
 | RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery unavailable |
 
-No Stripe key, webhook secret, Stripe account, Stripe checkout or Stripe API dependency is used by the current application code. Any previously entered Stripe Preview key is not used by this build.
+No Stripe key, webhook secret, Stripe account, Stripe checkout or Stripe API dependency is used by the current application code. The unused STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET were also removed from the Cloudflare Pages Preview project settings; Production settings were not changed.
 
 ## Migrations
 
