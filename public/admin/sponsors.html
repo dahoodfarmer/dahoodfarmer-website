@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sponsor CRM — Da HoodFarmer Admin</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+body{background:#0a0f18;color:#e5e7eb}
+.admin-wrap{max-width:1400px;margin:2rem auto;padding:0 1rem}
+.admin-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.panel{background:#142033;border:1px solid #2b405b;border-radius:12px;padding:1.2rem;margin:1rem 0}
+.panel h2{margin-top:0;color:#e9c85b}
+.muted{color:#9ca3af;font-size:.9rem}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:850px}
+th,td{text-align:left;padding:.7rem;border-bottom:1px solid #2b405b;vertical-align:top}
+th{font-size:.75rem;text-transform:uppercase;color:#aebbd0}
+input,select,textarea{width:100%;background:#0b1422;color:#f3f4f6;border:1px solid #425773;border-radius:6px;padding:.6rem;font:inherit}
+textarea{min-height:72px;resize:vertical}
+button,.button{background:#d6b64c;color:#101827;border:0;border-radius:6px;padding:.65rem .9rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+button:disabled{opacity:.5;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.8rem}
+.field label{display:block;font-size:.78rem;color:#c7d2e0;margin-bottom:.3rem}
+.card{background:#0e1929;border:1px solid #2b405b;border-radius:10px;padding:1rem;margin:.8rem 0}
+.card h3{margin:.1rem 0 .7rem;color:#f1d77a}
+.actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem}
+.small{font-size:.8rem;color:#9ca3af}
+.status{font-weight:700;color:#e9c85b}
+@media(max-width:640px){.admin-wrap{padding:0 .7rem}.panel{padding:.8rem}.card{padding:.8rem}}
+</style>
+</head>
+<body>
+<main class="admin-wrap">
+  <div class="admin-top">
+    <div><h1 style="margin:0">Sponsor CRM</h1><p class="muted">Private owner workspace · Cloudflare Access protected</p></div>
+    <a class="button" href="/admin/">Back to main admin</a>
+  </div>
+  <div id="message" role="status" aria-live="polite" class="muted">Loading sponsor records…</div>
+  <section class="panel">
+    <h2>New sponsor inquiries</h2>
+    <p class="muted">These are sponsor applications that have not yet been converted into a tracked partnership. Creating a CRM record moves a new application to “reviewing”; it does not approve a deal or send an offer.</p>
+    <div id="prospects"></div>
+  </section>
+  <section class="panel">
+    <h2>Partnership pipeline</h2>
+    <p class="muted">Track qualification, proposals, agreements, payment requests, fulfillment and renewals. “Paid” is reserved for verified payment reconciliation and cannot be set manually here.</p>
+    <div id="partnerships"></div>
+  </section>
+</main>
+<script>
+(function(){
+'use strict';
+var message=document.getElementById('message');
+var state={applications:[],partnerships:[],deliverables:[],activities:[]};
+var divisions=['business_network','summits_events','marketplace','academy','land_experiences','advertising_media'];
+var stages=['prospect','qualified','proposal_draft','proposal_sent','negotiating','contracted','fulfilling','completed','renewal_due','closed_lost'];
+var contracts=['not_started','draft','sent','signed','declined'];
+var payments=['not_requested','invoice_sent','pending','failed'];
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function options(list,current){return list.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+'>'+esc(v.replaceAll('_',' '))+'</option>'}).join('')}
+function field(label,name,value,type){return '<div class="field"><label>'+esc(label)+'</label><input data-field="'+esc(name)+'" type="'+(type||'text')+'" value="'+esc(value||'')+'"></div>'}
+function post(payload){return fetch('/api/admin/sponsor-crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Request failed');return d})})}
+function render(){
+ var p=document.getElementById('prospects');
+ p.innerHTML=state.applications.length?state.applications.map(function(a){
+  return '<div class="card"><h3>'+esc(a.organization||a.name)+'</h3><p class="small">'+esc(a.contact_name||a.name)+' · '+esc(a.email)+' · '+esc([a.city,a.region,a.country].filter(Boolean).join(', '))+'</p><p>'+esc(a.message)+'</p><div class="grid"><div class="field"><label>Division</label><select data-new-division="'+a.id+'">'+options(divisions,'business_network')+'</select></div>'+field('Working package','package_name',a.requested_package)+'<div class="field"><label>Proposed amount (USD)</label><input type="number" min="1" max="1000000" step="0.01" data-new-amount="'+a.id+'" placeholder="Leave blank until qualified"></div></div><div class="actions"><button type="button" data-create="'+a.id+'">Create CRM record</button></div></div>';
+ }).join(''):'<p class="muted">No unconverted sponsor inquiries.</p>';
+ var host=document.getElementById('partnerships');
+ host.innerHTML=state.partnerships.length?state.partnerships.map(function(x){
+  var ds=state.deliverables.filter(function(d){return Number(d.partnership_id)===Number(x.id)});
+  var acts=state.activities.filter(function(a){return Number(a.partnership_id)===Number(x.id)}).slice(0,8);
+  return '<article class="card" data-deal="'+x.id+'"><h3>'+esc(x.organization||x.contact_name)+' <span class="small">#'+x.id+'</span></h3><p class="small">'+esc(x.contact_name)+' · '+esc(x.contact_email)+' · Application #'+x.application_id+' · '+esc(x.application_status)+'</p><div class="grid">'+
+   '<div class="field"><label>Division</label><select data-field="division">'+options(divisions,x.division)+'</select></div>'+
+   '<div class="field"><label>Pipeline stage</label><select data-field="stage">'+options(stages,x.stage)+'</select></div>'+
+   field('Package / campaign','package_name',x.package_name)+
+   field('Proposed amount (USD)','proposed_amount',x.proposed_amount_cents==null?'':(x.proposed_amount_cents/100).toFixed(2),'number')+
+   field('Agreed amount (USD)','agreed_amount',x.agreed_amount_cents==null?'':(x.agreed_amount_cents/100).toFixed(2),'number')+
+   '<div class="field"><label>Agreement status</label><select data-field="contract_status">'+options(contracts,x.contract_status)+'</select></div>'+
+   field('Agreement document HTTPS link','contract_url',x.contract_url)+
+   field('Agreement signed date','contract_signed_at',x.contract_signed_at,'date')+
+   '<div class="field"><label>Payment status</label><select data-field="payment_status">'+options(payments,x.payment_status)+'</select></div>'+
+   field('Invoice HTTPS link','invoice_url',x.invoice_url)+
+   field('Start date','start_date',x.start_date,'date')+field('End date','end_date',x.end_date,'date')+field('Renewal date','renewal_date',x.renewal_date,'date')+
+   '<div class="field" style="grid-column:1/-1"><label>Internal notes</label><textarea data-field="notes">'+esc(x.notes)+'</textarea></div>'+
+   '</div><div class="actions"><button type="button" data-save="'+x.id+'">Save partnership</button><span class="small">Payment received is updated only by verified payment reconciliation.</span></div>'+
+   '<h4>Deliverables</h4><div>'+ds.map(function(d){return '<div class="grid" style="align-items:end;border-top:1px solid #2b405b;padding:.6rem 0"><div><strong>'+esc(d.title)+'</strong><div class="small">'+esc(d.description)+' · Due: '+esc(d.due_date||'Not set')+'</div></div><div class="field"><label>Status</label><select data-delivery-status="'+d.id+'">'+options(['planned','in_progress','completed','waived'],d.status)+'</select></div><div class="field"><label>Proof / evidence link</label><input data-delivery-url="'+d.id+'" value="'+esc(d.evidence_url||'')+'"></div><button type="button" data-save-delivery="'+d.id+'">Update</button></div>'}).join('')+'</div>'+
+   '<div class="grid"><div class="field"><label>New deliverable</label><input data-new-deliverable="'+x.id+'" placeholder="e.g. Homepage sponsor placement"></div><div class="field"><label>Due date</label><input type="date" data-new-due="'+x.id+'"></div><div class="field"><label>Description</label><input data-new-description="'+x.id+'" placeholder="Exact promised benefit"></div></div><div class="actions"><button type="button" data-add-deliverable="'+x.id+'">Add deliverable</button></div>'+
+   '<h4>Recent activity</h4><ul>'+acts.map(function(a){return '<li class="small">'+esc(a.created_at)+' · '+esc(a.activity_type)+' — '+esc(a.summary)+(a.follow_up_at?' · Follow up: '+esc(a.follow_up_at):'')+'</li>'}).join('')+'</ul>'+
+   '<div class="grid"><div class="field"><label>Activity type</label><select data-activity-type="'+x.id+'">'+options(['note','email','call','meeting','proposal','contract','payment','follow_up'],'note')+'</select></div><div class="field"><label>Follow-up date</label><input type="date" data-follow-up="'+x.id+'"></div><div class="field"><label>Activity note</label><input data-activity-summary="'+x.id+'" placeholder="What happened / next step"></div></div><div class="actions"><button type="button" data-add-activity="'+x.id+'">Log activity</button></div></article>';
+ }).join(''):'<p class="muted">No sponsor partnerships have been created yet.</p>';
+}
+function load(){message.textContent='Loading sponsor records…';fetch('/api/admin/sponsor-crm').then(function(r){if(!r.ok)throw new Error('Sponsor CRM could not load. Check Access.');return r.json()}).then(function(d){state=d;render();message.textContent='Loaded '+state.applications.length+' new inquiries and '+state.partnerships.length+' tracked partnerships.'}).catch(function(e){message.textContent=e.message})}
+document.addEventListener('click',function(e){
+ var b=e.target.closest('button');if(!b)return;
+ if(b.hasAttribute('data-create')){
+  var id=b.getAttribute('data-create'),div=document.querySelector('[data-new-division="'+id+'"]').value,pkg=document.querySelector('[data-field="package_name"]')?.value||'';
+  var amt=document.querySelector('[data-new-amount="'+id+'"]').value;
+  b.disabled=true;post({action:'create',application_id:Number(id),division:div,package_name:pkg,proposed_amount_cents:amt?Math.round(Number(amt)*100):null}).then(load).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
+ }
+ if(b.hasAttribute('data-save')){
+  var card=b.closest('[data-deal]'),id=Number(b.getAttribute('data-save'));
+  function val(k){return card.querySelector('[data-field="'+k+'"]')?.value||''}
+  var prop=val('proposed_amount'),agree=val('agreed_amount');
+  var payload={action:'update',id:id,division:val('division'),stage:val('stage'),package_name:val('package_name'),proposed_amount_cents:prop?Math.round(Number(prop)*100):null,agreed_amount_cents:agree?Math.round(Number(agree)*100):null,contract_status:val('contract_status'),contract_url:val('contract_url'),contract_signed_at:val('contract_signed_at'),payment_status:val('payment_status'),invoice_url:val('invoice_url'),start_date:val('start_date'),end_date:val('end_date'),renewal_date:val('renewal_date'),notes:val('notes')};
+  b.disabled=true;post(payload).then(load).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
+ }
+ if(b.hasAttribute('data-add-deliverable')){
+  var id=Number(b.getAttribute('data-add-deliverable'));
+  var title=document.querySelector('[data-new-deliverable="'+id+'"]').value;
+  var due=document.querySelector('[data-new-due="'+id+'"]').value;
+  var desc=document.querySelector('[data-new-description="'+id+'"]').value;
+  b.disabled=true;post({action:'add_deliverable',partnership_id:id,title:title,due_date:due,description:desc}).then(load).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
+ }
+ if(b.hasAttribute('data-save-delivery')){
+  var id=Number(b.getAttribute('data-save-delivery'));
+  var status=document.querySelector('[data-delivery-status="'+id+'"]').value;
+  var url=document.querySelector('[data-delivery-url="'+id+'"]').value;
+  b.disabled=true;post({action:'update_deliverable',id:id,status:status,evidence_url:url}).then(load).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
+ }
+ if(b.hasAttribute('data-add-activity')){
+  var id=Number(b.getAttribute('data-add-activity'));
+  var type=document.querySelector('[data-activity-type="'+id+'"]').value;
+  var summary=document.querySelector('[data-activity-summary="'+id+'"]').value;
+  var follow=document.querySelector('[data-follow-up="'+id+'"]').value;
+  b.disabled=true;post({action:'add_activity',partnership_id:id,activity_type:type,summary:summary,follow_up_at:follow}).then(load).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
+ }
+});
+load();
+})();
+</script>
+</body>
+</html>
