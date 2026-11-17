@@ -82,7 +82,9 @@ test('payment center is informational only until an authorized provider is appro
   assert.match(html,/Apple Pay/);
   assert.match(html,/Debit &amp; Credit Cards/);
   assert.match(html,/ACH Bank Debit/);
-  assert.match(html,/Payments are not being accepted through this page yet/);
+  assert.match(html,/Available external payment destinations/);
+  assert.match(html,/external-payment-options/);
+  assert.match(html,/dhf-payment-options\.js/);
   assert.match(html,/Not activated/);
   assert.doesNotMatch(html,/<form\b/i);
 });
