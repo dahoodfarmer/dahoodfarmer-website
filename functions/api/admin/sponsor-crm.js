@@ -1,4 +1,5 @@
 import { hashInvoiceToken } from '../../lib/invoices.js';
+import { getPaymentProviderConfig } from '../../lib/payment-provider.js';
 const DIVISIONS = new Set(['business_network','summits_events','marketplace','academy','land_experiences','advertising_media']);
 const STAGES = new Set(['prospect','qualified','proposal_draft','proposal_sent','negotiating','contracted','fulfilling','completed','renewal_due','closed_lost']);
 const CONTRACT_STATES = new Set(['not_started','draft','sent','signed','declined']);
@@ -71,7 +72,9 @@ export async function onRequestGet({ env }) {
       partnerships: partnerships.results || [],
       deliverables: deliverables.results || [],
       activities: activities.results || [],
-      invoice_issuing_enabled: env.DHF_INVOICING_ENABLED === 'true' && Boolean(env.STRIPE_SECRET_KEY)
+      invoice_issuing_enabled: (() => { const config = getPaymentProviderConfig(env); return config.invoicingEnabled && config.provider === 'stripe' && Boolean(env.STRIPE_SECRET_KEY); })(),
+      payment_provider: getPaymentProviderConfig(env).provider,
+      payment_methods: getPaymentProviderConfig(env).methods
     });
   } catch (error) {
     console.error('Sponsor CRM read failed:', error?.message || String(error));
@@ -187,8 +190,10 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === 'create_invoice') {
-      if (env.DHF_INVOICING_ENABLED !== 'true') return json({ error: 'Sponsor invoice issuing is disabled until tax treatment and test-mode Stripe settings are approved.' }, 503);
-      if (!env.STRIPE_SECRET_KEY) return json({ error: 'Stripe invoicing is not configured in this environment.' }, 503);
+      const paymentConfig = getPaymentProviderConfig(env);
+      if (!paymentConfig.invoicingEnabled) return json({ error: 'Sponsor invoice issuing is disabled. Payment activation requires an explicitly selected provider and owner-approved configuration.' }, 503);
+      if (paymentConfig.provider !== 'stripe') return json({ error: 'The selected payment provider does not yet have an invoice adapter connected.' }, 503);
+      if (!env.STRIPE_SECRET_KEY) return json({ error: 'The selected payment provider is not configured in this environment.' }, 503);
       const partnershipId = Number(data.partnership_id);
       const dueDate = dateOrNull(data.due_date);
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
@@ -211,7 +216,7 @@ export async function onRequestPost({ request, env }) {
       let invoiceRecord = openInvoice;
       let invoiceId = openInvoice?.invoice_id || crypto.randomUUID();
       const amount = Number(partnership.agreed_amount_cents);
-      if (openInvoice && (Number(openInvoice.amount_cents) !== amount || openInvoice.due_date !== dueDate)) return json({ error: 'An existing invoice has a different amount or due date. Void it in Stripe before issuing a replacement.' }, 409);
+      if (openInvoice && (Number(openInvoice.amount_cents) !== amount || openInvoice.due_date !== dueDate)) return json({ error: 'An existing invoice has a different amount or due date. Void it with the payment provider before issuing a replacement.' }, 409);
       if (!['true','false'].includes(env.DHF_STRIPE_EXPECT_LIVEMODE)) return json({ error: 'Expected Stripe test/live mode is not configured.' }, 503);
       let stripeAccount;
       try { stripeAccount = await stripeRequest('account', env); }
