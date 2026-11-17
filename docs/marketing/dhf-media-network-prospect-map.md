@@ -34,7 +34,7 @@ The media organizations in this map are not interchangeable, and most are not sp
 - **Role:** Production/development company that publicly invites pitches for reality and original programming.
 - **Potential value:** A possible development conversation if the concept fits its slate and submission terms.
 - **DHF value:** Access to experienced development and production capabilities and a potential route toward packaging a show.
-- **Risk:** A pitch submission can expose original format elements. The public pitch invitation is not proof of confidentiality, an NDA or a rights-protective agreement.
+- **Risk:** A pitch submission can expose original format elements. The public page says submissions are not returned; it does not establish confidentiality, an NDA, payment terms or a rights-protective agreement.
 - **Next step:** Review the exact submission terms, recipient, rights language and permitted use. Begin with a non-confidential overview only. Do not submit the format, episode engine, characters, scripts, budget or sizzle until approved.
 
 Official route: https://studiocenter.com/content/sc-entertainment
@@ -43,7 +43,7 @@ Official route: https://studiocenter.com/content/sc-entertainment
 - **Role:** Creator submission and distribution platform with public materials describing sponsor/revenue-share opportunities.
 - **Potential value:** Distribution, monetization, audience development and a possible sponsor-sharing model for finished or appropriately packaged content.
 - **DHF value:** A route to build audience and commercial history while retaining negotiating leverage for the underlying franchise.
-- **Risk:** Earlier research flagged a possible two-year exclusivity term. Treat that as unverified until the current agreement is reviewed. Verify rights ownership, license scope, term, territory, renewal, takedown, revenue deductions, sponsor approval, and rights reversion.
+- **Risk:** The current creator-submission page states that BVM+ offers a $500–$2,500 per-episode production stipend, 30%–50% of net sponsor revenue for creator-supplied sponsors, and exclusive streaming/promotional rights for two years while creators retain authorship credit. The page also describes a 1–2 episode/month suggested schedule, a minimum of 3 of 5 evaluation criteria, and an initial 2–4 week review. These are platform-published claims, not a negotiated offer. Authorship credit is not the same as ownership of the underlying IP. Verify the exact rights license, exclusivity, revenue deductions, sponsor approvals, term, territory, renewal, takedown and reversion in the actual contract.
 - **Next step:** Ask for the current creator agreement and revenue model before submitting anything. Use a standalone, non-confidential creator project first; do not submit unreleased franchise IP.
 
 Official route: https://www.blkvision.com/creator-submissions
@@ -99,7 +99,7 @@ Official route: https://www.actve.tv/
 - **Role:** Streaming device/platform and app distribution ecosystem.
 - **Potential value:** A future distribution endpoint for an owned DHF channel or app.
 - **DHF value:** Access to Roku households and an established streaming platform.
-- **Boundary:** Roku is not a production studio or sponsor. A distribution-ready app/channel, content rights, technical compliance and platform approval are required.
+- **Boundary:** Roku is not a production studio or sponsor. A distribution-ready app/channel, content rights, technical compliance and platform approval are required. Roku's developer documentation says the app should be published from the account of the organization that owns the content; if a third-party developer publishes under its own account, ownership of the app belongs to that developer under Roku's distribution agreement. DHF must retain the root developer account and grant vendors limited roles.
 
 Developer information: https://developer.roku.com/
 
@@ -116,7 +116,7 @@ Developer information: https://developer.amazon.com/fire-tv
 ### South Carolina Film Commission
 - **Role:** Production information, location support and state film/TV incentive administration.
 - **Potential value:** Location guidance, production referrals and qualifying incentive support.
-- **Important limitation:** The state's cash rebate has minimum qualified-spend and eligibility rules. The official FAQ says unscripted/reality TV series are not eligible for the cash rebate. Do not include a rebate in the budget for a reality/hybrid show unless the Commission confirms eligibility in writing.
+- **Important limitation:** The cash rebate requires at least $1 million in qualifying South Carolina spend, pre-approval and an eligible production. The official FAQ explicitly says unscripted/reality TV series are not eligible for the cash rebate. The FAQ separately describes a possible discretionary sales/use/accommodations tax exemption for certain projects spending at least $250,000; that is a tax exemption, not a cash rebate. Do not include a rebate or exemption in a budget without written eligibility confirmation.
 - **DHF value:** Location and production planning support; not a sponsor or guaranteed grant.
 
 Official information: https://www.scprt.com/film-commission/incentives
@@ -165,7 +165,18 @@ These are negotiating objectives, not legal guarantees. Each contract must defin
 
 Do not assume an NDA will be offered. Do not send a full concept merely because a submission form exists. Keep dated copies of every version and a record of what was disclosed, to whom and under which terms.
 
-## 8. Website implementation relationship
+## 8. Source notes and verification
+
+- Studio Center pitch invitation and non-return of submissions: https://studiocenter.com/content/sc-entertainment
+- BVM+ creator submission, stipend, sponsor revenue share and two-year exclusive streaming/promotional rights: https://www.blkvision.com/creator-submissions
+- Blue Ant formal pitch route: https://blueantmedia.com/global-media/how-to-pitch-us/
+- Palm TV submission, no-fee statement, no guarantee and variable ownership/licensing: https://www.palmtvnetwork.com/submit-guidelines and https://www.palmtvnetwork.com/faqs
+- acTVe channel ownership, services and self-reported scale: https://www.actve.tv/
+- Roku app publishing and owner-account guidance: https://developer.roku.com/dev/docs/channel-publishing-guide
+- Amazon Fire TV app submission and developer account: https://developer.amazon.com/docs/app-submission/publish-app-login-and-add-app.html
+- South Carolina Film Commission cash-rebate and reality-TV eligibility FAQ: https://www.scprt.com/film-commission/incentives/incentive-faqs
+
+## 9. Website implementation relationship
 
 The public `/media-partners` page is for non-confidential production and distribution introductions only. It is separate from:
 - The sponsor application and sponsor CRM.
