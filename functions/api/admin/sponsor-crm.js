@@ -1,5 +1,7 @@
 import { hashInvoiceToken } from '../../lib/invoices.js';
 import { getPaymentProviderConfig, resolvePaymentProvider, createStripeInvoiceAdapter } from '../../lib/payment-provider.js';
+import { createPaidReceipt } from '../../lib/payment-receipts.js';
+import { sendReceiptEmail } from '../../lib/receipt-email.js';
 const DIVISIONS = new Set(['business_network','summits_events','marketplace','academy','land_experiences','advertising_media']);
 const STAGES = new Set(['prospect','qualified','proposal_draft','proposal_sent','negotiating','contracted','fulfilling','completed','renewal_due','closed_lost']);
 const CONTRACT_STATES = new Set(['not_started','draft','sent','signed','declined']);
@@ -160,8 +162,7 @@ export async function onRequestPost({ request, env }) {
       const dueDate = dateOrNull(data.due_date);
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1 || !title) return json({ error: 'Partnership and deliverable title are required.' }, 422);
       if (Number.isNaN(dueDate)) return json({ error: 'Due date must use YYYY-MM-DD.' }, 422);
-      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Invoice due date cannot be in the past.' }, 422);
-      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Invoice due date cannot be in the past.' }, 422);
+      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Deliverable due date cannot be in the past.' }, 422);
       const exists = await env.DB.prepare('SELECT id FROM sponsor_partnerships WHERE id = ?').bind(partnershipId).first();
       if (!exists) return json({ error: 'Partnership not found.' }, 404);
       const result = await env.DB.prepare(
@@ -283,9 +284,21 @@ export async function onRequestPost({ request, env }) {
         }
 
         if (stripeInvoice.status === 'paid') {
+          const paidAmount = Number(stripeInvoice.amount_paid);
+          if (!Number.isSafeInteger(paidAmount) || paidAmount !== amount) {
+            return json({ error: 'The provider reports a paid invoice, but its paid amount does not match the approved agreement. Owner reconciliation is required.' }, 409);
+          }
+          const receipt = await createPaidReceipt({
+            DB: env.DB, env, invoiceId, providerId: 'stripe',
+            providerReference: typeof stripeInvoice.payment_intent === 'string' ? stripeInvoice.payment_intent : stripeInvoice.id,
+            amountCents: paidAmount, currency: stripeInvoice.currency || 'usd',
+            paidAt: stripeInvoice.status_transitions?.paid_at ? new Date(stripeInvoice.status_transitions.paid_at * 1000).toISOString() : new Date().toISOString(),
+            paymentMethod: null
+          });
           await env.DB.prepare("UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', provider_id = 'stripe', provider_invoice_id = ?, provider_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', invoiceId).run();
-          await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', partnershipId).run();
-          return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url || '', amount_cents: amount, due_date: dueDate, payment_status: 'paid' });
+          await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', stripeInvoice.id, partnershipId).run();
+          await sendReceiptEmail({ DB: env.DB, env, receipt });
+          return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url || '', amount_cents: amount, due_date: dueDate, payment_status: 'paid', receipt_id: receipt.receipt_id });
         }
         if (stripeInvoice.status === 'void' || stripeInvoice.status === 'uncollectible') return json({ error: 'The existing Stripe invoice is void or uncollectible. Review it in Stripe before issuing a replacement.' }, 409);
         if (stripeInvoice.status !== 'draft' && Number(stripeInvoice.amount_due) !== amount) throw new Error('Existing Stripe invoice amount does not match the approved amount.');
