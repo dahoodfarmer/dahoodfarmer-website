@@ -15,6 +15,7 @@ Apply these migrations to the isolated Preview main application database in orde
 - `0010_provider_neutral_payments.sql` — provider IDs, generic invoice references, payment methods and provider-event audit.
 - `0011_provider_customer_reference.sql` — provider-neutral customer reference for sponsor partnerships.
 - `0012_payment_receipts.sql` — durable, invoice-idempotent customer receipt ledger.
+- `0013_webhook_idempotency.sql` — durable webhook processing states, duplicate suppression and safe retry tracking.
 
 Current Preview target: `dahoodfarmer-preview-db`  
 Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
