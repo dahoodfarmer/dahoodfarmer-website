@@ -27,8 +27,16 @@ export function resolvePaymentProvider(env = {}, adapters = {}) {
 }
 export function isAllowedPaymentMethod(method) { return METHODS.has(method); }
 
+function assertStripeKeyMode(env) {
+  const key = env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error('Stripe secret is not configured.');
+  const match = key.match(/^(?:sk|rk)_(test|live)_/);
+  const expected = env.DHF_STRIPE_EXPECT_LIVEMODE === 'true' ? 'live' : 'test';
+  if (!match || match[1] !== expected) throw new Error('Stripe ' + expected + '-mode API key required for this environment.');
+}
+
 async function stripeRequest(path, env, method = 'GET', params = null, idempotencyKey = '') {
-  if (!env.STRIPE_SECRET_KEY) throw new Error('Stripe secret is not configured.');
+  assertStripeKeyMode(env);
   const headers = { Authorization: 'Bearer ' + env.STRIPE_SECRET_KEY };
   const init = { method, headers };
   if (params) {
