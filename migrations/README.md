@@ -10,10 +10,9 @@ Apply these migrations to the isolated Preview main application database in orde
 - `0005_opportunity_products.sql` — server-controlled Opportunity Network product catalog; seeded products remain draft.
 - `0006_sponsor_crm.sql` — sponsor pipeline, agreements, payment status, deliverables and activity history.
 - `0007_sponsor_invoices.sql` — owner-issued sponsor invoice records.
-- `0008_stripe_invoicing.sql`
-- `0009_sponsor_prospect_pipeline.sql`
-- `0010_provider_neutral_payments.sql` — Stripe customer/invoice references, hosted invoice URLs and webhook event audit.
+- `0008_stripe_invoicing.sql` — legacy Stripe-specific invoice references retained for compatibility.
 - `0009_sponsor_prospect_pipeline.sql` — outbound sponsor, corporate and media prospect CRM.
+- `0010_provider_neutral_payments.sql` — provider IDs, generic invoice references, payment methods and provider-event audit.
 
 Current Preview target: `dahoodfarmer-preview-db`  
 Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
