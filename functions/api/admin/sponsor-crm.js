@@ -257,8 +257,8 @@ export async function onRequestPost({ request, env }) {
         }
 
         if (stripeInvoice.status === 'paid') {
-          await env.DB.prepare(\"UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?\").bind(stripeInvoice.hosted_invoice_url || '', stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', invoiceId).run();
-          await env.DB.prepare(\"UPDATE sponsor_partnerships SET payment_status = 'paid', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?\").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', partnershipId).run();
+          await env.DB.prepare("UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?").bind(stripeInvoice.hosted_invoice_url || '', stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', invoiceId).run();
+          await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'paid', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', partnershipId).run();
           return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url || '', amount_cents: amount, due_date: dueDate, payment_status: 'paid' });
         }
         if (stripeInvoice.status === 'void' || stripeInvoice.status === 'uncollectible') return json({ error: 'The existing Stripe invoice is void or uncollectible. Review it in Stripe before issuing a replacement.' }, 409);
