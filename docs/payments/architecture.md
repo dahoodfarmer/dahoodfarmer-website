@@ -16,7 +16,7 @@
 
 ## Level 2 — DHF-owned platform
 
-DHF owns the branded payment center, sponsor CRM, package pricing, invoices, payment-link routing, QR destinations, receipts, reconciliation workflow, reporting and sponsor relationship. The current public Payment Center is an informational foundation only. It displays Apple Pay, cards and ACH/bank transfer as not activated and has no payment form or live checkout.
+DHF owns the branded payment center, sponsor CRM, package pricing, invoices, payment-link routing, QR destinations, a durable receipt ledger, reconciliation workflow, reporting and sponsor relationship. A verified paid invoice creates one receipt record keyed uniquely to the invoice. The customer receives an unguessable, no-index receipt page that can be printed or saved as PDF; the owner receives the matching record in the private Payment & Receipt Ledger. The current public Payment Center is an informational foundation only. It displays Apple Pay, cards and ACH/bank transfer as not activated and has no payment form or live checkout.
 
 ## Level 1 — Authorized provider
 
@@ -55,9 +55,9 @@ A QR code is only a visual encoding of an opaque DHF payment URL; it is not a pr
 
 - Main D1 DB: sponsor applications, CRM partnerships, agreements, deliverables, activities and invoice/provider references.
 - SESSIONS: application and admin rate limiting.
-- Migration 0010 adds provider-neutral identifiers and an idempotent provider-event ledger; migration 0011 adds the provider-neutral customer reference. Existing Stripe-specific fields remain temporarily for compatibility.
+- Migration 0010 adds provider-neutral identifiers and an idempotent provider-event ledger; migration 0011 adds the provider-neutral customer reference; migration 0012 adds the durable receipt ledger. Existing Stripe-specific fields remain temporarily for compatibility.
 - Production databases, secrets, DNS and deployments remain untouched.
 
 ## Explicit exclusions
 
-No live-mode charges, automatic invoice emails, recurring billing, public marketplace checkout, custom-amount donations, payment facilitation for third parties, split payouts, provider account creation or bank account changes. DHF may set sponsorship package prices and commercial terms. Any processing surcharge requires separate legal and card-network review; the default is to price processing costs into the package. Do not represent DHF as a payment processor or payment facilitator.
+No live-mode charges, automatic invoice emails or receipt emails, recurring billing, public marketplace checkout, custom-amount donations, payment facilitation for third parties, split payouts, provider account creation or bank account changes. Receipt email delivery remains a separate activation step; no customer email is sent until an approved sender is configured and owner-authorized. DHF may set sponsorship package prices and commercial terms. Any processing surcharge requires separate legal and card-network review; the default is to price processing costs into the package. Do not represent DHF as a payment processor or payment facilitator.
