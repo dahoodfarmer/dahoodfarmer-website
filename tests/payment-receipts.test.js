@@ -39,7 +39,7 @@ const env = { DHF_RECEIPT_TOKEN_SECRET: 'test-only-secret-that-is-at-least-32-ch
 
 test('creates a branded receipt record once for a verified paid invoice', async () => {
   const DB = fakeDb();
-  const receipt = await createPaidReceipt({ DB, env, invoiceId: 'inv-123', providerId: 'stripe', providerReference: 'pi_test_123', amountCents: 125000, paidAt: '2026-11-17T12:00:00.000Z' });
+  const receipt = await createPaidReceipt({ DB, env, invoiceId: 'inv-123', providerId: 'manual', providerReference: 'pi_test_123', amountCents: 125000, paidAt: '2026-11-17T12:00:00.000Z' });
   assert.match(receipt.receipt_id, /^DHF-20261117-[A-F0-9]{8}$/);
   assert.equal(receipt.recipient_email, 'buyer@example.com');
   assert.equal(receipt.amount_cents, 125000);
@@ -58,7 +58,7 @@ test('receipt token is deterministic per invoice and secret for safe retry recov
 test('does not create a receipt when paid amount differs from approved invoice', async () => {
   const DB = fakeDb();
   await assert.rejects(
-    createPaidReceipt({ DB, env, invoiceId: 'inv-123', providerId: 'stripe', providerReference: 'pi_bad', amountCents: 1000 }),
+    createPaidReceipt({ DB, env, invoiceId: 'inv-123', providerId: 'manual', providerReference: 'pi_bad', amountCents: 1000 }),
     /does not match/
   );
   assert.equal(DB.calls.some(call => /INSERT OR IGNORE INTO payment_receipts/.test(call.sql)), false);
@@ -67,7 +67,7 @@ test('does not create a receipt when paid amount differs from approved invoice',
 test('requires a dedicated receipt token secret', async () => {
   const DB = fakeDb();
   await assert.rejects(
-    createPaidReceipt({ DB, env: {}, invoiceId: 'inv-123', providerId: 'stripe', providerReference: 'pi_test', amountCents: 125000 }),
+    createPaidReceipt({ DB, env: {}, invoiceId: 'inv-123', providerId: 'manual', providerReference: 'pi_test', amountCents: 125000 }),
     /not configured/
   );
 });
