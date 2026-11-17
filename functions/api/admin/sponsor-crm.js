@@ -197,6 +197,7 @@ export async function onRequestPost({ request, env }) {
         "SELECT s.*, a.id AS application_id, a.organization, a.name AS contact_name, a.email AS contact_email FROM sponsor_partnerships s JOIN opportunity_applications a ON a.id = s.application_id WHERE s.id = ?"
       ).bind(partnershipId).first();
       if (!partnership) return json({ error: 'Partnership not found.' }, 404);
+      if (partnership.payment_status === 'paid' || partnership.payment_status === 'refunded') return json({ error: 'This partnership has already been paid or refunded.' }, 409);
       if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
         return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
       }
@@ -254,6 +255,7 @@ export async function onRequestPost({ request, env }) {
             .bind(stripeInvoice.id, stripeInvoice.status || 'draft', invoiceId).run();
         }
 
+        if (stripeInvoice.status !== 'draft' && Number(stripeInvoice.amount_due) !== amount) throw new Error('Existing Stripe invoice amount does not match the approved amount.');
         if (stripeInvoice.status === 'draft') {
           const itemParams = new URLSearchParams();
           itemParams.set('customer', customerId);
@@ -271,6 +273,7 @@ export async function onRequestPost({ request, env }) {
           stripeInvoice = await stripeRequest('invoices/' + encodeURIComponent(stripeInvoice.id), env);
         }
         if (!stripeInvoice.hosted_invoice_url) throw new Error('Stripe finalized the invoice but did not return a hosted invoice URL.');
+        if (Number(stripeInvoice.amount_due) !== amount) throw new Error('Finalized Stripe invoice amount does not match the approved amount.');
         await env.DB.prepare(
           "UPDATE sponsor_invoices SET status = 'issued', stripe_status = ?, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, due_date = ?, updated_at = datetime('now') WHERE invoice_id = ?"
         ).bind(stripeInvoice.status || 'open', stripeInvoice.hosted_invoice_url, stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', dueDate, invoiceId).run();
