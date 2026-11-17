@@ -1,0 +1,24 @@
+name: Website CI
+
+on:
+  pull_request:
+    branches:
+      - site-rebuild-v2
+      - feature/loopy-carter-dual-identity
+      - feature/dhf-opportunity-network-build
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run tests
+        run: npm test

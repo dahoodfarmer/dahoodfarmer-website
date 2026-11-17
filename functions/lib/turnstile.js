@@ -2,6 +2,14 @@
 // Verifies tokens server-side via the siteverify endpoint
 // Validates response hostname, handles HTTP errors and malformed JSON
 
+export function getExpectedTurnstileHostname(request) {
+  try {
+    return new URL(request.url).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
 export async function verifyTurnstile(token, secret, remoteip, expectedHostname) {
   if (!token) {
     return { success: false, error: 'Missing captcha token' };

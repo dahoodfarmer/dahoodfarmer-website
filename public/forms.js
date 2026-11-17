@@ -13,16 +13,10 @@
   }
 
   function findNewsletterForm() {
-    var forms = document.querySelectorAll('form');
-    for (var i = 0; i < forms.length; i++) {
-      var form = forms[i];
-      if (form.querySelector('input[name="email"]') &&
-          !form.querySelector('input[name="name"]') &&
-          form.dataset.newsletter !== 'false') {
-        return { form: form, endpoint: '/api/newsletter' };
-      }
-    }
-    return null;
+    // Only an explicitly marked signup form may use the newsletter endpoint.
+    // Unsubscribe confirmations and other email-only forms must keep their own action.
+    var form = document.querySelector('form[data-newsletter="true"]');
+    return form ? { form: form, endpoint: '/api/newsletter' } : null;
   }
 
   function serialize(form) {
@@ -198,6 +192,11 @@
     if (endpoint) {
       attachForm({ form: document.querySelector('form.form-container'), endpoint: endpoint }, 'primary');
     }
+
+    var applicationForms = document.querySelectorAll('form[data-opportunity-form]');
+    applicationForms.forEach(function (form, index) {
+      attachForm({ form: form, endpoint: '/api/opportunity-application' }, 'opportunity-' + index);
+    });
 
     var newsletter = findNewsletterForm();
     if (newsletter) attachForm(newsletter, 'newsletter');

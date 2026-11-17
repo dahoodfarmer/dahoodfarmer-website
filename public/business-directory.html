@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHF Business Directory — Da HoodFarmer</title>
+<meta name="description" content="Discover businesses approved for the Da HoodFarmer Opportunity Network business directory.">
+<link rel="canonical" href="https://dahoodfarmer.com/business-directory">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css">
+</head><body><main>
+<section class="page-hero"><p class="eyebrow">DHF Opportunity Network</p><h1>Business Directory</h1><p>Find approved businesses and organizations in the DHF network.</p></section>
+<div class="page-content opportunity-content">
+<p class="lead-copy">This directory displays only business profiles reviewed and approved by DHF and explicitly authorized for public display. Private application details and contact information are not published.</p>
+<div class="directory-search">
+<div class="form-group"><label for="directorySearch">Search businesses</label><input id="directorySearch" type="search" maxlength="100" placeholder="Business name, service or location"></div>
+<div class="form-row"><div class="form-group"><label for="directoryCountry">Country</label><input id="directoryCountry" type="text" maxlength="100" placeholder="Any country"></div><div class="form-group"><label for="directoryCategory">Category</label><input id="directoryCategory" type="text" maxlength="100" placeholder="Any category"></div></div>
+<button id="directorySearchButton" class="btn btn-gold" type="button">Search directory</button>
+<p id="directoryCount" class="form-note" role="status" aria-live="polite">Loading approved listings…</p>
+</div>
+<div id="directoryResults" class="directory-grid" aria-live="polite"><p class="empty-directory">Loading approved business listings…</p></div>
+<div class="application-panel"><h2>Want your business considered?</h2><p>Applications are open to businesses across all 50 states and international markets. Public profiles are published only after review and separate consent.</p><a class="btn btn-gold" href="/business#apply">Apply for a business listing</a></div>
+</div></main><script src="/business-directory.js"></script><script src="/script.js"></script></body></html>

@@ -64,3 +64,30 @@
 .media-photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:900px;margin:1.5rem auto 2.5rem}.media-photo-grid figure{margin:0;background:#141217;border:1px solid rgba(212,175,55,.22);border-radius:10px;padding:.7rem}.media-photo-grid img{display:block;width:100%;height:320px;object-fit:cover;object-position:center 25%;border-radius:7px}.media-photo-grid figcaption{font-size:.82rem;color:var(--text-dim);padding:.6rem .2rem .1rem;text-align:center}@media(max-width:680px){.media-photo-grid{grid-template-columns:1fr}.media-photo-grid img{height:280px}}
 
 .identity-choice-photo-person{object-position:24% center}.media-photo-documentary{object-fit:contain!important;background:#08080a}
+
+/* DHF Opportunity Network */
+.opportunity-content{max-width:1100px}
+.opportunity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:1rem;margin:1.5rem 0 2.5rem}
+.opportunity-card{position:relative;padding:1.5rem;background:linear-gradient(145deg,#1b1524,#111);border:1px solid rgba(169,132,227,.3);border-radius:12px;min-height:190px}
+.opportunity-card h3{font-family:var(--font-head);color:var(--gold);font-size:1.12rem;margin:.45rem 0 .7rem}
+.opportunity-card p{color:var(--text-dim);font-size:.92rem;margin:0 0 .9rem}
+.opportunity-number{font-size:.72rem;letter-spacing:.18em;color:#b89ae8;font-weight:700}
+.application-panel{margin:3rem 0;padding:clamp(1.25rem,3vw,2.25rem);border:1px solid rgba(212,175,55,.28);border-radius:14px;background:linear-gradient(145deg,#1a1422,#101014)}
+.application-panel h2{margin-top:.35rem}
+.application-panel>p{max-width:780px}
+.opportunity-form{max-width:760px;margin:1.5rem auto 0}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.consent-group{display:flex;flex-direction:column;gap:.8rem;margin:1.25rem 0}
+.consent-group label{display:flex;align-items:flex-start;gap:.65rem;color:var(--text-dim);font-size:.88rem;line-height:1.5;text-transform:none;letter-spacing:0}
+.consent-group input{width:auto;flex:0 0 auto;margin-top:.25rem;accent-color:var(--gold)}
+.form-note{font-size:.8rem;color:var(--text-dim);margin-top:.9rem;line-height:1.6}
+.directory-search{padding:1.5rem;margin:1rem 0 2rem;background:#141217;border:1px solid rgba(212,175,55,.2);border-radius:12px}
+.directory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin:1.5rem 0 2.5rem}
+.directory-card{padding:1.35rem;background:#17131d;border:1px solid rgba(155,114,212,.3);border-radius:10px}
+.directory-card h3{font-family:var(--font-head);font-size:1.1rem;color:var(--gold);margin-bottom:.55rem}
+.directory-card p{font-size:.9rem;margin:.45rem 0;color:var(--text-dim)}
+.directory-card .directory-category{color:#c6a8f3;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}
+.directory-card .directory-location{font-size:.8rem;color:var(--silver)}
+.directory-card a{display:inline-block;margin-top:.65rem;color:var(--gold);font-weight:700}
+.empty-directory{grid-column:1/-1;padding:2rem;text-align:center;color:var(--text-dim);border:1px dashed rgba(212,175,55,.35);border-radius:10px}
+@media(max-width:640px){.form-row{grid-template-columns:1fr;gap:0}.application-panel{padding:1.2rem}.opportunity-card{min-height:0}}
