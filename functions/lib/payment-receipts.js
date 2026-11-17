@@ -19,7 +19,7 @@ export async function createReceiptToken(invoiceId, secret) {
 
 export async function createPaidReceipt({ DB, env, invoiceId, providerId, providerReference, amountCents, currency = 'usd', paidAt, paymentMethod = null }) {
   if (!DB || !env?.DHF_RECEIPT_TOKEN_SECRET) throw new Error('Receipt storage is not configured.');
-  if (!['stripe', 'flo', 'manual'].includes(providerId)) throw new Error('Unsupported receipt provider.');
+  if (providerId !== 'manual') throw new Error('Unsupported receipt provider.');
   if (!Number.isSafeInteger(amountCents) || amountCents < 0) throw new Error('Invalid paid amount.');
   if (currency !== 'usd') throw new Error('Unsupported receipt currency.');
   if (paymentMethod && !['apple_pay', 'card', 'ach', 'bank_transfer', 'other'].includes(paymentMethod)) throw new Error('Invalid receipt payment method.');
