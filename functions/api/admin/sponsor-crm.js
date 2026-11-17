@@ -24,7 +24,9 @@ function cents(value, optional = true) {
 function dateOrNull(value) {
   if (value === null || value === undefined || value === '') return null;
   const s = String(value);
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s + 'T00:00:00Z')) ? s : NaN;
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(s)) return NaN;
+  const parsed = new Date(s + 'T00:00:00Z');
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === s ? s : NaN;
 }
 function safeHttpsUrl(value) {
   const s = text(value, 1000);
