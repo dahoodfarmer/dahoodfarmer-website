@@ -1,7 +1,7 @@
 # DHF Payment Center — Preview Setup
 
 **Environment:** Cloudflare Pages Preview only.  
-**Production:** No production database, secret, DNS, webhook, or deployment changes are included.
+**Production:** No production database, secret, DNS, deployment or payment activation changes.
 
 ## Isolated Preview resources
 
@@ -10,71 +10,46 @@
 | DB | dahoodfarmer-preview-db | ca5786b1-751e-4cee-b595-3a4b60061cc9 |
 | SESSIONS | dahoodfarmer-preview-sessions | 2218d0643bab47e0b1bd46fd0e473637 |
 
-The Pages project production branch remains `site-rebuild-v2`. The current payment work is on `feature/dhf-provider-neutral-payment-center`; its deployment is a Preview deployment.
+The production branch remains site-rebuild-v2. Payment work is on feature/dhf-provider-neutral-payment-center.
 
-## Payment and receipt controls
+## Preview controls
 
 | Variable | Preview setting | Purpose |
 |---|---|---|
-| DHF_PAYMENTS_ENABLED | `false` | Master payment kill switch |
-| DHF_PAYMENT_PROVIDER | `none` | No provider selected |
-| DHF_PAYMENT_METHODS | Empty | No payment method advertised as available |
-| DHF_INVOICING_ENABLED | `false` | Sponsor invoice creation disabled |
-| DHF_CHECKOUT_ENABLED | `false` | General checkout disabled |
-| DHF_STRIPE_EXPECT_LIVEMODE | `false` | Reject live-mode expectations |
-| DHF_RECEIPT_TOKEN_SECRET | Preview secret required; minimum 32 random characters | HMAC key for opaque receipt URLs |
-| DHF_RECEIPT_EMAIL_ENABLED | `false` | Receipt email kill switch |
-| RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery remains unavailable |
-| PUBLIC_SITE_URL | Not set in Preview | Configure the Preview hostname before any owner-approved email test; email remains disabled |
+| DHF_INTERNAL_INVOICING_ENABLED | true | Allow DHF-owned invoice creation in the Access-protected Preview CRM |
+| DHF_PAYMENTS_ENABLED | false | Master payment kill switch |
+| DHF_PAYMENT_PROVIDER | none | No provider selected |
+| DHF_PAYMENT_METHODS | Empty | No method advertised as available |
+| DHF_CHECKOUT_ENABLED | false | Checkout disabled |
+| DHF_INVOICING_ENABLED | false | Provider invoicing disabled; DHF internal invoicing is separate |
+| DHF_RECEIPT_EMAIL_ENABLED | false | Customer email kill switch |
+| DHF_RECEIPT_TOKEN_SECRET | Preview secret only | Receipt URL signing key; never place in Git |
+| RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery unavailable |
 
-The Preview configuration contains Stripe secret bindings, but Cloudflare masks their values. The application now enforces the configured Stripe API-key mode before outbound API calls and rejects webhook events whose `livemode` flag does not match `DHF_STRIPE_EXPECT_LIVEMODE`. The actual key mode and webhook-secret pairing still require an authenticated provider test; no Stripe API request or payment transaction has been performed. Do not infer test-mode readiness from the existence of a secret binding alone.
-
-A paid webhook is deliberately rejected with a retryable error until the dedicated receipt-token secret is present. Webhook events now have durable processing states: completed duplicates are acknowledged without repeating side effects, and failed events can be retried. Stale processing claims can be reclaimed after five minutes. Receipt email remains off even when a receipt is created.
+No Stripe key, webhook secret, Stripe account, Stripe checkout or Stripe API dependency is used by the current application code. Any previously entered Stripe Preview key is not used by this build.
 
 ## Migrations
 
-Apply to the isolated Preview main DB in order:
-
-- `0006_sponsor_crm.sql`
-- `0007_sponsor_invoices.sql`
-- `0008_stripe_invoicing.sql`
-- `0009_sponsor_prospect_pipeline.sql`
-- `0010_provider_neutral_payments.sql`
-- `0011_provider_customer_reference.sql`
-- `0012_payment_receipts.sql`
-- `0013_webhook_idempotency.sql`
-
-Do not apply these migrations to Production without separate review and explicit owner approval. The previous experimental `PAYMENTS_DB` is not used by this sponsor-invoice design.
+Preview already has migrations 0010 through 0013 applied. Earlier migration 0008 contains historical Stripe-named columns; it remains in place for schema compatibility and is not an active integration. Do not alter Production schema as part of this Preview work.
 
 ## Current behavior
 
-- Sponsor inquiries and pipeline can be reviewed in the private CRM.
-- Invoice creation requires a signed agreement, contracted stage, agreed server-side amount, valid billing contact, and future due date.
-- Invoice issuing is blocked unless a provider is explicitly selected and the master payment and invoice flags are enabled.
-- The Payment Center is informational only; Apple Pay, cards, and ACH are shown as not activated.
-- The provider adapter contract and Stripe invoice adapter are implemented, but no provider is activated and no transaction is submitted.
-- QR codes are not generated until a secure opaque invoice URL exists.
-- Migration 0012 adds a durable receipt ledger. A verified paid webhook creates at most one receipt per invoice; the owner ledger exposes the corresponding customer receipt page.
-- Receipt email delivery is implemented but remains disabled. No Resend sender credentials are configured, and no customer email has been sent.
-- The owner ledger is read-only. It does not create invoices, initiate charges, or issue refunds.
+- Sponsor CRM remains protected by owner-only Cloudflare Access.
+- DHF invoice creation uses the signed agreement and server-side agreed amount.
+- Each invoice gets a random opaque URL token; only its hash is stored.
+- Resuming an open invoice rotates its URL token. The previous token stops resolving.
+- Customer invoice pages are no-index, no-store and printable.
+- Invoice creation does not contact a payment provider, charge a customer, send an email or mark an invoice paid.
+- Apple Pay, cards, ACH and bank transfer are not activated.
+- The permanent Payment Center QR and invoice QR remain to be implemented and tested.
+- Payment collection, checkout and receipt email remain disabled.
 
-## Verification completed
+## Preview acceptance work remaining
 
-- Migrations 0010, 0011, 0012, and 0013 are applied to the isolated Preview database only.
-- Preview D1 checks show zero invoice, receipt, and partnership records. This explains the zero totals currently displayed; it is an empty test ledger, not evidence of real-world payments.
-- `PRAGMA foreign_key_check` returned no rows.
-- Current Preview deployment `a8858eae-0250-48fe-af15-159100fc9f1e` completed successfully for commit `54a2d3a787d42988300603035733b2ba1fe83c50`.
-- GitHub Actions Website CI run #246 completed successfully with 115 passing tests on commit `54a2d3a787d42988300603035733b2ba1fe83c50`.
-- Production and Preview Access audiences are distinct, and the Preview/Production D1 and KV bindings are isolated.
-- Payment, invoicing, checkout, and receipt email flags remain disabled. A read-only, Access-protected Stripe test-mode health endpoint is available at `/api/admin/payment-provider-health`; it makes only a GET request to Stripe's account endpoint and does not create invoices or charges.
+1. Add QR generation for the permanent Payment Center URL and each secure invoice URL.
+2. Add owner-only bank-transfer reconciliation with amount matching and explicit confirmation of cleared funds.
+3. Add the receipt creation flow after verified manual settlement.
+4. Test invoice token rotation, expiry/revocation, QR scan routing and receipt display with synthetic Preview records.
+5. Research compliant Apple Pay options without creating accounts or enabling payments.
 
-## Remaining Preview gates
-
-1. Open the private read-only Stripe test-mode health check at `/api/admin/payment-provider-health` after the owner confirms the route is ready; it performs only GET /v1/account and never creates invoices or charges.
-2. Confirm the dedicated receipt-token secret is present in Preview and keep the email switch off.
-3. Verify the Stripe account and matching Preview test-mode API/webhook credentials without exposing secret values or creating a duplicate account.
-4. Run a synthetic invoice-to-paid-webhook-to-receipt test in Stripe test mode, including duplicate-event/idempotency checks.
-5. Verify customer receipt rendering and owner-ledger reconciliation against the same synthetic record.
-6. Exercise refund and payment-failure handling. ACH/bank-transfer support requires a provider capability check and a separate reconciliation test; it must not be advertised as active until verified.
-
-No Production release, live payment activation, customer email delivery, or real-money transaction is authorized by this Preview setup.
+No Production release, customer email, live payment or real-money transaction is authorized by this Preview setup.
