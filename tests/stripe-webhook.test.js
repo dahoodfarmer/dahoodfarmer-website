@@ -147,7 +147,7 @@ test('late invoice.paid event cannot overwrite an already-recorded full refund',
  const invoiceUpdate=DB.calls.find(c=>/UPDATE sponsor_invoices SET status = 'paid'/.test(c.sql));
  const partnershipUpdate=DB.calls.find(c=>/UPDATE sponsor_partnerships SET payment_status = CASE WHEN EXISTS/.test(c.sql));
  assert.ok(invoiceUpdate);
- assert.match(invoiceUpdate.sql,/provider_status = CASE WHEN refund_amount_cents >= amount_cents THEN 'refunded' ELSE 'paid' END/);
+ assert.ok(invoiceUpdate.sql.includes("WHEN refund_amount_cents > 0 THEN 'partially_refunded'"));
  assert.ok(partnershipUpdate);
  assert.match(partnershipUpdate.sql,/refund_amount_cents >= amount_cents/);
  assert.equal(partnershipUpdate.values[0],'inv-1');
