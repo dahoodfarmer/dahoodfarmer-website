@@ -1,4 +1,4 @@
-# DHF Stripe Invoicing — Preview Setup
+# DHF Payment Center — Preview Setup
 
 **Environment:** Cloudflare Pages Preview only.
 **Production:** No production database, secret, DNS, webhook or deployment changes are included.
@@ -7,40 +7,48 @@
 
 | Binding | Resource | ID |
 |---|---|---|
-| `DB` | `dahoodfarmer-preview-db` | `ca5786b1-751e-4cee-b595-3a4b60061cc9` |
-| `SESSIONS` | `dahoodfarmer-preview-sessions` | `2218d0643bab47e0b1bd46fd0e473637` |
+| DB | dahoodfarmer-preview-db | ca5786b1-751e-4cee-b595-3a4b60061cc9 |
+| SESSIONS | dahoodfarmer-preview-sessions | 2218d0643bab47e0b1bd46fd0e473637 |
 
-The sponsor CRM and Stripe invoice schema are applied only to the isolated Preview main DB.
+## Payment flags
 
-## Required Preview variables
-
-| Name | Type | State |
+| Variable | Preview value | Purpose |
 |---|---|---|
-| `DHF_INVOICING_ENABLED` | Plain text | `false` |
-| `DHF_CHECKOUT_ENABLED` | Plain text | `false` (future non-invoice checkout gate) |
-| `STRIPE_SECRET_KEY` | Secret | Secret binding exists; actual value and mode are not exposed |
-| `STRIPE_WEBHOOK_SECRET` | Secret | Secret binding exists; actual value and event subscriptions are not exposed |
+| DHF_PAYMENTS_ENABLED | false | Master payment kill switch |
+| DHF_PAYMENT_PROVIDER | none | No provider selected |
+| DHF_PAYMENT_METHODS | empty | No payment method advertised as available |
+| DHF_INVOICING_ENABLED | false | Sponsor invoice creation disabled |
+| DHF_CHECKOUT_ENABLED | false | General checkout disabled |
+| DHF_STRIPE_EXPECT_LIVEMODE | false | Existing Stripe test-mode expectation; no live-mode use |
 
-A Stripe publishable key is not required for Stripe-hosted invoice pages. Do not enable invoicing until the secret is confirmed to be a test-mode key in Preview and tax treatment is approved.
+Existing Preview Stripe secret and webhook-secret bindings were previously observed, but their values and actual modes are not exposed here. Their presence does not enable payment processing. No payment API call or transaction has been made as part of this work.
 
 ## Migrations
 
-Apply to the Preview main DB in order:
-- `0006_sponsor_crm.sql`
-- `0007_sponsor_invoices.sql`
-- `0008_stripe_invoicing.sql`
+Apply to the isolated Preview main DB in order:
+- 0006_sponsor_crm.sql
+- 0007_sponsor_invoices.sql
+- 0008_stripe_invoicing.sql
+- 0009_sponsor_prospect_pipeline.sql
+- 0010_provider_neutral_payments.sql
 
-The previous experimental `PAYMENTS_DB` schema is unused by this Stripe Invoicing design and is not bound by the current branch.
+Do not apply these migrations to Production without separate review and explicit owner approval. The previous experimental PAYMENTS_DB is not used by this sponsor-invoice design.
 
 ## Current behavior
 
-- Sponsor inquiries and CRM pipeline can be reviewed.
-- Invoice creation requires a signed agreement, contracted stage, agreed amount, billing email and owner-selected future due date.
-- Invoice issuing returns HTTP 503 while `DHF_INVOICING_ENABLED=false).
-- If enabled after approval, the backend creates a Stripe hosted invoice and does not email the sponsor automatically.
-- Only verified invoice webhooks can mark the sponsor payment as paid.
-- No test or live transaction has been submitted as part of this implementation.
+- Sponsor inquiries and pipeline can be reviewed in the private CRM.
+- Invoice creation requires a signed agreement, contracted stage, agreed server-side amount, valid billing contact and future due date.
+- Invoice issuing is blocked unless a provider is explicitly selected and the master payments and invoice flags are enabled.
+- The Payment Center is informational only; Apple Pay, cards and ACH are shown as not activated.
+- The provider adapter contract and Stripe invoice adapter are implemented, but no provider is activated and no transaction is submitted.
+- QR codes are not yet generated; a QR is added only after a secure opaque invoice URL exists.
 
-## Production gate
+## Remaining Preview gates
 
-Production requires a separately reviewed Stripe configuration, production webhook endpoint and secret, production schema application, tax decision, customer terms, refund policy, end-to-end test and explicit owner approval. Never enable live invoicing as part of Preview work.
+1. Apply migration 0010 to the isolated Preview DB and verify schema/indexes.
+2. Run the full GitHub Actions test suite and review the result.
+3. Confirm the protected Preview can be opened by the owner for mobile visual review.
+4. If the owner chooses Stripe, verify the existing account and Preview test-mode keys without creating a duplicate account. If the owner chooses FLO, obtain its written API/acquirer specifications first.
+5. Complete test-mode payment, webhook, refund and ACH/bank-transfer reconciliation tests only after separate authorization to configure and test the provider.
+
+No Production release or live payment activation is authorized by this Preview setup.
