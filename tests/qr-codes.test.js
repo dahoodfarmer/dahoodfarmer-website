@@ -10,6 +10,8 @@ test('permanent Payment Center QR uses a local QR library and stable /pay destin
   assert.match(page, /id="payment-center-qr"/);
   assert.match(page, /window\.location\.origin\+'\/pay'/);
   assert.match(page, /download-payment-center-qr/);
+  assert.match(page, /ACH Bank Debit/);
+  assert.match(page, /Bank Transfer/);
   assert.match(page, /src="\/js\/qrcode\.min\.js"/);
   assert.match(redirects, /^\/pay \/payment-center 301/m);
   assert.ok(library.length > 10000);
