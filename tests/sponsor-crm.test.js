@@ -15,6 +15,11 @@ function fakeDb(options = {}) {
             async all() { calls.push({ kind: 'all', sql, values }); return { results: options.rows || [] }; },
             async first() {
               calls.push({ kind: 'first', sql, values });
+              if (/recipient_name/.test(sql)) return options.receiptInvoice ?? {
+                invoice_id: 'inv-existing-paid', partnership_id: 4, description: 'Corporate sponsorship',
+                amount_cents: 50000, recipient_name: 'Buyer', recipient_email: 'buyer@example.com',
+                business_name: 'Example Sponsor'
+              };
               if (/FROM opportunity_applications/i.test(sql)) return options.application ?? sponsorApp;
               if (/FROM sponsor_partnerships/i.test(sql)) return options.partnership ?? { id: 4, application_id: 12, stage: 'prospect' };
               if (/FROM sponsor_invoices/i.test(sql)) return options.openInvoice ?? null;
@@ -215,6 +220,7 @@ test('reconciling an already-paid provider invoice creates the missing receipt o
   const DB = fakeDb({
     partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'invoice_sent', contact_email: 'buyer@example.com', contact_name: 'Buyer', organization: 'Example Sponsor', stripe_customer_id: 'cus_test_1' },
     openInvoice: { invoice_id: 'inv-existing-paid', partnership_id: 4, amount_cents: 50000, due_date: '2026-12-31', status: 'issued', stripe_invoice_id: 'in_existing_paid' },
+    receiptInvoice: { invoice_id: 'inv-existing-paid', partnership_id: 4, description: 'Corporate sponsorship', amount_cents: 50000, recipient_name: 'Buyer', recipient_email: 'buyer@example.com', business_name: 'Example Sponsor' },
     first: { receipt_id: 'DHF-20261117-ABCD1234', invoice_id: 'inv-existing-paid', recipient_email: 'buyer@example.com', amount_cents: 50000, currency: 'usd', paid_at: '2026-11-17T12:00:00.000Z', email_status: 'not_configured' }
   });
   const oldFetch = globalThis.fetch;
