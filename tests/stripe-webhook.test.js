@@ -23,7 +23,7 @@ function eventRequest(payload,header){
 
 test('verified invoice.paid webhook marks invoice and partnership paid',async()=>{
  const DB=fakeDb();
- const event={id:'evt_paid_1',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,hosted_invoice_url:'https://invoice.stripe.com/i/test',invoice_pdf:'https://files.stripe.com/test.pdf',number:'INV-001',metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const event={livemode:false,id:'evt_paid_1',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,hosted_invoice_url:'https://invoice.stripe.com/i/test',invoice_pdf:'https://files.stripe.com/test.pdf',number:'INV-001',metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test',DHF_RECEIPT_TOKEN_SECRET:'test-only-secret-that-is-at-least-32-chars'}});
  assert.equal(response.status,200);
@@ -34,16 +34,25 @@ test('verified invoice.paid webhook marks invoice and partnership paid',async()=
 
 test('paid webhook remains retryable until receipt-token security is configured',async()=>{
  const DB=fakeDb();
- const event={id:'evt_paid_no_receipt_secret',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const event={livemode:false,id:'evt_paid_no_receipt_secret',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
  assert.equal(response.status,503);
  assert.equal(DB.calls.length,0);
 });
 
+test('rejects live-mode Stripe events in a test-mode Preview environment',async()=>{
+ const DB=fakeDb();
+ const event={livemode:true,id:'evt_live_in_preview',type:'invoice.paid',data:{object:{id:'in_live_1',status:'paid',currency:'usd',total:50000,amount_paid:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const payload=JSON.stringify(event);
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',DHF_STRIPE_EXPECT_LIVEMODE:'false',STRIPE_WEBHOOK_SECRET:'whsec_test',DHF_RECEIPT_TOKEN_SECRET:'test-only-secret-that-is-at-least-32-chars'}});
+ assert.equal(response.status,400);
+ assert.equal(DB.calls.length,0);
+});
+
 test('invoice.payment_failed records failed payment without closing the invoice',async()=>{
  const DB=fakeDb();
- const event={id:'evt_failed_1',type:'invoice.payment_failed',data:{object:{id:'in_test_1',status:'open',currency:'usd',total:50000,hosted_invoice_url:'https://invoice.stripe.com/i/test',metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const event={livemode:false,id:'evt_failed_1',type:'invoice.payment_failed',data:{object:{id:'in_test_1',status:'open',currency:'usd',total:50000,hosted_invoice_url:'https://invoice.stripe.com/i/test',metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
  assert.equal(response.status,200);
@@ -52,7 +61,7 @@ test('invoice.payment_failed records failed payment without closing the invoice'
 
 test('invoice.voided marks an unpaid invoice void',async()=>{
  const DB=fakeDb();
- const event={id:'evt_void_1',type:'invoice.voided',data:{object:{id:'in_test_1',status:'void',currency:'usd',total:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const event={livemode:false,id:'evt_void_1',type:'invoice.voided',data:{object:{id:'in_test_1',status:'void',currency:'usd',total:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
  assert.equal(response.status,200);
@@ -61,7 +70,7 @@ test('invoice.voided marks an unpaid invoice void',async()=>{
 
 test('full charge.refunded event marks the partnership refunded',async()=>{
  const DB=fakeDb();
- const event={id:'evt_refund_1',type:'charge.refunded',data:{object:{id:'ch_test_1',invoice:'in_test_1',amount_refunded:50000}}};
+ const event={livemode:false,id:'evt_refund_1',type:'charge.refunded',data:{object:{id:'ch_test_1',invoice:'in_test_1',amount_refunded:50000}}};
  const payload=JSON.stringify(event);
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test'}});
  assert.equal(response.status,200);
@@ -78,7 +87,7 @@ test('rejects an invalid Stripe webhook signature',async()=>{
 
 test('rejects mismatched invoice metadata and totals',async()=>{
  const DB=fakeDb();
- const event={id:'evt_mismatch',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:10000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const event={livemode:false,id:'evt_mismatch',type:'invoice.paid',data:{object:{id:'in_test_1',status:'paid',currency:'usd',total:10000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
  const payload=JSON.stringify(event);
  const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:{DB,DHF_PAYMENTS_ENABLED:'true',DHF_PAYMENT_PROVIDER:'stripe',STRIPE_WEBHOOK_SECRET:'whsec_test',DHF_RECEIPT_TOKEN_SECRET:'test-only-secret-that-is-at-least-32-chars'}});
  assert.equal(response.status,400);
