@@ -81,7 +81,7 @@ test('payment center is informational only until an authorized provider is appro
   const html=read('public/payment-center.html');
   assert.match(html,/Apple Pay/);
   assert.match(html,/Debit &amp; Credit Cards/);
-  assert.match(html,/ACH \/ Bank Transfer/);
+  assert.match(html,/ACH Bank Debit/);
   assert.match(html,/Payments are not being accepted through this page yet/);
   assert.match(html,/Not activated/);
   assert.doesNotMatch(html,/<form\b/i);
