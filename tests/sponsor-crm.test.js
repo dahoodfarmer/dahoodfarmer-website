@@ -38,7 +38,7 @@ test('sponsor CRM GET returns prospect, partnership, deliverable and activity co
   const response = await onRequestGet({ env: { DB } });
   const body = await response.json();
   assert.equal(response.status, 200);
-  assert.deepEqual(Object.keys(body), ['applications', 'partnerships', 'deliverables', 'activities']);
+  assert.deepEqual(Object.keys(body), ['applications', 'partnerships', 'deliverables', 'activities', 'invoice_issuing_enabled']);
   assert.equal(DB.calls.filter(c => c.kind === 'all').length, 4);
 });
 
