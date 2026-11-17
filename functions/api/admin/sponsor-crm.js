@@ -30,7 +30,17 @@ function dateOrNull(value) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === s ? s : NaN;
 }
 
+function assertStripeKeyMode(env) {
+  const expected = env.DHF_STRIPE_EXPECT_LIVEMODE;
+  const key = typeof env.STRIPE_SECRET_KEY === 'string' ? env.STRIPE_SECRET_KEY : '';
+  const match = key.match(/^(?:sk|rk)_(test|live)_/);
+  if (!['true', 'false'].includes(expected) || !match || match[1] !== (expected === 'true' ? 'live' : 'test')) {
+    throw new Error('Stripe API key mode does not match this environment.');
+  }
+}
+
 async function stripeRequest(path, env, method = 'GET', params = null, idempotencyKey = '') {
+  assertStripeKeyMode(env);
   const headers = { Authorization: 'Bearer ' + env.STRIPE_SECRET_KEY };
   const init = { method, headers };
   if (params) {
