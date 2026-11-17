@@ -77,7 +77,8 @@ export async function onRequestPost({ request, env }) {
       if (!DIVISIONS.has(division)) return json({ error: 'Invalid sponsor division.' }, 422);
       if (Number.isNaN(proposed)) return json({ error: 'Proposed amount must be between $1 and $1,000,000.' }, 422);
       const application = await env.DB.prepare('SELECT id, application_type, status FROM opportunity_applications WHERE id = ?').bind(applicationId).first();
-      if (!application || application.application_type !== 'sponsor') return json({ error: 'Sponsor application not found.' }, 404);\n      if (application.status === 'declined') return json({ error: 'A declined sponsor inquiry cannot be moved into the active pipeline.' }, 409);
+      if (!application || application.application_type !== 'sponsor') return json({ error: 'Sponsor application not found.' }, 404);
+      if (application.status === 'declined') return json({ error: 'A declined sponsor inquiry cannot be moved into the active pipeline.' }, 409);
       const result = await env.DB.prepare(
         "INSERT OR IGNORE INTO sponsor_partnerships (application_id, division, package_name, proposed_amount_cents) VALUES (?, ?, ?, ?)"
       ).bind(applicationId, division, packageName, proposed).run();
