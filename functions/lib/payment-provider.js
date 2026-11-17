@@ -47,7 +47,7 @@ async function verifyStripeWebhook(payload, header, secret) {
   const parts = header.split(',').map(part => part.split('='));
   const timestamp = parts.find(([key]) => key === 't')?.[1];
   const signatures = parts.filter(([key]) => key === 'v1').map(([, value]) => value);
-  if (!timestamp || !/^\\d+$/.test(timestamp) || !signatures.length) return false;
+  if (!timestamp || !/^\d+$/.test(timestamp) || !signatures.length) return false;
   if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
