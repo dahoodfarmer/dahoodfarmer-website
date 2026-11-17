@@ -16,7 +16,8 @@ function fakeDb(options = {}) {
             async first() {
               calls.push({ kind: 'first', sql, values });
               if (/FROM opportunity_applications/i.test(sql)) return options.application ?? sponsorApp;
-              if (/FROM sponsor_partnerships/i.test(sql)) return options.partnership ?? { id: 4, application_id: 12, stage: 'prospect' };\n              if (/FROM sponsor_invoices/i.test(sql)) return options.openInvoice ?? null;
+              if (/FROM sponsor_partnerships/i.test(sql)) return options.partnership ?? { id: 4, application_id: 12, stage: 'prospect' };
+              if (/FROM sponsor_invoices/i.test(sql)) return options.openInvoice ?? null;
               if (/FROM sponsor_deliverables/i.test(sql)) return options.deliverable ?? { id: 9 };
               return options.first ?? { id: 4 };
             },
