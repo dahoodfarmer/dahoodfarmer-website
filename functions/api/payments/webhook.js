@@ -14,6 +14,10 @@ export async function onRequestPost({ request, env }) {
   if (!await provider.verifyWebhook(raw, request.headers.get('Stripe-Signature'))) return json({ error: 'Invalid signature.' }, 400);
   let event;
   try { event = JSON.parse(raw); } catch { return json({ error: 'Invalid event.' }, 400); }
+  const expectedLiveMode = env.DHF_STRIPE_EXPECT_LIVEMODE === 'true';
+  if (typeof event.livemode !== 'boolean' || event.livemode !== expectedLiveMode) {
+    return json({ error: 'Stripe event mode does not match this environment.' }, 400);
+  }
   const object = event.data?.object;
   if (!object) return json({ received: true });
   if (event.type === 'invoice.paid' && (!env.DHF_RECEIPT_TOKEN_SECRET || env.DHF_RECEIPT_TOKEN_SECRET.length < 32)) return json({ error: 'Receipt security is not configured; paid-event reconciliation will retry.' }, 503);
