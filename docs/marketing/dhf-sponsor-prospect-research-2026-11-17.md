@@ -8,15 +8,15 @@
 
 | Prospect | Fit / division | Why it belongs on the research list | Qualification status |
 |---|---|---|---|
-| The Tractor Mart — Columbia | Business Network; Marketplace; Land & Experiences | Local farm-equipment dealer; direct relevance to growers, acreage owners, and equipment education | Category fit only; sponsorship policy and decision-maker not verified |
-| Carolina Power Equipment — Cayce / Columbia metro | Business Network; Marketplace; Summits & Events | Tractor, outdoor-power, and light-construction equipment relevance | Category fit only; sponsorship policy and decision-maker not verified |
+| Tractor Supply Co. — 7831 Garners Ferry Rd, Columbia | Business Network; Marketplace; Land & Experiences | Local farm-equipment dealer; direct relevance to growers, acreage owners, and equipment education | Category fit only; sponsorship policy and decision-maker not verified |
+| The Tractor Mart — Columbia | Business Network; Marketplace; Land & Experiences | Tractor, outdoor-power, and light-construction equipment relevance | Category fit only; sponsorship policy and decision-maker not verified |
 | Catoe's Power Equipment — Columbia | Business Network; Marketplace; Academy | Local equipment sales, service, and repair relevance to practical farm/property content | Category fit only; sponsorship policy and decision-maker not verified |
 | CB Forrest Workwear — Cayce | Marketplace; Land & Experiences | Work boots and durable workwear are relevant to farm, ranch, and outdoor audiences | Category fit only; sponsorship policy and decision-maker not verified |
 | Mast General Store — Columbia | Marketplace; Land & Experiences | Outdoor gear, apparel, footwear, and regional lifestyle alignment | Category fit only; sponsorship policy and decision-maker not verified |
 | FLO Business Solutions — Columbia | Business Network; Academy | Local B2B payment/POS and business services; potential fit for entrepreneur education | Category fit only; sponsorship policy and decision-maker not verified |
 | Pollock Company — West Columbia | Business Network; Academy | Local business technology, connectivity, cybersecurity, and managed services | Category fit only; sponsorship policy and decision-maker not verified |
 
-**First-dollar prioritization:** Begin qualification with The Tractor Mart, Carolina Power Equipment, Catoe's Power Equipment, and CB Forrest Workwear because their products naturally align with the agriculture, workwear, and equipment subject matter. Offer only a low-cost, tightly scoped pilot if the prospect confirms an appropriate budget and a deliverable that DHF can fulfill now. Do not imply any prior relationship.
+**First-dollar prioritization:** Begin qualification with the Columbia Tractor Supply store (using the official local-store route), The Tractor Mart, Carolina Power Equipment, Catoe's Power Equipment, and CB Forrest Workwear because their products naturally align with the agriculture, workwear, and equipment subject matter. Offer only a low-cost, tightly scoped pilot if the prospect confirms an appropriate budget and a deliverable that DHF can fulfill now. Do not imply any prior relationship.
 
 ## B. South Carolina and regional sponsorship pathways
 
