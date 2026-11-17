@@ -188,6 +188,11 @@ export async function onRequestPost({ request, env }) {
     if (action === 'create_invoice') {
       if (env.DHF_INVOICING_ENABLED !== 'true') return json({ error: 'Sponsor invoice issuing is disabled until tax treatment and test-mode Stripe settings are approved.' }, 503);
       if (!env.STRIPE_SECRET_KEY) return json({ error: 'Stripe invoicing is not configured in this environment.' }, 503);
+      if (!['true','false'].includes(env.DHF_STRIPE_EXPECT_LIVEMODE)) return json({ error: 'Expected Stripe test/live mode is not configured.' }, 503);
+      let stripeAccount;
+      try { stripeAccount = await stripeRequest('account', env); }
+      catch { return json({ error: 'Stripe account mode could not be verified.' }, 503); }
+      if (stripeAccount.livemode !== (env.DHF_STRIPE_EXPECT_LIVEMODE === 'true')) return json({ error: 'Stripe key mode does not match this environment. Invoice creation blocked.' }, 409);
       const partnershipId = Number(data.partnership_id);
       const dueDate = dateOrNull(data.due_date);
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
