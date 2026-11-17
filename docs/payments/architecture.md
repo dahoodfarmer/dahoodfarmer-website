@@ -55,7 +55,7 @@ A QR code is only a visual encoding of an opaque DHF payment URL; it is not a pr
 
 - Main D1 DB: sponsor applications, CRM partnerships, agreements, deliverables, activities and invoice/provider references.
 - SESSIONS: application and admin rate limiting.
-- Migration 0010 adds provider-neutral identifiers and an idempotent provider-event ledger; migration 0011 adds the provider-neutral customer reference; migration 0012 adds the durable receipt ledger. Existing Stripe-specific fields remain temporarily for compatibility.
+- Migration 0010 adds provider-neutral identifiers and an idempotent provider-event ledger; migration 0011 adds the provider-neutral customer reference; migration 0012 adds the durable receipt ledger; migration 0013 adds webhook processing states, duplicate suppression and safe retry tracking. Existing Stripe-specific fields remain temporarily for compatibility.
 - Production databases, secrets, DNS and deployments remain untouched.
 
 ## Explicit exclusions
