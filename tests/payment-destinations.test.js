@@ -3,38 +3,42 @@ import assert from 'node:assert/strict';
 import { getConfiguredPaymentDestinations } from '../functions/lib/payment-destinations.js';
 import { onRequestGet } from '../functions/api/payment-options.js';
 
-test('only configured official HTTPS PayPal and Venmo destinations are returned', () => {
+test('only configured official HTTPS Square payment links are returned', () => {
   const methods = getConfiguredPaymentDestinations({
-    DHF_PAYPAL_PAYMENT_URL: 'https://www.paypal.com/paypalme/dhf',
-    DHF_VENMO_PAYMENT_URL: 'https://venmo.com/u/dahoodfarmer',
-    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app/$dahoodfarmer'
+    DHF_SQUARE_PAYMENT_URL: 'https://square.link/u/DHFbusiness'
   });
-  assert.deepEqual(methods.map(item => item.id), ['paypal', 'venmo', 'cash_app']);
-  assert.equal(methods[0].url, 'https://www.paypal.com/paypalme/dhf');
-  assert.equal(methods[2].url, 'https://cash.app/$dahoodfarmer');
+  assert.deepEqual(methods.map(item => item.id), ['square']);
+  assert.equal(methods[0].url, 'https://square.link/u/DHFbusiness');
 });
 
 test('rejects lookalike hosts, non-HTTPS URLs, credentials and unsupported destinations', () => {
-  const methods = getConfiguredPaymentDestinations({
-    DHF_PAYPAL_PAYMENT_URL: 'https://paypal.com.attacker.example/pay',
-    DHF_VENMO_PAYMENT_URL: 'http://venmo.com/u/dhf',
-    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app.attacker.example/$dahoodfarmer'
-  });
-  assert.deepEqual(methods, []);
   assert.deepEqual(getConfiguredPaymentDestinations({
-    DHF_PAYPAL_PAYMENT_URL: 'https://user:pass@paypal.com/pay',
-    DHF_VENMO_PAYMENT_URL: 'https://venmo.com:8443/u/dhf'
+    DHF_SQUARE_PAYMENT_URL: 'https://square.link.attacker.example/pay'
+  }), []);
+  assert.deepEqual(getConfiguredPaymentDestinations({
+    DHF_SQUARE_PAYMENT_URL: 'http://square.link/u/dhf'
+  }), []);
+  assert.deepEqual(getConfiguredPaymentDestinations({
+    DHF_SQUARE_PAYMENT_URL: 'https://user:pass@square.link/u/dhf'
+  }), []);
+  assert.deepEqual(getConfiguredPaymentDestinations({
+    DHF_SQUARE_PAYMENT_URL: 'https://square.link:8443/u/dhf'
+  }), []);
+  assert.deepEqual(getConfiguredPaymentDestinations({
+    DHF_PAYPAL_PAYMENT_URL: 'https://paypal.me/dahoodfarmer',
+    DHF_VENMO_PAYMENT_URL: 'https://venmo.com/u/dahoodfarmer',
+    DHF_CASH_APP_BUSINESS_URL: 'https://cash.app/$dahoodfarmer'
   }), []);
 });
 
 test('public payment-options endpoint returns no-store safe configuration only', async () => {
   const response = await onRequestGet({ env: {
-    DHF_PAYPAL_PAYMENT_URL: 'https://paypal.me/dahoodfarmer'
+    DHF_SQUARE_PAYMENT_URL: 'https://checkout.square.site/DHFbusiness'
   }});
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.methods.length, 1);
-  assert.equal(body.methods[0].id, 'paypal');
+  assert.equal(body.methods[0].id, 'square');
   assert.equal(body.automatic_confirmation, false);
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
 });
