@@ -115,6 +115,7 @@ test('creates a finalized Stripe hosted invoice without sending an email', async
   const oldFetch = globalThis.fetch;
   globalThis.fetch = async (url, init = {}) => {
     calls.push({ url: String(url), init });
+    if (String(url).endsWith('/account')) return new Response(JSON.stringify({ id: 'acct_test', livemode: false }), { status: 200 });
     if (String(url).endsWith('/customers')) return new Response(JSON.stringify({ id: 'cus_test_1' }), { status: 200 });
     if (String(url).endsWith('/invoices')) return new Response(JSON.stringify({ id: 'in_test_1', status: 'draft', amount_due: 0 }), { status: 200 });
     if (String(url).endsWith('/invoiceitems')) return new Response(JSON.stringify({ id: 'ii_test_1' }), { status: 200 });
@@ -122,13 +123,13 @@ test('creates a finalized Stripe hosted invoice without sending an email', async
     throw new Error('Unexpected Stripe request: ' + String(url));
   };
   try {
-    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_INVOICING_ENABLED: 'true', STRIPE_SECRET_KEY: 'sk_test_mock' } });
+    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_INVOICING_ENABLED: 'true', DHF_STRIPE_EXPECT_LIVEMODE: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(body.invoice_url, 'https://invoice.stripe.com/i/test_invoice');
     assert.equal(body.invoice_number, 'INV-TEST-001');
     assert.equal(body.amount_cents, 50000);
-    assert.equal(calls.length, 4);
+    assert.equal(calls.length, 5);
     assert.equal(calls.some(c => c.url.endsWith('/send')), false);
     const invoiceParams = new URLSearchParams(calls.find(c => c.url.endsWith('/invoices')).init.body);
     assert.equal(invoiceParams.get('collection_method'), 'send_invoice');
@@ -155,13 +156,13 @@ test('resumes an existing open Stripe invoice instead of creating a duplicate', 
   });
   let calls=0;
   const oldFetch=globalThis.fetch;
-  globalThis.fetch=async(url)=>{calls++;return new Response(JSON.stringify({id:'in_existing',status:'open',amount_due:50000,hosted_invoice_url:'https://invoice.stripe.com/i/existing',invoice_pdf:'https://files.stripe.com/existing.pdf',number:'INV-EXISTING'}),{status:200})};
+  globalThis.fetch=async(url)=>{calls++;return new Response(JSON.stringify(String(url).endsWith('/account')?{id:'acct_test',livemode:false}:{id:'in_existing',status:'open',amount_due:50000,hosted_invoice_url:'https://invoice.stripe.com/i/existing',invoice_pdf:'https://files.stripe.com/existing.pdf',number:'INV-EXISTING'}),{status:200})};
   try {
-    const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_INVOICING_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_mock'}});
+    const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_INVOICING_ENABLED:'true',DHF_STRIPE_EXPECT_LIVEMODE:'false',STRIPE_SECRET_KEY:'sk_test_mock'}});
     const body=await response.json();
     assert.equal(response.status,200);
     assert.equal(body.invoice_url,'https://invoice.stripe.com/i/existing');
-    assert.equal(calls,1);
+    assert.equal(calls,2);
   } finally {globalThis.fetch=oldFetch}
 });
 
