@@ -12,6 +12,8 @@ test('permanent Payment Center QR uses a local QR library and stable /pay destin
   assert.match(page, /download-payment-center-qr/);
   assert.match(page, /ACH Bank Debit/);
   assert.match(page, /Bank Transfer/);
+  assert.match(page, /external-payment-options/);
+  assert.match(page, /dhf-payment-options\.js/);
   assert.match(page, /src="\/js\/qrcode\.min\.js"/);
   assert.match(redirects, /^\/pay \/payment-center 301/m);
   assert.ok(library.length > 10000);
@@ -23,5 +25,7 @@ test('invoice page generates its own QR from the opaque invoice URL', async () =
   assert.match(page, /id="invoice-qr"/);
   assert.match(page, /text:window\.location\.href/);
   assert.match(page, /download-invoice-qr/);
+  assert.match(page, /external-payment-options/);
+  assert.match(page, /dhf-payment-options\.js/);
   assert.match(page, /\/js\/qrcode\.min\.js/);
 });
