@@ -1,5 +1,6 @@
 import { getPaymentProviderConfig, createStripeInvoiceAdapter } from '../../lib/payment-provider.js';
 import { createPaidReceipt } from '../../lib/payment-receipts.js';
+import { sendReceiptEmail } from '../../lib/receipt-email.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
@@ -15,6 +16,7 @@ export async function onRequestPost({ request, env }) {
   try { event = JSON.parse(raw); } catch { return json({ error: 'Invalid event.' }, 400); }
   const object = event.data?.object;
   if (!object) return json({ received: true });
+  if (event.type === 'invoice.paid' && (!env.DHF_RECEIPT_TOKEN_SECRET || env.DHF_RECEIPT_TOKEN_SECRET.length < 32)) return json({ error: 'Receipt security is not configured; paid-event reconciliation will retry.' }, 503);
 
   try {
     if (event.type === 'charge.refunded') {
@@ -67,7 +69,7 @@ export async function onRequestPost({ request, env }) {
       await env.DB.prepare(
         "UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'stripe', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?"
       ).bind(object.id, object.hosted_invoice_url || '', record.partnership_id).run();
-      await createPaidReceipt({
+      const receipt = await createPaidReceipt({
         DB: env.DB,
         env,
         invoiceId: record.invoice_id,
@@ -78,6 +80,7 @@ export async function onRequestPost({ request, env }) {
         paidAt: object.status_transitions?.paid_at ? new Date(object.status_transitions.paid_at * 1000).toISOString() : new Date().toISOString(),
         paymentMethod: null
       });
+      await sendReceiptEmail({ DB: env.DB, env, receipt });
     } else if (event.type === 'invoice.payment_failed') {
       await env.DB.prepare(
         "UPDATE sponsor_invoices SET stripe_status = ?, provider_id = 'stripe', provider_invoice_id = ?, provider_status = ?, hosted_invoice_url = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status <> 'void'"
