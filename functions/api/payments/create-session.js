@@ -130,10 +130,7 @@ export async function onRequestPost({ request, env }) {
 
   let stripeResponse;
   try {
-    stripeResponse = await stripeFetch('checkout/sessions', {
-      ...env,
-      STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY
-    }, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Idempotency-Key': orderId }, body: params.toString() });
+    stripeResponse = await stripeFetch('checkout/sessions', env, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Idempotency-Key': orderId }, body: params.toString() });
   } catch {
     return json({ error: 'The payment service could not be reached. Please try again.' }, 502);
   }
