@@ -1,62 +1,59 @@
-# DHF Sponsor Revenue and Invoice Checkout Architecture
+# DHF Sponsor Invoicing — Stripe Hosted Invoice Page
 
-**Status:** Preview implementation, payment collection disabled by default.
-**Scope:** Sponsor invoices issued only after an owner-approved, signed agreement.
-**Processor:** Stripe Checkout (embedded) for card/wallet collection; DHF is not a payment facilitator or processor.
+**Status:** Preview implementation; invoice issuing is disabled by default.
+**Purpose:** Collect one-time sponsor payments only after an owner-approved written agreement has been signed.
 
-## Sponsor-to-cash workflow
+## Owner-controlled process
 
 1. A company submits the public sponsor inquiry form.
-2. The owner reviews the application in the protected Sponsor CRM.
-3. The owner qualifies the prospect and records the package, agreed amount and written agreement.
-4. The owner records the signed agreement link and signed date.
-5. The CRM issues a one-time, high-entropy invoice link. Only the SHA-256 token hash is stored in the invoice table; the bearer token is shown in the private CRM URL.
-6. The sponsor opens the invoice page and sees only the organization, invoice description, amount, due date and payment state.
-7. The payment API validates the invoice token and reads the amount from D1. The browser cannot set or change the amount.
-8. Stripe Checkout collects payment. DHF does not receive or store card numbers, CVC values or wallet credentials.
-9. A verified Stripe webhook updates the payment ledger, invoice and sponsor CRM. Browser redirects are not proof of payment.
-10. The owner reviews the payment state, deliverables and renewal date in the CRM.
+2. The owner reviews the inquiry in the Cloudflare Access-protected Sponsor CRM.
+3. The owner qualifies the prospect, records the package and agreed amount, and stores the signed agreement link and date.
+4. The owner sets an invoice due date and clicks **Issue / resume Stripe invoice**.
+5. The backend creates or reuses a Stripe Customer, creates a one-time send-invoice invoice and invoice item, finalizes the invoice, and stores the Stripe invoice ID and hosted invoice URL in D1.
+6. The backend does not send an invoice email automatically. The owner reviews and shares the hosted invoice URL with the contracted sponsor.
+7. The sponsor pays on Stripe's hosted invoice page. DHF does not collect or store card numbers or security codes.
+8. A signed Stripe webhook updates the invoice and sponsor CRM. A browser redirect or screenshot is never treated as proof of payment.
+9. The owner tracks deliverables, evidence, payment status and renewal dates in the Sponsor CRM.
+
+## Stripe integration
+
+- Stripe Invoicing API: Customer, Invoice Item, Invoice create, and Invoice finalize operations.
+- Collection method: `send_invoice`.
+- Payment page: Stripe-hosted invoice page (`hosted_invoice_url`).
+- Automatic email sending is not invoked; the owner shares the link manually.
+- Invoice metadata includes DHF invoice, partnership and application identifiers.
+- Idempotency keys are used for customer, invoice, invoice-item and finalize requests.
+- Required webhook events: `invoice.finalized`, `invoice.paid`, `invoice.payment_failed`, `invoice.voided`, and `charge.refunded`.
+- The webhook signature is verified against the raw request body with a five-minute timestamp tolerance.
+- Webhook event IDs are retained in the main D1 database for audit and deduplication.
+- Payment status is updated only from verified Stripe webhook events, not by editing the CRM form.
 
 ## Data boundaries
 
-- Main application `DB`: sponsor applications, CRM records, agreement references, deliverables, activities and sponsor invoices.
-- Preview-only `PAYMENTS_DB`: Stripe order ledger and webhook event IDs.
-- Preview-only `SESSIONS`: rate limits.
-- Production databases and secrets remain untouched by this Preview implementation.
+- Main D1 `DB`: sponsor applications, CRM partnerships, agreements, deliverables, activities, Stripe customer/invoice IDs, hosted invoice URLs and webhook event IDs.
+- `SESSIONS`: application and admin rate limiting.
+- No separate payment ledger database is required for Stripe Invoicing.
+- Production databases, secrets, DNS and deployments remain untouched by this Preview implementation.
 
-The public invoice endpoint never returns private applicant email, internal notes, agreement links or the invoice token hash. The invoice URL itself is a bearer credential and should be sent only to the contracted sponsor contact.
+## Tax and payment configuration gate
 
-## Security controls
+Automatic tax is not enabled in this implementation. Sponsor invoice tax treatment must be confirmed before enabling invoice creation. Stripe Tax requires appropriate tax registrations and configuration; do not assume sponsorship fees are tax-exempt or taxable without qualified accounting advice.
 
-- Explicit `DHF_CHECKOUT_ENABLED=true` gate required before payment collection.
-- Matching Stripe secret and publishable keys required.
-- Webhook signature verified against the raw request body with a five-minute timestamp tolerance.
-- Server-side amount and currency taken from the invoice record.
-- Invoice tokens are high entropy and stored only as SHA-256 hashes.
-- Same-origin checks, allowed-host checks, rate limits and D1 order persistence.
-- Duplicate webhook events are recorded with a unique event ID; invoice/partnership state updates are idempotent.
-- Checkout session is expired if the order cannot be persisted.
-- Owner-only Cloudflare Access protects the Sponsor CRM and admin API.
+The owner must also confirm:
+- Whether sponsor fees require sales tax, VAT or GST, and where.
+- Stripe account test-mode credentials and business/payout setup.
+- Invoice branding, payment methods, due-date policy and reminder settings.
+- The webhook endpoint and exact event subscriptions.
+- Refund, credit-note and cancellation handling.
+- Customer-facing invoice terms and applicable tax language.
 
-## Scope intentionally not enabled
+Keep `DHF_INVOICING_ENABLED=false` until these decisions and test-mode validation are complete.
 
-- No self-service sponsor package checkout.
-- No public product or ticket catalog checkout.
-- No automatic contract generation or electronic signature.
-- No live-mode payment acceptance.
-- No production payment database or production webhook.
-- No refunds or recurring sponsor subscriptions.
-- No payment-provider replacement or integration with FLO Business Solutions.
+## Explicitly not included
 
-## Launch gates
-
-Before a live launch, the owner must complete and approve:
-- Stripe account verification and payout bank setup.
-- A matching test-mode publishable key and successful test checkout in Preview.
-- A webhook endpoint and signing secret configured for the exact environment.
-- Customer-facing terms, refund/cancellation policy, privacy and invoice support process.
-- End-to-end testing of successful, expired, failed, duplicate-webhook and retry flows.
-- A separately provisioned production payment database and production secrets.
-- Explicit written approval to enable Production checkout.
-
-Until then, keep `DHF_CHECKOUT_ENABLED=false`.
+- Live-mode charges or automatic invoice emails.
+- Recurring sponsorship subscriptions.
+- Self-service sponsor package checkout.
+- Public marketplace or ticket checkout.
+- Electronic signatures or automatic contract generation.
+- FLO Business Solutions integration or replacement of Stripe.
