@@ -16,7 +16,7 @@ function fakeDb(options = {}) {
             async first() {
               calls.push({ kind: 'first', sql, values });
               if (/FROM opportunity_applications/i.test(sql)) return options.application ?? sponsorApp;
-              if (/FROM sponsor_partnerships/i.test(sql)) return options.partnership ?? { id: 4, application_id: 12, stage: 'prospect' };
+              if (/FROM sponsor_partnerships/i.test(sql)) return options.partnership ?? { id: 4, application_id: 12, stage: 'prospect' };\n              if (/FROM sponsor_invoices/i.test(sql)) return options.openInvoice ?? null;
               if (/FROM sponsor_deliverables/i.test(sql)) return options.deliverable ?? { id: 9 };
               return options.first ?? { id: 4 };
             },
@@ -98,6 +98,28 @@ test('adds a deliverable to an existing partnership', async () => {
   assert.equal(response.status, 200);
   assert.equal(body.success, true);
   assert.ok(DB.calls.some(c => /INSERT INTO sponsor_deliverables/.test(c.sql)));
+});
+
+
+test('cannot issue a sponsor invoice before a signed agreement and agreed amount', async () => {
+  const DB = fakeDb({ partnership: { id: 4, application_id: 12, contract_status: 'draft', agreed_amount_cents: 50000, package_name: 'Corporate Partner' } });
+  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4 }), env: { DB } });
+  assert.equal(response.status, 409);
+  assert.equal(DB.calls.some(c => /INSERT INTO sponsor_invoices/.test(c.sql)), false);
+});
+
+test('issues a secure sponsor invoice only after agreement is signed', async () => {
+  const DB = fakeDb({ partnership: { id: 4, application_id: 12, contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested' } });
+  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB } });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.success, true);
+  assert.equal(body.amount_cents, 50000);
+  assert.match(body.invoice_url, /^https:\/\/preview\\.example\\/pay\\/invoice\\?token=[a-f0-9]{64}$/);
+  const insert = DB.calls.find(c => /INSERT INTO sponsor_invoices/.test(c.sql));
+  assert.ok(insert);
+  assert.notEqual(insert.values[6], body.invoice_url.split('token=')[1]);
+  assert.ok(DB.calls.some(c => /UPDATE sponsor_partnerships SET payment_status = 'invoice_sent'/.test(c.sql)));
 });
 
 test('adds a dated follow-up activity', async () => {
