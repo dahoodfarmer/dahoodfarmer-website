@@ -1,4 +1,17 @@
 node_modules/
 .wrangler/
-.dev.vars
 *.log
+
+# Local environment files and secrets — never commit real values.
+.env
+.env.*
+!.env.example
+!.env.sample
+.dev.vars
+.dev.vars.*
+
+# Private keys and certificate bundles.
+*.key
+*.pem
+*.p12
+*.pfx
