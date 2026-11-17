@@ -19,7 +19,10 @@
     methods.forEach(function (method) {
       var card = el('article', 'external-payment-option');
       var title = el('h3', '', method.label);
-      var note = el('p', 'muted', 'Continue to the official ' + method.label + ' destination. Enter the exact invoice amount and include the invoice number in the payment note or message.');
+      var invoiceNumber = host.getAttribute('data-invoice-number') || '';
+      var noteText = 'Continue to the official ' + method.label + ' destination. Enter the exact invoice amount and include the invoice number in the payment note or message.';
+      if (invoiceNumber) noteText += ' Invoice number: ' + invoiceNumber + '.';
+      var note = el('p', 'muted', noteText);
       var link = el('a', 'external-payment-link', 'Continue to ' + method.label);
       link.href = method.url;
       link.target = '_blank';
