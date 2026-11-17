@@ -7,14 +7,14 @@
 
 DHF owns the branded Payment Center, sponsor CRM, signed-agreement records, invoice numbering, invoice amounts, secure invoice URLs, QR destinations, payment status, receipts, reporting and reconciliation workflow. The invoice amount is read from the server-side agreed amount on a signed agreement; it is never accepted from the browser.
 
-The current Preview implementation issues a DHF invoice independently of any payment provider. Each invoice receives a random opaque URL token; only its SHA-256 hash is stored. Reissuing the same open invoice rotates its token, making the prior URL unusable. Invoice pages are private/no-index, printable, and display current invoice status. No card or bank credentials are collected.
+The current Preview implementation issues a DHF invoice independently of any payment provider. The permanent Payment Center QR opens the stable /pay route; invoice pages generate a separate QR for their own opaque invoice URL. Each invoice receives a random opaque URL token; only its SHA-256 hash is stored. Reissuing the same open invoice rotates its token, making the prior URL unusable. Invoice pages are private/no-index, printable, and display current invoice status. No card or bank credentials are collected.
 
 ## Two QR destinations
 
 1. **Permanent Payment Center QR:** a stable DHF-owned destination that opens the branded Payment Center.
 2. **Invoice QR:** a unique QR for each invoice, containing only its opaque DHF invoice URL. It resolves to the current invoice amount and status.
 
-A QR is a visual link, not a payment network. Do not encode personal data, bank details, invoice amounts, or credentials in QR payloads. QR rendering is a separate implementation gate and must not use an external QR image service.
+A QR is a visual link, not a payment network. Do not encode personal data, bank details, invoice amounts, or credentials in QR payloads. QR codes are generated locally in the browser using a vendored MIT-licensed QR library; no external QR image service receives invoice URLs.
 
 ## Payment methods and settlement
 
