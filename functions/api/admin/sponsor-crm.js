@@ -107,6 +107,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === 'update') {
+      if (Object.prototype.hasOwnProperty.call(data, 'payment_status') || Object.prototype.hasOwnProperty.call(data, 'invoice_url')) return json({ error: 'Payment status and Stripe invoice links are system-managed.' }, 422);
       const id = Number(data.id);
       if (!Number.isSafeInteger(id) || id < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
       const stage = text(data.stage, 40);
@@ -199,20 +200,19 @@ export async function onRequestPost({ request, env }) {
       ).bind(partnershipId).first();
       if (!partnership) return json({ error: 'Partnership not found.' }, 404);
       if (partnership.payment_status === 'paid' || partnership.payment_status === 'refunded') return json({ error: 'This partnership has already been paid or refunded.' }, 409);
+      if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
+        return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
+      }
+      if (!partnership.contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
+      const openInvoice = await env.DB.prepare(
+        "SELECT * FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
+      ).bind(partnershipId).first();
+      if (openInvoice?.status === 'paid') return json({ error: 'This partnership is already paid.' }, 409);
       if (!['true','false'].includes(env.DHF_STRIPE_EXPECT_LIVEMODE)) return json({ error: 'Expected Stripe test/live mode is not configured.' }, 503);
       let stripeAccount;
       try { stripeAccount = await stripeRequest('account', env); }
       catch { return json({ error: 'Stripe account mode could not be verified.' }, 503); }
       if (stripeAccount.livemode !== (env.DHF_STRIPE_EXPECT_LIVEMODE === 'true')) return json({ error: 'Stripe key mode does not match this environment. Invoice creation blocked.' }, 409);
-
-      if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
-        return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
-      }
-      if (!partnership.contact_email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
-      const openInvoice = await env.DB.prepare(
-        "SELECT * FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
-      ).bind(partnershipId).first();
-      if (openInvoice?.status === 'paid') return json({ error: 'This partnership is already paid.' }, 409);
 
       let invoiceRecord = openInvoice;
       let invoiceId = openInvoice?.invoice_id || crypto.randomUUID();
