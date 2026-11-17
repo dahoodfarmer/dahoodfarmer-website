@@ -162,3 +162,23 @@ test('late invoice.finalized event cannot downgrade a paid or refunded invoice',
  assert.ok(update);
  assert.ok(update.sql.includes("status IN ('paid','refunded','void')"));
 });
+
+
+test('late invoice.finalized event preserves a previously recorded partial refund',async()=>{
+ const DB=fakeDb({refundAmountCents:12000}),event={livemode:false,id:'evt_finalized_after_partial_refund',type:'invoice.finalized',data:{object:{id:'in_test_1',status:'open',currency:'usd',total:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const payload=JSON.stringify(event);
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:baseEnv(DB)});
+ assert.equal(response.status,200);
+ const update=DB.calls.find(c=>/UPDATE sponsor_invoices SET status = CASE/.test(c.sql));
+ assert.ok(update.sql.includes("WHEN refund_amount_cents > 0 THEN 'paid'"));
+ assert.ok(update.sql.includes("WHEN refund_amount_cents > 0 THEN 'partially_refunded'"));
+});
+
+test('late invoice.voided event cannot erase a recorded refund',async()=>{
+ const DB=fakeDb({refundAmountCents:12000}),event={livemode:false,id:'evt_void_after_refund',type:'invoice.voided',data:{object:{id:'in_test_1',status:'void',currency:'usd',total:50000,metadata:{dhf_invoice_id:'inv-1',dhf_partnership_id:'4'}}}};
+ const payload=JSON.stringify(event);
+ const response=await onRequestPost({request:eventRequest(payload,await signature(payload)),env:baseEnv(DB)});
+ assert.equal(response.status,200);
+ const update=DB.calls.find(c=>/UPDATE sponsor_invoices SET status = 'void'/.test(c.sql));
+ assert.ok(update.sql.includes('refund_amount_cents = 0'));
+});
