@@ -30,7 +30,7 @@
 (function(){
  var target=document.getElementById('payment-center-qr');
  if(!target||typeof QRCode!=='function')return;
- new QRCode(target,{text:'https://dahoodfarmer.com/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+ new QRCode(target,{text:window.location.origin+'/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
  var button=document.getElementById('download-payment-center-qr');
  button.addEventListener('click',function(){
   var canvas=target.querySelector('canvas'),img=target.querySelector('img');
