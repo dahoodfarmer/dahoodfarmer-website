@@ -70,10 +70,11 @@ Do not apply these migrations to Production without separate review and explicit
 
 ## Remaining Preview gates
 
-1. Confirm the dedicated receipt-token secret is present in Preview and keep the email switch off.
-2. Verify the Stripe account and matching Preview test-mode API/webhook credentials without exposing secret values or creating a duplicate account.
-3. Run a synthetic invoice-to-paid-webhook-to-receipt test in Stripe test mode, including duplicate-event/idempotency checks.
-4. Verify customer receipt rendering and owner-ledger reconciliation against the same synthetic record.
-5. Exercise refund and payment-failure handling. ACH/bank-transfer support requires a provider capability check and a separate reconciliation test; it must not be advertised as active until verified.
+1. Open the private read-only Stripe test-mode health check at `/api/admin/payment-provider-health` after the owner confirms the route is ready; it performs only GET /v1/account and never creates invoices or charges.
+2. Confirm the dedicated receipt-token secret is present in Preview and keep the email switch off.
+3. Verify the Stripe account and matching Preview test-mode API/webhook credentials without exposing secret values or creating a duplicate account.
+4. Run a synthetic invoice-to-paid-webhook-to-receipt test in Stripe test mode, including duplicate-event/idempotency checks.
+5. Verify customer receipt rendering and owner-ledger reconciliation against the same synthetic record.
+6. Exercise refund and payment-failure handling. ACH/bank-transfer support requires a provider capability check and a separate reconciliation test; it must not be advertised as active until verified.
 
 No Production release, live payment activation, customer email delivery, or real-money transaction is authorized by this Preview setup.
