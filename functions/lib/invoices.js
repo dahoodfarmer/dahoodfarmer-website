@@ -13,8 +13,8 @@ export async function findInvoiceByToken(DB, token) {
 export async function reconcileInvoice(DB, invoiceId, partnershipId, orderId, status) {
   if (!DB || !invoiceId || !partnershipId || !orderId) throw new Error('Invoice reconciliation data is incomplete.');
   if (status === 'processing') {
-    await DB.prepare(\"UPDATE sponsor_invoices SET status = 'pending', payment_order_id = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status IN ('issued','pending')\").bind(orderId, invoiceId).run();
-    await DB.prepare(\"UPDATE sponsor_partnerships SET payment_status = 'pending', payment_reference = ?, updated_at = datetime('now') WHERE id = ? AND payment_status <> 'paid'\").bind(orderId, partnershipId).run();
+    await DB.prepare("UPDATE sponsor_invoices SET status = 'pending', payment_order_id = ?, updated_at = datetime('now') WHERE invoice_id = ? AND status IN ('issued','pending')").bind(orderId, invoiceId).run();
+    await DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'pending', payment_reference = ?, updated_at = datetime('now') WHERE id = ? AND payment_status <> 'paid'").bind(orderId, partnershipId).run();
     return;
   }
   if (status === 'paid') {
