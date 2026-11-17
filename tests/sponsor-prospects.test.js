@@ -4,7 +4,7 @@ import { onRequestGet, onRequestPost } from '../functions/api/admin/sponsor-pros
 
 function fakeDb(options={}) {
  const calls=[];
- return {calls,prepare(sql){return{bind(...values){return{
+ return {calls,prepare(sql){return{async all(){calls.push({kind:'all',sql,values:[]});return{results:options.results||[]}},bind(...values){return{
   async first(){calls.push({kind:'first',sql,values});return options.prospect||null},
   async all(){calls.push({kind:'all',sql,values});return{results:options.results||[]}},
   async run(){calls.push({kind:'run',sql,values});return{meta:{changes:1,last_row_id:5}}}
