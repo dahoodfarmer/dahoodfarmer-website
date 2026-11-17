@@ -1,4 +1,4 @@
-import { isValidPayload, sanitizeString } from '../../lib/validation.js';
+import { isValidEmail, isValidPayload, sanitizeString } from '../../lib/validation.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
@@ -68,11 +68,13 @@ export async function onRequestPost({ request, env }) {
       if (!organization) return json({ error: 'Organization name is required.' }, 422);
       if (!TYPES.has(partnerType) || !DIVISIONS.has(division)) return json({ error: 'Choose a valid partner type and division.' }, 422);
       if (website === null || sourceUrl === null) return json({ error: 'Website and source links must use HTTPS.' }, 422);
+      const publicEmail = text(data.public_email, 254).toLowerCase();
+      if (publicEmail && !isValidEmail(publicEmail)) return json({ error: 'Public email must be valid.' }, 422);
       if (!Number.isInteger(fitScore) || fitScore < 0 || fitScore > 10 || Number.isNaN(value) || Number.isNaN(followUp)) return json({ error: 'Fit score, value or follow-up date is invalid.' }, 422);
       const slug = text(data.slug, 100).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'prospect-' + crypto.randomUUID().slice(0, 8);
       const result = await env.DB.prepare(
         "INSERT INTO sponsor_prospects (slug, organization, partner_type, division, category, location, website, source_url, contact_route, public_phone, public_email, contact_name, fit_score, stage, estimated_value_cents, next_follow_up_date, qualification_notes, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'research', ?, ?, ?, ?)"
-      ).bind(slug, organization, partnerType, division, text(data.category, 120), text(data.location, 180), website, sourceUrl, text(data.contact_route, 500), text(data.public_phone, 80), text(data.public_email, 254), text(data.contact_name, 120), fitScore, value, followUp, text(data.qualification_notes, 2000), text(data.notes, 3000)).run();
+      ).bind(slug, organization, partnerType, division, text(data.category, 120), text(data.location, 180), website, sourceUrl, text(data.contact_route, 500), text(data.public_phone, 80), publicEmail, text(data.contact_name, 120), fitScore, value, followUp, text(data.qualification_notes, 2000), text(data.notes, 3000)).run();
       const id = result.meta?.last_row_id;
       if (id) await env.DB.prepare("INSERT INTO sponsor_prospect_activities (prospect_id, activity_type, summary) VALUES (?, 'research', 'Prospect added to internal research queue.')").bind(id).run();
       return json({ success: true, id }, 201);
@@ -91,6 +93,7 @@ export async function onRequestPost({ request, env }) {
       const fitScore = Number(data.fit_score);
       const value = cents(data.estimated_value_cents);
       const followUp = dateOrNull(data.next_follow_up_date);
+      if (!text(data.organization, 180)) return json({ error: 'Organization name is required.' }, 422);
       if (!STAGES.has(stage) || !TYPES.has(partnerType) || !DIVISIONS.has(division)) return json({ error: 'Choose valid prospect type, division and pipeline stage.' }, 422);
       if (website === null || sourceUrl === null) return json({ error: 'Website and source links must use HTTPS.' }, 422);
       if (!Number.isInteger(fitScore) || fitScore < 0 || fitScore > 10 || Number.isNaN(value) || Number.isNaN(followUp)) return json({ error: 'Fit score, value or follow-up date is invalid.' }, 422);
@@ -121,7 +124,7 @@ export async function onRequestPost({ request, env }) {
       if (!Number.isSafeInteger(id) || id < 1 || !ACTIVITIES.has(activityType) || !summary) return json({ error: 'Prospect, activity type and summary are required.' }, 422);
       const existing = await env.DB.prepare('SELECT id, owner_approved_at FROM sponsor_prospects WHERE id = ?').bind(id).first();
       if (!existing) return json({ error: 'Prospect not found.' }, 404);
-      if (activityType === 'outreach' && !existing.owner_approved_at) return json({ error: 'Owner approval is required before logging external outreach.' }, 409);
+      if (['outreach','response','meeting','proposal','contract'].includes(activityType) && !existing.owner_approved_at) return json({ error: 'Owner approval is required before logging external partner activity.' }, 409);
       await env.DB.prepare('INSERT INTO sponsor_prospect_activities (prospect_id, activity_type, summary) VALUES (?, ?, ?)').bind(id, activityType, summary).run();
       if (activityType === 'outreach') {
         await env.DB.prepare("UPDATE sponsor_prospects SET stage = 'contacted', last_contacted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").bind(id).run();
@@ -131,6 +134,8 @@ export async function onRequestPost({ request, env }) {
         await env.DB.prepare("UPDATE sponsor_prospects SET stage = 'discovery', updated_at = datetime('now') WHERE id = ?").bind(id).run();
       } else if (activityType === 'proposal') {
         await env.DB.prepare("UPDATE sponsor_prospects SET stage = 'proposal', updated_at = datetime('now') WHERE id = ?").bind(id).run();
+      } else if (activityType === 'contract') {
+        await env.DB.prepare("UPDATE sponsor_prospects SET stage = 'contracted', updated_at = datetime('now') WHERE id = ?").bind(id).run();
       }
       return json({ success: true, id });
     }
