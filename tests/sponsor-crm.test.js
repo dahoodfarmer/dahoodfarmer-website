@@ -9,6 +9,7 @@ function fakeDb(options = {}) {
     calls,
     prepare(sql) {
       return {
+        async all() { calls.push({ kind: 'all', sql, values: [] }); return { results: options.rows || [] }; },
         bind(...values) {
           return {
             async all() { calls.push({ kind: 'all', sql, values }); return { results: options.rows || [] }; },
