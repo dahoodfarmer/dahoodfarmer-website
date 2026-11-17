@@ -55,7 +55,7 @@ test('internal invoice creation remains disabled unless its Preview-only gate is
   const DB = fakeDb({ partnership: validPartnership });
   const response = await onRequestPost({
     request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
-    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'false', STRIPE_SECRET_KEY: 'unused' }
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'false' }
   });
   assert.equal(response.status, 503);
   assert.equal(DB.calls.length, 0);
