@@ -1,4 +1,4 @@
-# DHF Opportunity Network — Internal Sales Kit & Founding Rate Card
+# DHF Opportunity Network — Internal Sales Kit & Sponsor Rate Card
 
 **Status:** Internal draft for owner review. Not published. Prices are proposed pilot rates, not active checkout products or binding offers.  
 **Market:** All 50 U.S. states; international inquiries accepted where legal, payment, tax, insurance and logistics requirements can be met.  
@@ -65,8 +65,8 @@ No property is advertised as available or booked until the owner has authorized 
 | Tier | Proposed price | Suggested inventory | Draft deliverables |
 |---|---:|---:|---|
 | Community Partner | $250 | Up to 6 | Name/logo on sponsor page, one social recognition |
-| Supporting Sponsor | $500 | Up to 5 | Logo on event page, one newsletter mention, one social mention |
-| Founding Sponsor | $1,000 | Up to 3 | Supporting benefits plus sponsor interview or short presentation and two admissions |
+| Featured Partner | $500 | Up to 5 | Logo on event page, one newsletter mention, one social mention |
+| Corporate Partner | $1,000 | Up to 3 | Supporting benefits plus sponsor interview or short presentation and two admissions |
 | Presenting Partner | $2,500 | One per event | “Presented by” placement, opening/closing recognition, premium digital exhibit, sponsor interview, up to three social mentions and four admissions |
 | In-kind Partner | Negotiated value | Limited | Documented value and specific deliverables; no assumed cash equivalency |
 
@@ -98,7 +98,7 @@ This is a planning example, not a forecast or guarantee.
 | General admission | 100 | $20 | $2,000 |
 | VIP admission | 20 | $75 | $1,500 |
 | Vendor digital exhibits | 15 | $125 | $1,875 |
-| Supporting sponsors | 3 | $500 | $1,500 |
+| Featured Partners | 3 | $500 | $1,500 |
 | Workshop add-ons | 25 | $49 | $1,225 |
 | **Total** | | | **$8,100** |
 
