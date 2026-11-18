@@ -49,6 +49,13 @@ const base = {
   payment_reference: 'BANK-REF-2026-001', cleared_funds_confirmed: true
 };
 
+test('manual reconciliation is disabled unless every owner-controlled payment switch is enabled', async () => {
+  const DB = db();
+  const response = await onRequestPost({ request: req(base), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
+  assert.equal(response.status, 503);
+  assert.equal(DB.calls.length, 0);
+});
+
 test('requires explicit owner confirmation of cleared funds', async () => {
   const DB = db();
   const response = await onRequestPost({ request: req({ ...base, cleared_funds_confirmed: false }), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
@@ -65,7 +72,7 @@ test('rejects an amount that does not exactly match the invoice', async () => {
 
 test('records verified bank transfer and creates one customer receipt', async () => {
   const DB = db();
-  const response = await onRequestPost({ request: req(base), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret, DHF_RECEIPT_EMAIL_ENABLED: 'false' } });
+  const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret, DHF_RECEIPT_EMAIL_ENABLED: 'false' } });
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.payment_status, 'paid');
@@ -86,9 +93,9 @@ test('rejects cross-origin reconciliation requests', async () => {
 
 test('a retry after successful reconciliation reuses the existing receipt without paying twice', async () => {
   const DB = db();
-  const first = await onRequestPost({ request: req(base), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret, DHF_RECEIPT_EMAIL_ENABLED: 'false' } });
+  const first = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret, DHF_RECEIPT_EMAIL_ENABLED: 'false' } });
   const firstBody = await first.json();
-  const second = await onRequestPost({ request: req(base), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret, DHF_RECEIPT_EMAIL_ENABLED: 'false' } });
+  const second = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret, DHF_RECEIPT_EMAIL_ENABLED: 'false' } });
   const secondBody = await second.json();
   assert.equal(first.status, 200);
   assert.equal(second.status, 200);
@@ -107,7 +114,7 @@ test('does not reconcile a void invoice', async () => {
 
 test('fails closed when receipt signing is not configured', async () => {
   const DB = db();
-  const response = await onRequestPost({ request: req(base), env: { DB } });
+  const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', });
   assert.equal(response.status, 503);
   assert.equal(DB.calls.length, 0);
 });
