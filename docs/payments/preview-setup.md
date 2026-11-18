@@ -27,7 +27,7 @@ The production branch remains site-rebuild-v2. Payment work is on feature/dhf-pr
 | DHF_RECEIPT_TOKEN_SECRET | Configured as a Preview-only secret | Receipt URL signing key; generated and stored in Cloudflare; never place in Git or Production |
 | RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery unavailable |
 
-No Stripe or Square account, key, webhook, checkout, API dependency or payment destination is used by the current application code. Any stale Square-only Preview environment variables are unused and should be removed from Preview configuration. Production settings were not changed.
+No Stripe or Square account, key, webhook, checkout, API dependency or payment destination is used by the current application code. Square is the preferred non-Stripe candidate for future embedded Apple Pay/card/ACH evaluation only; no account or integration is configured. Any stale Square-only Preview environment variables are unused and should be removed from Preview configuration. Production settings were not changed.
 
 ## Migrations
 
@@ -41,7 +41,7 @@ Preview has migrations 0010 through 0014 applied. Migration 0014 adds a unique p
 - Resuming an open invoice rotates its URL token. The previous token stops resolving.
 - Customer invoice pages are no-index, no-store and printable.
 - Invoice creation does not contact a payment provider, charge a customer, send an email or mark an invoice paid.
-- Card, Apple Pay, ACH debit, bank-transfer instructions and receipt email are not activated.
+- Apple Pay, cards, ACH debit, bank-transfer instructions and receipt email are not activated. Direct bank transfer remains the first intended route; Square Web Payments SDK is only the leading non-Stripe candidate for future embedded Apple Pay/card/ACH support.
 - No third-party processor or hosted checkout is integrated. Direct bank-transfer instructions remain unpublished until the owner verifies the business settlement account, confirms the bank's transfer method and fees, and approves the customer instructions. The customer UI remains fail-closed.
 - The permanent Payment Center QR and invoice-specific QR are generated locally in the browser and have dedicated download actions. Both QR types were physically scanned successfully on the owner's devices after Cloudflare Access sign-in.
 - Payment collection, external payment destinations, manual reconciliation, checkout and receipt email remain disabled.
