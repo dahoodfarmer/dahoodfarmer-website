@@ -14,6 +14,10 @@ function sameOrigin(request) {
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: 'Cross-origin request rejected.' }, 403);
+  const methods = typeof env.DHF_PAYMENT_METHODS === 'string' ? env.DHF_PAYMENT_METHODS.split(',').map(value => value.trim().toLowerCase()) : [];
+  if (env.DHF_PAYMENTS_ENABLED !== 'true' || env.DHF_MANUAL_RECONCILIATION_ENABLED !== 'true' || env.DHF_PAYMENT_PROVIDER !== 'manual' || !methods.includes('bank_transfer')) {
+    return json({ error: 'Manual bank-transfer reconciliation is disabled in this environment.' }, 503);
+  }
   if (!env.DB) return json({ error: 'Payment ledger is unavailable.' }, 503);
   if (typeof env.DHF_RECEIPT_TOKEN_SECRET !== 'string' || env.DHF_RECEIPT_TOKEN_SECRET.length < 32) {
     return json({ error: 'Receipt security is not configured; no payment status was changed.' }, 503);
