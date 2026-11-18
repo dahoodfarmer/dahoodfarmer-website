@@ -8,7 +8,7 @@ function req(body, origin = 'https://preview.example') {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify(body)
   });
 }
-function db(initialStatus = 'issued') {
+function db(initialStatus = 'issued', recipientEmail = 'buyer@example.com') {
   const calls = [];
   let invoiceStatus = initialStatus;
   let providerId = 'unconfigured';
@@ -16,7 +16,7 @@ function db(initialStatus = 'issued') {
   const invoice = {
     invoice_id: 'invoice-123', partnership_id: 7, amount_cents: 125000, currency: 'usd',
     status: initialStatus, provider_id: providerId, recipient_name: 'Buyer',
-    recipient_email: 'buyer@example.com', business_name: 'Example Company',
+    recipient_email: recipientEmail, business_name: 'Example Company',
     description: 'Corporate sponsorship'
   };
   return {
@@ -117,4 +117,12 @@ test('fails closed when receipt signing is not configured', async () => {
   const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer' } });
   assert.equal(response.status, 503);
   assert.equal(DB.calls.length, 0);
+});
+
+test('requires a valid receipt email before changing an invoice to paid', async () => {
+  const DB = db('issued', '');
+  const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
+  assert.equal(response.status, 422);
+  assert.match((await response.json()).error, /valid customer email/i);
+  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices SET status = 'paid'/.test(call.sql)), false);
 });
