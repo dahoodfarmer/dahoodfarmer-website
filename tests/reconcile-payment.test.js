@@ -114,7 +114,7 @@ test('does not reconcile a void invoice', async () => {
 
 test('fails closed when receipt signing is not configured', async () => {
   const DB = db();
-  const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', });
+  const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer' } });
   assert.equal(response.status, 503);
   assert.equal(DB.calls.length, 0);
 });
