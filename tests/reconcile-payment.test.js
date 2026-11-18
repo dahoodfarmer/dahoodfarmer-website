@@ -12,10 +12,11 @@ function db(initialStatus = 'issued', recipientEmail = 'buyer@example.com') {
   const calls = [];
   let invoiceStatus = initialStatus;
   let providerId = 'unconfigured';
+  let providerReference = null;
   let receipt = null;
   const invoice = {
     invoice_id: 'invoice-123', partnership_id: 7, amount_cents: 125000, currency: 'usd',
-    status: initialStatus, provider_id: providerId, recipient_name: 'Buyer',
+    status: initialStatus, provider_id: providerId, provider_reference: providerReference, recipient_name: 'Buyer',
     recipient_email: recipientEmail, business_name: 'Example Company',
     description: 'Corporate sponsorship'
   };
@@ -26,21 +27,28 @@ function db(initialStatus = 'issued', recipientEmail = 'buyer@example.com') {
         return {
           async first() {
             calls.push({ kind: 'first', sql, values });
-            if (/FROM sponsor_invoices i/.test(sql)) return { ...invoice, status: invoiceStatus, provider_id: providerId };
+            if (/FROM sponsor_invoices i/.test(sql)) return { ...invoice, status: invoiceStatus, provider_id: providerId, provider_reference: providerReference };
             if (/JOIN sponsor_partnerships/.test(sql)) return invoice;
             if (/FROM payment_receipts/.test(sql)) return receipt;
             return null;
           },
           async run() {
             calls.push({ kind: 'run', sql, values });
-            if (/UPDATE sponsor_invoices SET status = 'paid'/.test(sql)) { invoiceStatus = 'paid'; providerId = 'manual'; }
-            if (/INSERT OR IGNORE INTO payment_receipts/.test(sql) && !receipt) {
-              receipt = { receipt_id: values[0], invoice_id: values[1], recipient_email: values[5], amount_cents: values[8], currency: values[9], paid_at: values[13], email_status: 'not_configured' };
+            if (/UPDATE sponsor_invoices/.test(sql) && /SET status = 'paid'/.test(sql) && ['issued', 'pending'].includes(invoiceStatus) && values[1] === invoice.invoice_id && values[2] === invoice.amount_cents) {
+              invoiceStatus = 'paid'; providerId = 'manual'; providerReference = values[0];
+            }
+            if (/INSERT OR IGNORE INTO payment_receipts/.test(sql) && !receipt && invoiceStatus === 'paid' && providerReference === values[2]) {
+              receipt = { receipt_id: values[0], invoice_id: values[4], recipient_email: invoice.recipient_email, amount_cents: values[6], currency: 'usd', paid_at: values[3], email_status: 'not_configured' };
             }
             return { meta: { changes: 1 } };
           }
         };
       }};
+    },
+    async batch(statements) {
+      const results = [];
+      for (const statement of statements) results.push(await statement.run());
+      return results;
     }
   };
 }
