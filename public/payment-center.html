@@ -29,13 +29,28 @@
 (function(){
  var target=document.getElementById('payment-center-qr');
  if(!target||typeof QRCode!=='function')return;
- new QRCode(target,{text:window.location.origin+'/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+ var logoUrl='/assets/dhf-carter-columbia-logo.webp';
+ var logoReady=false;
+ var logoImage=new Image();
+ logoImage.onload=function(){logoReady=true;};
+ logoImage.src=logoUrl;
+ new QRCode(target,{text:window.location.origin+'/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+ function brandedCanvas(){
+  var canvas=target.querySelector('canvas');
+  if(!canvas)return null;
+  if(logoReady){
+   var ctx=canvas.getContext('2d'),size=Math.round(canvas.width*.23),x=(canvas.width-size)/2,y=(canvas.height-size)/2,pad=Math.round(size*.12),r=Math.round(size*.12);
+   ctx.save();ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(x-pad+r,y-pad);ctx.arcTo(x+size+pad,y-pad,x+size+pad,y+size+pad,r);ctx.arcTo(x+size+pad,y+size+pad,x-pad,y+size+pad,r);ctx.arcTo(x-pad,y+size+pad,x-pad,y-pad,r);ctx.arcTo(x-pad,y-pad,x+size+pad,y-pad,r);ctx.closePath();ctx.fill();
+   ctx.drawImage(logoImage,x,y,size,size);ctx.restore();
+  }
+  return canvas;
+ }
  var button=document.getElementById('download-payment-center-qr');
  button.addEventListener('click',function(){
-  var canvas=target.querySelector('canvas'),img=target.querySelector('img');
+  var canvas=brandedCanvas(),img=target.querySelector('img');
   var url=canvas?canvas.toDataURL('image/png'):(img?img.src:'');
   if(!url)return;
-  var link=document.createElement('a');link.href=url;link.download='DHF-Payment-Center-QR.png';link.click();
+  var link=document.createElement('a');link.href=url;link.download='DHF-Payment-Center-Branded-QR.png';link.click();
  });
 })();
 </script><script src="/js/dhf-payment-options.js" defer></script><script src="/script.js"></script>
