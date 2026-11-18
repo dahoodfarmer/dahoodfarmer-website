@@ -10,7 +10,7 @@ function request(body, originHeader = origin) {
     body: JSON.stringify(body)
   });
 }
-function fakeDb({ partnership = null, openInvoice = null } = {}) {
+function fakeDb({ partnership = null, openInvoice = null, insertError = null } = {}) {
   const calls = [];
   return {
     calls,
@@ -26,6 +26,7 @@ function fakeDb({ partnership = null, openInvoice = null } = {}) {
             },
             async run() {
               calls.push({ kind: 'run', sql, values });
+              if (/INSERT INTO sponsor_invoices/.test(sql) && insertError) throw insertError;
               return { meta: { changes: 1, last_row_id: 42 } };
             }
           };
@@ -86,6 +87,17 @@ test('creates a DHF invoice from the signed agreement without calling a payment 
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test('returns a conflict if a concurrent request already created an open invoice', async () => {
+  const DB = fakeDb({ partnership: validPartnership, insertError: new Error('UNIQUE constraint failed: sponsor_invoices.partnership_id') });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  const body = await response.json();
+  assert.equal(response.status, 409);
+  assert.match(body.error, /Another open invoice/);
 });
 
 test('rejects invoice issuance without a signed agreement and agreed amount', async () => {
