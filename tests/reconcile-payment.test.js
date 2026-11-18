@@ -68,14 +68,14 @@ test('requires explicit owner confirmation of cleared funds', async () => {
   const DB = db();
   const response = await onRequestPost({ request: req({ ...base, cleared_funds_confirmed: false }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 422);
-  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\\s\\S]*SET status = 'paid'/.test(call.sql)), false);
+  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)), false);
 });
 
 test('rejects an amount that does not exactly match the invoice', async () => {
   const DB = db();
   const response = await onRequestPost({ request: req({ ...base, amount_cents: 125001 }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 409);
-  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\\s\\S]*SET status = 'paid'/.test(call.sql)), false);
+  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)), false);
 });
 
 test('records verified bank transfer and creates one customer receipt', async () => {
@@ -86,9 +86,9 @@ test('records verified bank transfer and creates one customer receipt', async ()
   assert.equal(body.payment_status, 'paid');
   assert.match(body.receipt_id, /^DHF-/);
   assert.match(body.receipt_url, /^\/receipt\/[A-Za-z0-9_-]{40,64}$/);
-  assert.ok(DB.calls.some(call => /UPDATE sponsor_invoices[\\s\\S]*SET status = 'paid'/.test(call.sql)));
+  assert.ok(DB.calls.some(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)));
   assert.ok(DB.calls.some(call => /INSERT OR IGNORE INTO payment_receipts/.test(call.sql)));
-  assert.ok(DB.calls.some(call => /UPDATE sponsor_partnerships[\\s\\S]*SET payment_status = 'paid'/.test(call.sql)));
+  assert.ok(DB.calls.some(call => /UPDATE sponsor_partnerships[\s\S]*SET payment_status = 'paid'/.test(call.sql)));
 });
 
 test('rejects cross-origin reconciliation requests', async () => {
@@ -109,15 +109,15 @@ test('a retry after successful reconciliation reuses the existing receipt withou
   assert.equal(second.status, 200);
   assert.equal(secondBody.already_reconciled, true);
   assert.equal(secondBody.receipt_id, firstBody.receipt_id);
-  assert.equal(DB.calls.filter(call => /UPDATE sponsor_invoices[\\s\\S]*SET status = 'paid'/.test(call.sql)).length, 1);
-  assert.equal(DB.calls.filter(call => /UPDATE sponsor_partnerships[\\s\\S]*SET payment_status = 'paid'/.test(call.sql)).length, 2);
+  assert.equal(DB.calls.filter(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)).length, 1);
+  assert.equal(DB.calls.filter(call => /UPDATE sponsor_partnerships[\s\S]*SET payment_status = 'paid'/.test(call.sql)).length, 2);
 });
 
 test('does not reconcile a void invoice', async () => {
   const DB = db('void');
   const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 409);
-  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\\s\\S]*SET status = 'paid'/.test(call.sql)), false);
+  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)), false);
 });
 
 test('fails closed when receipt signing is not configured', async () => {
@@ -132,5 +132,5 @@ test('requires a valid receipt email before changing an invoice to paid', async 
   const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 422);
   assert.match((await response.json()).error, /valid customer email/i);
-  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\\s\\S]*SET status = 'paid'/.test(call.sql)), false);
+  assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)), false);
 });
