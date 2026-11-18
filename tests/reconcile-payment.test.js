@@ -58,14 +58,14 @@ test('manual reconciliation is disabled unless every owner-controlled payment sw
 
 test('requires explicit owner confirmation of cleared funds', async () => {
   const DB = db();
-  const response = await onRequestPost({ request: req({ ...base, cleared_funds_confirmed: false }), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
+  const response = await onRequestPost({ request: req({ ...base, cleared_funds_confirmed: false }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 422);
   assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices SET status = 'paid'/.test(call.sql)), false);
 });
 
 test('rejects an amount that does not exactly match the invoice', async () => {
   const DB = db();
-  const response = await onRequestPost({ request: req({ ...base, amount_cents: 125001 }), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
+  const response = await onRequestPost({ request: req({ ...base, amount_cents: 125001 }), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 409);
   assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices SET status = 'paid'/.test(call.sql)), false);
 });
@@ -107,7 +107,7 @@ test('a retry after successful reconciliation reuses the existing receipt withou
 
 test('does not reconcile a void invoice', async () => {
   const DB = db('void');
-  const response = await onRequestPost({ request: req(base), env: { DB, DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
+  const response = await onRequestPost({ request: req(base), env: { DB, DHF_PAYMENTS_ENABLED: 'true', DHF_MANUAL_RECONCILIATION_ENABLED: 'true', DHF_PAYMENT_PROVIDER: 'manual', DHF_PAYMENT_METHODS: 'bank_transfer', DHF_RECEIPT_TOKEN_SECRET: tokenSecret } });
   assert.equal(response.status, 409);
   assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices SET status = 'paid'/.test(call.sql)), false);
 });
