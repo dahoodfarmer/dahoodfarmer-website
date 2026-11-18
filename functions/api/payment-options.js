@@ -1,11 +1,8 @@
-import { getConfiguredPaymentDestinations } from '../lib/payment-destinations.js';
-
-export async function onRequestGet({ env }) {
-  const enabled = env.DHF_PAYMENTS_ENABLED === 'true'
-    && env.DHF_SQUARE_PAYMENT_LINKS_ENABLED === 'true';
+export async function onRequestGet() {
   return new Response(JSON.stringify({
-    methods: enabled ? getConfiguredPaymentDestinations(env) : [],
-    payment_status: enabled ? 'external_destinations_only' : 'disabled',
+    methods: [],
+    payment_status: 'disabled',
+    payment_model: 'direct_bank_transfer_pending_owner_setup',
     automatic_confirmation: false
   }), {
     headers: {
