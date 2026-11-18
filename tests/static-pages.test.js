@@ -77,12 +77,11 @@ test('privacy and terms disclose applications, separate consent and internationa
   assert.match(terms,/does not automatically publish a business profile/);
 });
 
-test('payment center is informational only until an authorized provider is approved',()=>{
+test('payment center shows only direct bank transfer pending owner setup',()=>{
   const html=read('public/payment-center.html');
-  assert.match(html,/Apple Pay/);
-  assert.match(html,/Debit &amp; Credit Cards/);
-  assert.match(html,/ACH Bank Debit/);
-  assert.match(html,/Available external payment destinations/);
+  assert.match(html,/Direct Bank Transfer/);
+  assert.doesNotMatch(html,/Apple Pay|Debit &amp; Credit Cards|ACH Bank Debit/);
+  assert.match(html,/Direct bank-transfer instructions will be published here only after DHF verifies its business settlement account/);
   assert.match(html,/external-payment-options/);
   assert.match(html,/dhf-payment-options\.js/);
   assert.match(html,/Not activated/);
