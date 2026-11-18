@@ -111,7 +111,7 @@ test('a retry after successful reconciliation reuses the existing receipt withou
   assert.equal(second.status, 200);
   assert.equal(secondBody.already_reconciled, true);
   assert.equal(secondBody.receipt_id, firstBody.receipt_id);
-  assert.equal(DB.calls.filter(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)).length, 1);
+  assert.equal(DB.invoicePaidTransitions, 1);
   assert.equal(DB.calls.filter(call => /UPDATE sponsor_partnerships[\s\S]*SET payment_status = 'paid'/.test(call.sql)).length, 2);
 });
 
