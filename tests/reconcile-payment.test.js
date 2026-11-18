@@ -14,6 +14,9 @@ function db(initialStatus = 'issued', recipientEmail = 'buyer@example.com') {
   let providerId = 'unconfigured';
   let providerReference = null;
   let invoicePaidTransitions = 0;
+  let partnershipStatus = 'unpaid';
+  let partnershipProvider = 'unconfigured';
+  let partnershipReference = null;
   let receipt = null;
   const invoice = {
     invoice_id: 'invoice-123', partnership_id: 7, amount_cents: 125000, currency: 'usd',
@@ -30,7 +33,7 @@ function db(initialStatus = 'issued', recipientEmail = 'buyer@example.com') {
           async first() {
             calls.push({ kind: 'first', sql, values });
             if (/FROM sponsor_invoices/.test(sql)) return { ...invoice, status: invoiceStatus, provider_id: providerId, provider_reference: providerReference };
-            if (/JOIN sponsor_partnerships/.test(sql)) return invoice;
+            if (/FROM sponsor_partnerships/.test(sql)) return { payment_status: partnershipStatus, payment_provider_id: partnershipProvider, payment_reference: partnershipReference };
             if (/FROM payment_receipts/.test(sql)) return receipt;
             return null;
           },
@@ -39,8 +42,11 @@ function db(initialStatus = 'issued', recipientEmail = 'buyer@example.com') {
             if (/UPDATE sponsor_invoices/.test(sql) && /SET status = 'paid'/.test(sql) && ['issued', 'pending'].includes(invoiceStatus) && values[1] === invoice.invoice_id && values[2] === invoice.amount_cents) {
               invoiceStatus = 'paid'; providerId = 'manual'; providerReference = values[0]; invoicePaidTransitions += 1;
             }
+            if (/UPDATE sponsor_partnerships/.test(sql) && /SET payment_status = 'paid'/.test(sql) && invoiceStatus === 'paid' && providerReference === values[3]) {
+              partnershipStatus = 'paid'; partnershipProvider = 'manual'; partnershipReference = values[0];
+            }
             if (/INSERT OR IGNORE INTO payment_receipts/.test(sql) && !receipt && invoiceStatus === 'paid' && providerReference === values[2]) {
-              receipt = { receipt_id: values[0], invoice_id: values[4], recipient_email: invoice.recipient_email, amount_cents: values[6], currency: 'usd', paid_at: values[3], email_status: 'not_configured' };
+              receipt = { receipt_id: values[0], invoice_id: values[4], recipient_email: invoice.recipient_email, amount_cents: values[6], currency: 'usd', provider_id: 'manual', provider_reference: values[2], receipt_token_hash: values[1], paid_at: values[3], email_status: 'not_configured' };
             }
             return { meta: { changes: 1 } };
           }
