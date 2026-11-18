@@ -68,7 +68,7 @@ export async function onRequestPost({ request, env }) {
     const tokenHash = await hashInvoiceToken(token);
     const paidAt = new Date().toISOString();
     const receiptId = 'DHF-' + paidAt.slice(0, 10).replace(/-/g, '') + '-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
-    const summary = 'Owner-verified bank transfer reconciled for DHF invoice ' + invoiceId + '. Receipt will be recorded in the payment ledger.';
+    const summary = 'Owner-verified bank transfer reconciled for DHF invoice ' + invoiceId + '. Receipt ' + receiptId + ' recorded in the payment ledger.';
 
     await env.DB.batch([
       env.DB.prepare(
