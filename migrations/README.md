@@ -16,6 +16,7 @@ Apply these migrations to the isolated Preview main application database in orde
 - `0011_provider_customer_reference.sql` — provider-neutral customer reference for sponsor partnerships.
 - `0012_payment_receipts.sql` — durable, invoice-idempotent customer receipt ledger.
 - `0013_webhook_idempotency.sql` — durable webhook processing states, duplicate suppression and safe retry tracking.
+- `0014_one_open_invoice_per_partnership.sql` — unique partial index preventing concurrent or repeated issuance of multiple active invoices for one partnership.
 
 Current Preview target: `dahoodfarmer-preview-db`  
 Preview database ID: `ca5786b1-751e-4cee-b595-3a4b60061cc9`
