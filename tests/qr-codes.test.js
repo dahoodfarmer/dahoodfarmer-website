@@ -8,6 +8,7 @@ test('permanent Payment Center QR uses a local QR library and stable /pay destin
   const library = await readFile(new URL('../public/js/qrcode.min.js', import.meta.url), 'utf8');
   const license = await readFile(new URL('../public/js/QRCODE-LICENSE.txt', import.meta.url), 'utf8');
   assert.match(page, /id="payment-center-qr"/);
+  assert.match(page, /src="\/assets\/dhf-carter-columbia-logo\.webp"/);
   assert.match(page, /window\.location\.origin\+'\/pay'/);
   assert.match(page, /download-payment-center-qr/);
   assert.match(page, /Direct Bank Transfer/);
