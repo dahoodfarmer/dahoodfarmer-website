@@ -13,8 +13,8 @@ test('owner ledger separates gross payments, refunds, net payments, and outstand
           return {
             async all() {
               return { results: [
-                { invoice_id: 'inv-paid', invoice_number: 'DHF-001', amount_cents: 10000, refund_amount_cents: 2500, invoice_status: 'paid', payment_status: 'refunded', receipt_id: 'DHF-REC-001', customer_name: 'Synthetic Buyer', customer_email: 'buyer@example.invalid', provider_id: 'stripe' },
-                { invoice_id: 'inv-outstanding', invoice_number: 'DHF-002', amount_cents: 5000, refund_amount_cents: 0, invoice_status: 'issued', payment_status: 'invoice_sent', receipt_id: null, customer_name: 'Synthetic Buyer', customer_email: 'buyer@example.invalid', provider_id: 'stripe' }
+                { invoice_id: 'inv-paid', invoice_number: 'DHF-001', amount_cents: 10000, refund_amount_cents: 2500, invoice_status: 'paid', payment_status: 'refunded', receipt_id: 'DHF-REC-001', customer_name: 'Synthetic Buyer', customer_email: 'buyer@example.invalid', provider_id: 'manual' },
+                { invoice_id: 'inv-outstanding', invoice_number: 'DHF-002', amount_cents: 5000, refund_amount_cents: 0, invoice_status: 'issued', payment_status: 'invoice_sent', receipt_id: null, customer_name: 'Synthetic Buyer', customer_email: 'buyer@example.invalid', provider_id: 'manual' }
               ] };
             }
           };
