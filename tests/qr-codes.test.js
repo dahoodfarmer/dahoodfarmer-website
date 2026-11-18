@@ -11,6 +11,9 @@ test('permanent Payment Center QR uses a local QR library and stable /pay destin
   assert.match(page, /src="\/assets\/dhf-carter-columbia-logo\.webp"/);
   assert.match(page, /window\.location\.origin\+'\/pay'/);
   assert.match(page, /download-payment-center-qr/);
+  assert.match(page, /QRCode\.CorrectLevel\.H/);
+  assert.match(page, /dhf-carter-columbia-logo\.webp/);
+  assert.match(page, /DHF-Payment-Center-Branded-QR/);
   assert.match(page, /Direct Bank Transfer/);
   assert.match(page, /Setup pending/);
   assert.match(page, /external-payment-options/);
@@ -26,6 +29,9 @@ test('invoice page generates its own QR from the opaque invoice URL', async () =
   assert.match(page, /id="invoice-qr"/);
   assert.match(page, /text:window\.location\.href/);
   assert.match(page, /download-invoice-qr/);
+  assert.match(page, /QRCode\.CorrectLevel\.H/);
+  assert.match(page, /dhf-carter-columbia-logo\.webp/);
+  assert.match(page, /Branded-QR/);
   assert.match(page, /external-payment-options/);
   assert.match(page, /dhf-payment-options\.js/);
   assert.match(page, /\/js\/qrcode\.min\.js/);
