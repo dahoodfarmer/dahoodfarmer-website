@@ -85,7 +85,7 @@ test('payment center distinguishes planned methods from inactive payment routes'
   assert.match(html,/ACH Bank Debit/);
   assert.match(html,/Apple Pay[\s\S]*?Not activated/);
   assert.match(html,/DHF will publish verified business bank-transfer instructions after confirming the receiving account and any bank fees/);
-  assert.match(html,/Square Web Payments SDK is the leading candidate/);
+  assert.match(html,/compliant non-Stripe payment-processing route/);
   assert.match(html,/external-payment-options/);
   assert.match(html,/dhf-payment-options\.js/);
   assert.match(html,/Setup pending/);
