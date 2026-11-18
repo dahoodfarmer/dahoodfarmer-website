@@ -48,7 +48,7 @@ export async function onRequestPost({ request, env }) {
     if (Number(invoice.amount_cents) !== amountCents || invoice.currency !== 'usd') {
       return json({ error: 'The cleared amount must exactly match the approved invoice amount.' }, 409);
     }
-    if (!invoice.recipient_email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(invoice.recipient_email)) {
+    if (!invoice.recipient_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(invoice.recipient_email)) {
       return json({ error: 'A valid customer email is required before payment can be marked paid and a receipt issued.' }, 422);
     }
 
