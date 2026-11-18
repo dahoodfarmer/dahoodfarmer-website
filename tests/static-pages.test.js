@@ -77,15 +77,13 @@ test('privacy and terms disclose applications, separate consent and internationa
   assert.match(terms,/does not automatically publish a business profile/);
 });
 
-test('payment center distinguishes planned methods from inactive payment routes',()=>{
+test('payment center offers direct bank transfer only and keeps collection disabled',()=>{
   const html=read('public/payment-center.html');
   assert.match(html,/Direct Bank Transfer/);
-  assert.match(html,/Apple Pay/);
-  assert.match(html,/Debit \/ Credit Card/);
-  assert.match(html,/ACH Bank Debit/);
-  assert.match(html,/Apple Pay[\s\S]*?Not activated/);
+  assert.match(html,/Direct bank transfer is the only payment route under consideration/);
+  assert.match(html,/No card checkout, Apple Pay, ACH debit, wallet checkout or third-party processor is offered/);
+  assert.doesNotMatch(html,/<article class="payment-option"><h2>(Apple Pay|Debit \/ Credit Card|ACH Bank Debit)<\/h2>/);
   assert.match(html,/DHF will publish verified business bank-transfer instructions after confirming the receiving account and any bank fees/);
-  assert.match(html,/compliant non-Stripe payment-processing route/);
   assert.match(html,/external-payment-options/);
   assert.match(html,/dhf-payment-options\.js/);
   assert.match(html,/Setup pending/);
