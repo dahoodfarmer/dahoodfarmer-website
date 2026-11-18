@@ -37,4 +37,4 @@ No bank account details or payment destination are currently published. Payment 
 
 ## Legacy database compatibility
 
-Earlier additive migrations introduced legacy provider columns and constraints. They remain in the schema for migration compatibility only; the current application code has no active third-party processor adapter, API call, webhook or health-check route. Do not add a provider dependency without a new owner-approved decision.
+Earlier additive migrations introduced legacy provider columns and constraints. They remain in the schema for migration compatibility only. The former Stripe checkout and webhook API routes have been removed from this feature branch; the current application code has no active third-party processor adapter, API call, webhook or health-check route. The shop page is informational and has no checkout. Do not add a provider dependency without a new owner-approved decision.
