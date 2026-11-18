@@ -35,7 +35,7 @@ No Stripe key, webhook secret, Stripe account, Stripe checkout or Stripe API dep
 
 ## Migrations
 
-Preview already has migrations 0010 through 0013 applied. Earlier migration 0008 contains historical Stripe-named columns; it remains in place for schema compatibility and is not an active integration. Do not alter Production schema as part of this Preview work.
+Preview has migrations 0010 through 0014 applied. Migration 0014 adds a unique partial index that prevents more than one issued/pending invoice per partnership. Earlier migration 0008 contains historical Stripe-named columns; it remains in place for schema compatibility and is not an active integration. Do not alter Production schema as part of this Preview work.
 
 ## Current behavior
 
