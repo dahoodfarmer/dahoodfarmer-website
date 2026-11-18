@@ -32,7 +32,7 @@
  var logoUrl='/assets/dhf-carter-columbia-logo.webp';
  var logoReady=false;
  var logoImage=new Image();
- logoImage.onload=function(){logoReady=true;};
+ logoImage.onload=function(){logoReady=true;var canvas=brandedCanvas(),img=target.querySelector('img');if(canvas&&img)img.src=canvas.toDataURL('image/png');};
  logoImage.src=logoUrl;
  new QRCode(target,{text:window.location.origin+'/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
  function brandedCanvas(){
