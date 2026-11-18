@@ -20,7 +20,7 @@ Manual reconciliation previously changed the invoice to paid before the receipt 
 
 ## Remaining risks / acceptance gates
 
-1. Atomic D1 batch behavior is covered by automated unit tests, but a real Preview D1 failure-injection test and authenticated owner-screen acceptance test remain required before any live collection. Confirm the deployed D1 schema and readback behavior under the actual Cloudflare runtime.
+1. Preview D1 failure-injection was completed on 2026-11-18 using synthetic-only records. A deliberately invalid receipt provider caused the atomic batch to fail; readback confirmed the invoice remained issued/unconfigured, the partnership remained unpaid/unconfigured, and no receipt or activity was committed. All temporary records were deleted and a follow-up count verified zero temporary QA applications, invoices or receipts remained. Authenticated owner-screen acceptance is still required before any live collection.
 2. Cloudflare Access is the primary admin-page perimeter. The Pages middleware adds a second check for admin APIs; it does not replace the Access policy for static admin HTML. Keep both layers in place.
 3. The owner must test an authenticated Preview session and verify a synthetic invoice, token rotation, ledger, receipt, and error messages on the actual iPhone UI.
 4. No payment processor, merchant settlement account, customer payment method, refund workflow, tax treatment, or live payment is certified by this review.
