@@ -1,4 +1,5 @@
-import { createPaidReceipt } from '../../lib/payment-receipts.js';
+import { createReceiptToken } from '../../lib/payment-receipts.js';
+import { hashInvoiceToken } from '../../lib/invoices.js';
 import { sendReceiptEmail } from '../../lib/receipt-email.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -18,7 +19,7 @@ export async function onRequestPost({ request, env }) {
   if (env.DHF_PAYMENTS_ENABLED !== 'true' || env.DHF_MANUAL_RECONCILIATION_ENABLED !== 'true' || env.DHF_PAYMENT_PROVIDER !== 'manual' || !methods.includes('bank_transfer')) {
     return json({ error: 'Manual bank-transfer reconciliation is disabled in this environment.' }, 503);
   }
-  if (!env.DB) return json({ error: 'Payment ledger is unavailable.' }, 503);
+  if (!env.DB || typeof env.DB.batch !== 'function') return json({ error: 'Atomic payment ledger operations are unavailable.' }, 503);
   if (typeof env.DHF_RECEIPT_TOKEN_SECRET !== 'string' || env.DHF_RECEIPT_TOKEN_SECRET.length < 32) {
     return json({ error: 'Receipt security is not configured; no payment status was changed.' }, 503);
   }
@@ -36,7 +37,7 @@ export async function onRequestPost({ request, env }) {
 
   try {
     const invoice = await env.DB.prepare(
-      `SELECT i.invoice_id, i.partnership_id, i.amount_cents, i.currency, i.status, i.provider_id,
+      `SELECT i.invoice_id, i.partnership_id, i.amount_cents, i.currency, i.status, i.provider_id, i.provider_reference,
               a.name AS recipient_name, a.email AS recipient_email, a.organization AS business_name
        FROM sponsor_invoices i
        JOIN sponsor_partnerships s ON s.id = i.partnership_id
@@ -47,39 +48,93 @@ export async function onRequestPost({ request, env }) {
     if (Number(invoice.amount_cents) !== amountCents || invoice.currency !== 'usd') {
       return json({ error: 'The cleared amount must exactly match the approved invoice amount.' }, 409);
     }
-    if (!invoice.recipient_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(invoice.recipient_email)) {
+    if (!invoice.recipient_email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(invoice.recipient_email)) {
       return json({ error: 'A valid customer email is required before payment can be marked paid and a receipt issued.' }, 422);
     }
 
-    const alreadyReconciled = invoice.status === 'paid' && invoice.provider_id === 'manual';
+    const alreadyReconciled = invoice.status === 'paid' && invoice.provider_id === 'manual' && invoice.provider_reference === reference;
+    if (invoice.status === 'paid' && !alreadyReconciled) {
+      return json({ error: 'This invoice is already paid under a different reconciliation reference. Review the ledger; do not overwrite it.' }, 409);
+    }
     if (!alreadyReconciled && !['issued', 'pending'].includes(invoice.status)) {
       return json({ error: 'This invoice is not eligible for manual settlement reconciliation.' }, 409);
     }
 
-    if (!alreadyReconciled) {
-      const changed = await env.DB.prepare(
-        "UPDATE sponsor_invoices SET status = 'paid', paid_at = COALESCE(paid_at, datetime('now')), payment_method = 'bank_transfer', provider_id = 'manual', provider_status = 'paid', provider_reference = ?, updated_at = datetime('now') WHERE invoice_id = ? AND amount_cents = ? AND status IN ('issued','pending')"
-      ).bind(reference, invoiceId, amountCents).run();
-      if (Number(changed.meta?.changes || 0) !== 1) {
-        return json({ error: 'Invoice status changed during reconciliation. Reload the ledger and verify it before retrying.' }, 409);
-      }
+    // Cloudflare D1 batch runs these statements in one atomic transaction.
+    // Every dependent write is conditional on the invoice carrying this exact
+    // paid state and reference, so a competing reconciliation cannot diverge
+    // the partnership, receipt, or activity ledger from the invoice.
+    const token = await createReceiptToken(invoiceId, env.DHF_RECEIPT_TOKEN_SECRET);
+    const tokenHash = await hashInvoiceToken(token);
+    const paidAt = new Date().toISOString();
+    const receiptId = 'DHF-' + paidAt.slice(0, 10).replace(/-/g, '') + '-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
+    const summary = 'Owner-verified bank transfer reconciled for DHF invoice ' + invoiceId + '. Receipt will be recorded in the payment ledger.';
+
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE sponsor_invoices
+         SET status = 'paid', paid_at = COALESCE(paid_at, datetime('now')),
+             payment_method = 'bank_transfer', provider_id = 'manual',
+             provider_status = 'paid', provider_reference = ?, updated_at = datetime('now')
+         WHERE invoice_id = ? AND amount_cents = ? AND currency = 'usd'
+           AND status IN ('issued','pending')`
+      ).bind(reference, invoiceId, amountCents),
+      env.DB.prepare(
+        `UPDATE sponsor_partnerships
+         SET payment_status = 'paid', payment_provider_id = 'manual',
+             payment_reference = ?, updated_at = datetime('now')
+         WHERE id = ? AND EXISTS (
+           SELECT 1 FROM sponsor_invoices
+           WHERE invoice_id = ? AND status = 'paid' AND provider_id = 'manual' AND provider_reference = ?
+             AND amount_cents = ? AND currency = 'usd'
+         )`
+      ).bind(reference, invoice.partnership_id, invoiceId, reference, amountCents),
+      env.DB.prepare(
+        `INSERT OR IGNORE INTO payment_receipts
+          (receipt_id, invoice_id, partnership_id, receipt_token_hash, recipient_name, recipient_email,
+           business_name, description, amount_cents, currency, payment_method, provider_id,
+           provider_reference, paid_at, email_status)
+         SELECT ?, i.invoice_id, i.partnership_id, ?, a.name, a.email, a.organization,
+                i.description, i.amount_cents, i.currency, 'bank_transfer', 'manual', ?, ?, 'not_configured'
+         FROM sponsor_invoices i
+         JOIN sponsor_partnerships s ON s.id = i.partnership_id
+         JOIN opportunity_applications a ON a.id = s.application_id
+         WHERE i.invoice_id = ? AND i.status = 'paid' AND i.provider_id = 'manual'
+           AND i.provider_reference = ? AND i.amount_cents = ? AND i.currency = 'usd'`
+      ).bind(receiptId, tokenHash, reference, paidAt, invoiceId, reference, amountCents),
+      env.DB.prepare(
+        `INSERT INTO sponsor_activities (partnership_id, activity_type, summary)
+         SELECT ?, 'payment', ?
+         WHERE EXISTS (
+           SELECT 1 FROM sponsor_invoices
+           WHERE invoice_id = ? AND status = 'paid' AND provider_id = 'manual'
+             AND provider_reference = ? AND amount_cents = ? AND currency = 'usd'
+         ) AND NOT EXISTS (
+           SELECT 1 FROM sponsor_activities
+           WHERE partnership_id = ? AND activity_type = 'payment'
+             AND summary LIKE ?
+         )`
+      ).bind(invoice.partnership_id, summary, invoiceId, reference, amountCents, invoice.partnership_id, '%invoice ' + invoiceId + '.%')
+    ]);
+
+    const confirmedInvoice = await env.DB.prepare(
+      `SELECT status, provider_id, provider_reference, amount_cents, currency
+       FROM sponsor_invoices WHERE invoice_id = ? LIMIT 1`
+    ).bind(invoiceId).first();
+    if (!confirmedInvoice || confirmedInvoice.status !== 'paid' || confirmedInvoice.provider_id !== 'manual' ||
+        confirmedInvoice.provider_reference !== reference || Number(confirmedInvoice.amount_cents) !== amountCents ||
+        confirmedInvoice.currency !== 'usd') {
+      return json({ error: 'The atomic reconciliation did not confirm this exact payment. Reload the ledger and investigate before retrying.' }, 409);
     }
 
-    await env.DB.prepare(
-      "UPDATE sponsor_partnerships SET payment_status = 'paid', payment_provider_id = 'manual', payment_reference = ?, updated_at = datetime('now') WHERE id = ?"
-    ).bind(reference, invoice.partnership_id).run();
+    const saved = await env.DB.prepare(
+      `SELECT receipt_id, invoice_id, recipient_email, amount_cents, currency, paid_at, email_status
+       FROM payment_receipts WHERE invoice_id = ? LIMIT 1`
+    ).bind(invoiceId).first();
+    if (!saved) return json({ error: 'The invoice is marked paid but the receipt record could not be confirmed. Keep payment controls disabled and investigate.' }, 500);
 
-    const receipt = await createPaidReceipt({
-      DB: env.DB, env, invoiceId, providerId: 'manual', providerReference: reference,
-      amountCents, currency: invoice.currency, paidAt: new Date().toISOString(), paymentMethod: 'bank_transfer'
-    });
+    const receipt = { ...saved, token, receipt_url: '/receipt/' + token };
     await sendReceiptEmail({ DB: env.DB, env, receipt });
-    if (!alreadyReconciled) {
-      await env.DB.prepare(
-        "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
-      ).bind(invoice.partnership_id, 'Owner-verified bank transfer reconciled for DHF invoice ' + invoiceId + '. Receipt ' + receipt.receipt_id + '.').run();
-    }
-
     return json({
       success: true,
       invoice_id: invoiceId,
