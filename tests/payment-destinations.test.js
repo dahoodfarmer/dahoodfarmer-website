@@ -31,9 +31,22 @@ test('rejects lookalike hosts, non-HTTPS URLs, credentials and unsupported desti
   }), []);
 });
 
+test('public payment-options endpoint fails closed when either payment switch is off', async () => {
+  const response = await onRequestGet({ env: {
+    DHF_SQUARE_PAYMENT_URL: 'https://square.link/u/DHFbusiness',
+    DHF_PAYMENTS_ENABLED: 'false',
+    DHF_SQUARE_PAYMENT_LINKS_ENABLED: 'true'
+  }});
+  const body = await response.json();
+  assert.deepEqual(body.methods, []);
+  assert.equal(body.payment_status, 'disabled');
+});
+
 test('public payment-options endpoint returns no-store safe configuration only', async () => {
   const response = await onRequestGet({ env: {
-    DHF_SQUARE_PAYMENT_URL: 'https://checkout.square.site/DHFbusiness'
+    DHF_SQUARE_PAYMENT_URL: 'https://checkout.square.site/DHFbusiness',
+    DHF_PAYMENTS_ENABLED: 'true',
+    DHF_SQUARE_PAYMENT_LINKS_ENABLED: 'true'
   }});
   const body = await response.json();
   assert.equal(response.status, 200);
