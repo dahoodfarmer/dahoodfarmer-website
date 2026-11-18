@@ -20,6 +20,8 @@ The production branch remains site-rebuild-v2. Payment work is on feature/dhf-pr
 | DHF_PAYMENTS_ENABLED | false | Master payment kill switch |
 | DHF_PAYMENT_PROVIDER | none | No provider selected |
 | DHF_PAYMENT_METHODS | Empty | No method advertised as available |
+| DHF_MANUAL_RECONCILIATION_ENABLED | false | Owner-side bank-transfer reconciliation kill switch |
+| DHF_SQUARE_PAYMENT_LINKS_ENABLED | false | Square-hosted payment-link display kill switch; also requires the master payment switch |
 | DHF_CHECKOUT_ENABLED | false | Checkout disabled |
 | DHF_INVOICING_ENABLED | false | Provider invoicing disabled; DHF internal invoicing is separate |
 | DHF_RECEIPT_EMAIL_ENABLED | false | Customer email kill switch |
@@ -44,9 +46,9 @@ Preview already has migrations 0010 through 0013 applied. Earlier migration 0008
 - Customer invoice pages are no-index, no-store and printable.
 - Invoice creation does not contact a payment provider, charge a customer, send an email or mark an invoice paid.
 - Apple Pay, cards, ACH and bank transfer are not activated.
-- Square-hosted payment links are supported by the UI but remain inactive until the owner verifies and configures an official payment link. Adyen is reserved for a later per-invoice link flow. The UI validates provider hosts and renders provider QR codes locally; external payments still require owner-side settlement verification.
+- Square-hosted payment links remain hidden unless both DHF_PAYMENTS_ENABLED and DHF_SQUARE_PAYMENT_LINKS_ENABLED are explicitly true and an official allowlisted Square URL is configured. Adyen is reserved for a later per-invoice link flow. The UI validates provider hosts and renders provider QR codes locally; external payments still require owner-side settlement verification.
 - The permanent Payment Center QR and invoice-specific QR are generated locally in the browser and have dedicated download actions; scan and Preview-host verification remain.
-- Payment collection, checkout and receipt email remain disabled.
+- Payment collection, external payment destinations, manual reconciliation, checkout and receipt email remain disabled.
 
 ## Preview acceptance work remaining
 
