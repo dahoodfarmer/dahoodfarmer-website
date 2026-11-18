@@ -46,6 +46,12 @@ Preview has migrations 0010 through 0014 applied. Migration 0014 adds a unique p
 - The permanent Payment Center QR and invoice-specific QR are generated locally in the browser and have dedicated download actions. Both QR types were physically scanned successfully on the owner's devices after Cloudflare Access sign-in.
 - Payment collection, external payment destinations, manual reconciliation, checkout and receipt email remain disabled.
 
+## Completed Preview engineering checks
+
+- Automated Website CI passed 104/104 tests on commit `f836da58feae9aa14caba5404c1f40935116326a`.
+- A real Preview D1 atomic-batch failure-injection test deliberately violated the payment receipt provider constraint. The invoice, partnership, receipt and activity writes rolled back as one unit. The synthetic test records were deleted, and a follow-up query confirmed zero temporary QA applications, invoices or receipts remained.
+- The uploaded Carter / Columbia emblem is bundled as `/assets/dhf-carter-columbia-logo.webp` and displayed on the Payment Center, invoice, receipt and owner payment-ledger pages.
+
 ## Preview acceptance work remaining
 
 1. Complete owner-side testing of invoice creation and secure token rotation/revocation using synthetic Preview records.
