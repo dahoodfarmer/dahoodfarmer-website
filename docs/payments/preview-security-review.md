@@ -11,16 +11,16 @@
 - The public payment-options endpoint currently returns no methods and a disabled status.
 - Invoice tokens are random opaque tokens; the database stores their SHA-256 hash. Invoice pages are no-store, no-index, and no-referrer.
 - Receipt links use an HMAC-derived token and the database stores its SHA-256 hash. Receipt pages are no-store, no-index, no-referrer, and escape customer-controlled text.
-- Reconciliation checks cleared-funds confirmation, exact amount, USD currency, invoice status, bank-transfer method, and a payment reference. Receipt insertion is idempotent by invoice.
+- Reconciliation checks cleared-funds confirmation, exact amount, USD currency, invoice status, bank-transfer method, and a payment reference. Invoice, partnership, receipt, and activity writes now run in one Cloudflare D1 `batch()` transaction. Dependent writes are conditional on the exact paid invoice/reference; the handler reads back and verifies invoice, partnership, receipt provider/reference/amount/currency, and receipt-token hash before returning success. Receipt insertion is idempotent by invoice.
 - Preview payment flags remain off. No Production database, secrets, DNS, or payment settings were changed.
 
 ## Improvement made during this review
 
-Manual reconciliation previously changed the invoice to paid before the receipt helper checked whether the customer email was valid. A missing/invalid email could therefore leave a paid invoice without its required receipt. The handler now validates the receipt recipient before changing invoice status. A regression test covers the missing-email case.
+Manual reconciliation previously changed the invoice to paid before the receipt helper checked whether the customer email was valid. A missing/invalid email could therefore leave a paid invoice without its required receipt. The handler now validates the receipt recipient before changing invoice status. A regression test covers the missing-email case. The handler now uses one atomic D1 batch for invoice, partnership, receipt, and activity writes; competing references cannot overwrite an already-paid invoice, and the response is withheld unless all three ledger records read back consistently. The idempotent retry test verifies only one invoice transition to paid and reuse of the original receipt.
 
 ## Remaining risks / acceptance gates
 
-1. Reconciliation is composed of multiple D1 statements rather than one atomic transaction. The invoice update uses a conditional status transition and retries are designed to recover, but a failure between statements can temporarily leave invoice, partnership, activity, and receipt records out of sync. Before live collection, implement and test a single atomic D1 batch/transaction strategy or a durable reconciliation state machine.
+1. Atomic D1 batch behavior is covered by automated unit tests, but a real Preview D1 failure-injection test and authenticated owner-screen acceptance test remain required before any live collection. Confirm the deployed D1 schema and readback behavior under the actual Cloudflare runtime.
 2. Cloudflare Access is the primary admin-page perimeter. The Pages middleware adds a second check for admin APIs; it does not replace the Access policy for static admin HTML. Keep both layers in place.
 3. The owner must test an authenticated Preview session and verify a synthetic invoice, token rotation, ledger, receipt, and error messages on the actual iPhone UI.
 4. No payment processor, merchant settlement account, customer payment method, refund workflow, tax treatment, or live payment is certified by this review.
