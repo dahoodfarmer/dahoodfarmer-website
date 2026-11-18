@@ -46,7 +46,7 @@ Preview has migrations 0010 through 0014 applied. Migration 0014 adds a unique p
 - Customer invoice pages are no-index, no-store and printable.
 - Invoice creation does not contact a payment provider, charge a customer, send an email or mark an invoice paid.
 - Apple Pay, cards, ACH and bank transfer are not activated.
-- Square-hosted payment links remain hidden unless both DHF_PAYMENTS_ENABLED and DHF_SQUARE_PAYMENT_LINKS_ENABLED are explicitly true and an official allowlisted Square URL is configured. Adyen is reserved for a later per-invoice link flow. The UI validates provider hosts and renders provider QR codes locally; external payments still require owner-side settlement verification.
+- No third-party processor or hosted checkout is integrated. Direct bank-transfer instructions remain unpublished until the owner verifies the business settlement account, confirms the bank's transfer method and fees, and approves the customer instructions. The customer UI remains fail-closed.
 - The permanent Payment Center QR and invoice-specific QR are generated locally in the browser and have dedicated download actions; scan and Preview-host verification remain.
 - Payment collection, external payment destinations, manual reconciliation, checkout and receipt email remain disabled.
 
