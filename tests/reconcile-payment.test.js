@@ -142,3 +142,27 @@ test('requires a valid receipt email before changing an invoice to paid', async 
   assert.match((await response.json()).error, /valid customer email/i);
   assert.equal(DB.calls.some(call => /UPDATE sponsor_invoices[\s\S]*SET status = 'paid'/.test(call.sql)), false);
 });
+
+test('rejects a second reconciliation reference after the invoice is already paid', async () => {
+  const DB = db();
+  const enabledEnv = {
+    DB,
+    DHF_PAYMENTS_ENABLED: 'true',
+    DHF_MANUAL_RECONCILIATION_ENABLED: 'true',
+    DHF_PAYMENT_PROVIDER: 'manual',
+    DHF_PAYMENT_METHODS: 'bank_transfer',
+    DHF_RECEIPT_TOKEN_SECRET: tokenSecret,
+    DHF_RECEIPT_EMAIL_ENABLED: 'false'
+  };
+  const first = await onRequestPost({ request: req(base), env: enabledEnv });
+  assert.equal(first.status, 200);
+  const beforeRetry = DB.calls.length;
+  const conflicting = await onRequestPost({
+    request: req({ ...base, payment_reference: 'DIFFERENT-BANK-REFERENCE' }),
+    env: enabledEnv
+  });
+  assert.equal(conflicting.status, 409);
+  assert.match((await conflicting.json()).error, /already paid under a different reconciliation reference/i);
+  assert.equal(DB.calls.length, beforeRetry + 1);
+  assert.equal(DB.invoicePaidTransitions, 1);
+});
