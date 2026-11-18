@@ -47,6 +47,10 @@ export async function onRequestPost({ request, env }) {
     if (Number(invoice.amount_cents) !== amountCents || invoice.currency !== 'usd') {
       return json({ error: 'The cleared amount must exactly match the approved invoice amount.' }, 409);
     }
+    if (!invoice.recipient_email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(invoice.recipient_email)) {
+      return json({ error: 'A valid customer email is required before payment can be marked paid and a receipt issued.' }, 422);
+    }
+
     const alreadyReconciled = invoice.status === 'paid' && invoice.provider_id === 'manual';
     if (!alreadyReconciled && !['issued', 'pending'].includes(invoice.status)) {
       return json({ error: 'This invoice is not eligible for manual settlement reconciliation.' }, 409);
