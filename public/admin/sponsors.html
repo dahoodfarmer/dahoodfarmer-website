@@ -62,7 +62,7 @@ var contracts=['not_started','draft','sent','signed','declined'];
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function options(list,current){return list.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+'>'+esc(v.replaceAll('_',' '))+'</option>'}).join('')}
 function field(label,name,value,type){return '<div class="field"><label>'+esc(label)+'</label><input data-field="'+esc(name)+'" type="'+(type||'text')+'" value="'+esc(value||'')+'"></div>'}
-function post(payload){return fetch('/api/admin/sponsor-crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Request failed');return d})})}
+function post(payload){return fetch('/api/admin/sponsor-crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.text().then(function(raw){var d;try{d=JSON.parse(raw)}catch(_){throw new Error('The server returned an unexpected response (HTTP '+r.status+'). Refresh the page and sign in again if prompted.')}if(!r.ok)throw new Error(d.error||('Request failed (HTTP '+r.status+').'));return d})})}
 function render(){
  var p=document.getElementById('prospects');
  p.innerHTML=state.applications.length?state.applications.map(function(a){
@@ -86,7 +86,7 @@ function render(){
    (x.invoice_url?'<div class="field"><label>DHF invoice &amp; QR</label><a href="'+esc(x.invoice_url)+'" target="_blank" rel="noopener">Open invoice / QR '+esc(x.invoice_number||'')+'</a></div>':'<div class="field"><label>DHF invoice &amp; QR</label><span class="small">No DHF invoice issued yet.</span></div>')+
    field('Start date','start_date',x.start_date,'date')+field('End date','end_date',x.end_date,'date')+field('Renewal date','renewal_date',x.renewal_date,'date')+
    '<div class="field" style="grid-column:1/-1"><label>Internal notes</label><textarea data-field="notes">'+esc(x.notes)+'</textarea></div>'+
-   '</div><div class="actions"><button type="button" data-save="'+x.id+'">Save partnership</button><span class="small">Payment received is updated only by verified payment reconciliation.</span></div><div class="actions"><button type="button" data-create-invoice="'+x.id+'"'+((state.invoice_issuing_enabled&&x.contract_status==='signed'&&['contracted','fulfilling','completed','renewal_due'].includes(x.stage)&&Number(x.agreed_amount_cents)>=100)?'':' disabled')+'>Issue / resume DHF invoice</button></div>'+
+   '</div><div class="actions"><button type="button" data-save="'+x.id+'">Save partnership</button><span class="small">Payment received is updated only by verified payment reconciliation.</span></div><div class="actions"><button type="button" data-create-invoice="'+x.id+'"'+((state.invoice_issuing_enabled&&x.contract_status==='signed'&&['contracted','fulfilling','completed','renewal_due'].includes(x.stage)&&Number(x.agreed_amount_cents)>=100)?'':' disabled')+'>Issue / resume DHF invoice</button><span class="small" data-invoice-status="'+x.id+'" role="status" aria-live="polite"></span></div>'+
    '<h4>Deliverables</h4><div>'+ds.map(function(d){return '<div class="grid" style="align-items:end;border-top:1px solid #2b405b;padding:.6rem 0"><div><strong>'+esc(d.title)+'</strong><div class="small">'+esc(d.description)+' · Due: '+esc(d.due_date||'Not set')+'</div></div><div class="field"><label>Status</label><select data-delivery-status="'+d.id+'">'+options(['planned','in_progress','completed','waived'],d.status)+'</select></div><div class="field"><label>Proof / evidence link</label><input data-delivery-url="'+d.id+'" value="'+esc(d.evidence_url||'')+'"></div><button type="button" data-save-delivery="'+d.id+'">Update</button></div>'}).join('')+'</div>'+
    '<div class="grid"><div class="field"><label>New deliverable</label><input data-new-deliverable="'+x.id+'" placeholder="e.g. Homepage sponsor placement"></div><div class="field"><label>Due date</label><input type="date" data-new-due="'+x.id+'"></div><div class="field"><label>Description</label><input data-new-description="'+x.id+'" placeholder="Exact promised benefit"></div></div><div class="actions"><button type="button" data-add-deliverable="'+x.id+'">Add deliverable</button></div>'+
    '<h4>Recent activity</h4><ul>'+acts.map(function(a){return '<li class="small">'+esc(a.created_at)+' · '+esc(a.activity_type)+' — '+esc(a.summary)+(a.follow_up_at?' · Follow up: '+esc(a.follow_up_at):'')+'</li>'}).join('')+'</ul>'+
@@ -110,11 +110,19 @@ document.addEventListener('click',function(e){
  }
  if(b.hasAttribute('data-create-invoice')){
   var id=Number(b.getAttribute('data-create-invoice'));
-  var due=document.querySelector('[data-deal="'+id+'"] [data-field="invoice_due_date"]').value;
+  var card=b.closest('[data-deal]');
+  var due=card.querySelector('[data-field="invoice_due_date"]').value;
+  var status=card.querySelector('[data-invoice-status]');
+  if(!due){status.textContent='Enter an invoice due date in the field above, then tap this button again.';card.querySelector('[data-field="invoice_due_date"]').focus();return;}
+  status.textContent='Creating DHF invoice…';
   b.disabled=true;
   post({action:'create_invoice',partnership_id:id,due_date:due}).then(function(d){
-   return load().then(function(){message.innerHTML='Secure invoice issued: <a href="'+esc(d.invoice_url)+'" target="_blank" rel="noopener">open invoice</a>. Share this link only with the contracted sponsor.';});
-  }).catch(function(err){message.textContent=err.message}).finally(function(){b.disabled=false});
+   message.textContent='DHF invoice created successfully.';
+   return load().then(function(){
+    var refreshed=document.querySelector('[data-deal="'+id+'"] [data-invoice-status]');
+    if(refreshed)refreshed.innerHTML='Invoice issued: <a href="'+esc(d.invoice_url)+'" target="_blank" rel="noopener">open invoice / QR</a>. No payment has been collected.';
+   });
+  }).catch(function(err){status.textContent=err.message;message.textContent=err.message}).finally(function(){b.disabled=false});
  }
  if(b.hasAttribute('data-add-deliverable')){
   var id=Number(b.getAttribute('data-add-deliverable'));
