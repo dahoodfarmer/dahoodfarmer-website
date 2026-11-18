@@ -1,7 +1,7 @@
-# Da HoodFarmer Payment Center — Provider-Neutral Architecture
+# Da HoodFarmer Payment Center — DHF-Owned Architecture
 
 **Status:** Preview development foundation. DHF-owned invoices are provider-independent; payment collection remains disabled.
-**Decision:** The DHF platform owns invoices, QR destinations, customer experience, records and reconciliation. No Stripe integration or account is intended.
+**Decision:** DHF owns invoices, QR destinations, customer experience, records and reconciliation. Stripe and Square are excluded. No third-party hosted checkout is part of the initial launch.
 
 ## DHF ownership
 
@@ -9,12 +9,12 @@ DHF owns the branded Payment Center, sponsor CRM, signed agreements, invoice num
 
 ## Payment rails are separate
 
-- Apple Pay and card acceptance require merchant setup and an authorized acquiring/processing and settlement route. A QR code does not itself process or settle money.
-- ACH requires confirmed authorization, return-handling and settlement procedures.
-- Manual bank transfer can be reconciled only after the owner independently verifies cleared funds in the business bank account.
+- Direct bank-to-bank transfer is the intended first payment rail. It can avoid card-processing percentages, but the receiving bank may charge account, wire or other transfer fees. The owner must confirm the exact terms with the bank.
+- Manual bank transfer can be reconciled only after the owner independently verifies cleared funds in the DHF business bank account and confirms the exact invoice amount.
+- Card, Apple Pay, ACH debit and third-party wallet checkout are excluded from the initial launch. A DHF-owned interface does not eliminate card-network or acquiring costs.
 - DHF does not store card numbers, CVV/security codes, bank login credentials or raw payment credentials.
 
-The public Payment Center shows intended methods as not activated. No payment form or live checkout is available.
+The public Payment Center shows methods as not activated. No payment form, checkout or bank details are published.
 
 ## Two QR experiences
 
@@ -27,18 +27,17 @@ QR payloads contain only DHF URLs. No personal information, amount, bank details
 
 The private Sponsor CRM can create a DHF-owned invoice only from a signed agreement, contracted stage, agreed amount, valid billing email and future due date. The server generates a random 256-bit URL token, stores only its SHA-256 hash, and rotates the token when an open invoice is resumed. Customer invoice pages are no-index, no-store and printable. The invoice amount cannot be changed by the customer.
 
-DHF_INTERNAL_INVOICING_ENABLED is enabled only in the isolated Preview configuration. DHF_PAYMENTS_ENABLED, DHF_CHECKOUT_ENABLED and receipt email remain false. No payment provider is selected.
+DHF_INTERNAL_INVOICING_ENABLED is enabled only in the isolated Preview configuration. DHF_PAYMENTS_ENABLED, DHF_CHECKOUT_ENABLED and receipt email remain false. No payment provider is selected. Direct bank instructions and reconciliation remain disabled pending owner-side bank setup and approval.
 
 ## Legacy schema
 
-Some historical migrations retain provider-specific database columns and CHECK values for compatibility with databases already migrated. Those legacy columns are not used by the current application code. The Stripe adapter, API health endpoint, webhook route and Stripe-specific tests are removed from this branch.
+Some historical migrations retain provider-specific database columns and CHECK values for compatibility with databases already migrated. Those legacy columns are not used by the current application code. No active Stripe, Square, Adyen or other processor adapter, API, webhook or checkout route is included in this release branch.
 
 ## Activation gates
 
-1. Verify legal merchant identity, tax classification, business address and payout account.
-2. Compare written commercial terms and payout/settlement conditions for any candidate acquiring route.
-3. Verify Apple Pay domain, merchant ID, certificates and provider/acquirer support before advertising it as available.
-4. Test invoice creation, token rotation/revocation, QR scan behavior and owner reconciliation in Preview.
-5. Verify ACH authorization, returns and settlement before any activation.
-6. Complete privacy, terms, refund, tax and customer-support review.
-7. Obtain explicit owner approval before live account setup, Production secrets, migrations, DNS changes, deployment or payment activation.
+1. Verify legal merchant identity, tax classification, business address and the receiving business bank account.
+2. Obtain the bank's written details for supported incoming transfer types, processing times and any fees.
+3. Add only approved business bank instructions to customer invoices; never expose login credentials or personal account access.
+4. Test invoice creation, token rotation/revocation, QR scan behavior and owner reconciliation in Preview with synthetic records.
+5. Complete privacy, terms, refund, tax and customer-support review.
+6. Obtain explicit owner approval before publishing bank instructions, enabling reconciliation, changing Production or accepting customer funds.
