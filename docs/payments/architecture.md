@@ -24,7 +24,7 @@ A QR is a visual link, not a payment network. Do not encode personal data, bank 
 - **Bank transfer:** may be supported as an owner-approved manual method. A screenshot, remittance advice or customer statement is not proof of settlement. Only the owner can reconcile cleared funds in the business bank account and mark an invoice paid.
 - DHF must not represent itself as a card processor or payment facilitator, and must not collect card numbers, CVV/security codes or bank login credentials.
 
-No external business destination is configured. Payment collection and DHF checkout remain disabled. The external-destination framework is dormant until an owner-verified business profile URL is configured. Manual settlement support must remain fail-closed until its separate owner reconciliation workflow is complete.
+No external business destination is configured. Payment collection and DHF checkout remain disabled. Square links are returned only when both the master payment switch and the dedicated Square-link switch are explicitly enabled. Manual bank-transfer reconciliation is independently fail-closed unless the master switch, manual-reconciliation switch, manual provider selection and bank-transfer method are all explicitly enabled.
 
 ## Security and operating rules
 
