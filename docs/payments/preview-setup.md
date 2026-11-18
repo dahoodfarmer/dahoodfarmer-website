@@ -28,7 +28,7 @@ The production branch remains site-rebuild-v2. Payment work is on feature/dhf-pr
 | DHF_SQUARE_PAYMENT_URL | Empty | Optional official Square payment link; HTTPS square.link or checkout.square.site host only |
 | 
 | 
-| DHF_RECEIPT_TOKEN_SECRET | Preview secret only | Receipt URL signing key; never place in Git |
+| DHF_RECEIPT_TOKEN_SECRET | Configured as a Preview-only secret | Receipt URL signing key; generated and stored in Cloudflare; never place in Git or Production |
 | RESEND_API_KEY / RESEND_FROM_EMAIL | Not configured | Email delivery unavailable |
 
 No Stripe key, webhook secret, Stripe account, Stripe checkout or Stripe API dependency is used by the current application code. The unused STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET were also removed from the Cloudflare Pages Preview project settings; Production settings were not changed.
