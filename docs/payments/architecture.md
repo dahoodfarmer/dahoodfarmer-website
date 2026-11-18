@@ -1,7 +1,7 @@
 # Da HoodFarmer Payment Center — Architecture
 
 **Status:** DHF-owned invoice foundation in Preview; payment collection remains disabled.
-**Product decision:** DHF owns the customer experience and business records. Stripe and Square are excluded. No third-party hosted checkout is part of the initial launch.
+**Product decision:** DHF owns the customer experience and business records. Stripe is permanently excluded. Direct bank transfer remains a separate first-party route. Square Web Payments SDK is the preferred non-Stripe candidate for embedded Apple Pay/card/ACH, but is not selected, integrated or activated. No third-party hosted checkout is part of the initial launch.
 
 ## DHF-owned capabilities
 
@@ -20,7 +20,9 @@ A QR is a visual link, not a payment network. Do not encode personal data, bank 
 
 - **Direct bank transfer:** the intended first payment rail. DHF will provide business bank-transfer instructions directly on the invoice only after the owner verifies the receiving business account, confirms the bank's transfer options and any fees, and approves the wording. A customer screenshot, remittance advice or payment promise is not proof of settlement.
 - **Manual reconciliation:** only the owner may mark an invoice paid, and only after independently verifying cleared funds in the DHF business bank account and confirming the exact invoice amount. The reconciliation endpoint is fail-closed behind the master payment switch, manual-reconciliation switch, manual provider selection and bank-transfer method. All remain off in Preview.
-- **Cards, Apple Pay, ACH debit and third-party wallet checkout:** excluded from the initial launch. A DHF-owned screen or QR does not remove card-network, acquiring or processing costs. Do not add a processor or payment facilitator without a separate owner-approved business case.
+- **Apple Pay and cards:** planned but inactive. Square Web Payments SDK is the leading candidate for embedded DHF checkout, subject to merchant eligibility and owner approval. A DHF-owned screen or QR does not remove card-network, acquiring or processing costs.
+- **ACH bank debit:** optional future rail only. Square ACH is asynchronous and settles to the Square seller balance before payout to DHF's linked bank; it is not direct buyer-to-DHF-bank transfer.
+- **No provider integration is active:** Square remains an evaluation candidate only; no account, credentials, SDK, webhook or checkout has been configured. See `non-stripe-processor-evaluation.md`.
 - DHF must not represent itself as a card processor or payment facilitator, and must not collect card numbers, CVV/security codes or bank login credentials.
 
 No bank account details or payment destination are currently published. Payment collection and DHF checkout remain disabled. No customer is instructed to send money. Direct bank transfers can avoid card-processing percentages, but the receiving bank may charge account, wire or other transfer fees; confirm the exact terms with the bank before activation.
@@ -37,4 +39,4 @@ No bank account details or payment destination are currently published. Payment 
 
 ## Legacy database compatibility
 
-Earlier additive migrations introduced legacy provider columns and constraints. They remain in the schema for migration compatibility only. The former Stripe checkout and webhook API routes have been removed from this feature branch; the current application code has no active third-party processor adapter, API call, webhook or health-check route. The shop page is informational and has no checkout. Do not add a provider dependency without a new owner-approved decision.
+Earlier additive migrations introduced legacy provider columns and constraints. They remain in the schema for migration compatibility only. The former Stripe checkout and webhook API routes have been removed from this feature branch; the current application code has no active third-party processor adapter, API call, webhook or health-check route. The shop page is informational and has no checkout. Do not activate a provider or add provider credentials without owner approval. Square is the current preferred non-Stripe candidate for further evaluation.
