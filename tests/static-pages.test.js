@@ -77,11 +77,15 @@ test('privacy and terms disclose applications, separate consent and internationa
   assert.match(terms,/does not automatically publish a business profile/);
 });
 
-test('payment center shows only direct bank transfer pending owner setup',()=>{
+test('payment center distinguishes planned methods from inactive payment routes',()=>{
   const html=read('public/payment-center.html');
   assert.match(html,/Direct Bank Transfer/);
-  assert.doesNotMatch(html,/Apple Pay|Debit &amp; Credit Cards|ACH Bank Debit/);
+  assert.match(html,/Apple Pay/);
+  assert.match(html,/Debit \/ Credit Card/);
+  assert.match(html,/ACH Bank Debit/);
+  assert.match(html,/Apple Pay[\s\S]*?Not activated/);
   assert.match(html,/DHF will publish verified business bank-transfer instructions after confirming the receiving account and any bank fees/);
+  assert.match(html,/Square Web Payments SDK is the leading candidate/);
   assert.match(html,/external-payment-options/);
   assert.match(html,/dhf-payment-options\.js/);
   assert.match(html,/Setup pending/);
