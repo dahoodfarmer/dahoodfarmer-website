@@ -22,7 +22,7 @@ export async function createPaidReceipt({ DB, env, invoiceId, providerId, provid
   if (providerId !== 'manual') throw new Error('Unsupported receipt provider.');
   if (!Number.isSafeInteger(amountCents) || amountCents < 0) throw new Error('Invalid paid amount.');
   if (currency !== 'usd') throw new Error('Unsupported receipt currency.');
-  if (paymentMethod && !['apple_pay', 'card', 'ach', 'bank_transfer', 'other'].includes(paymentMethod)) throw new Error('Invalid receipt payment method.');
+  if (paymentMethod && paymentMethod !== 'bank_transfer') throw new Error('Only direct bank-transfer receipts are supported.');
 
   const invoice = await DB.prepare(
     `SELECT i.invoice_id, i.partnership_id, i.description, i.amount_cents,
