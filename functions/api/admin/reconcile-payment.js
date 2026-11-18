@@ -127,11 +127,23 @@ export async function onRequestPost({ request, env }) {
       return json({ error: 'The atomic reconciliation did not confirm this exact payment. Reload the ledger and investigate before retrying.' }, 409);
     }
 
+    const partnership = await env.DB.prepare(
+      `SELECT payment_status, payment_provider_id, payment_reference
+       FROM sponsor_partnerships WHERE id = ? LIMIT 1`
+    ).bind(invoice.partnership_id).first();
+    if (!partnership || partnership.payment_status !== 'paid' || partnership.payment_provider_id !== 'manual' || partnership.payment_reference !== reference) {
+      return json({ error: 'The invoice and partnership ledger did not reconcile to the same payment. Keep payment controls disabled and investigate.' }, 500);
+    }
+
     const saved = await env.DB.prepare(
-      `SELECT receipt_id, invoice_id, recipient_email, amount_cents, currency, paid_at, email_status
+      `SELECT receipt_id, invoice_id, recipient_email, amount_cents, currency, provider_id,
+              provider_reference, receipt_token_hash, paid_at, email_status
        FROM payment_receipts WHERE invoice_id = ? LIMIT 1`
     ).bind(invoiceId).first();
-    if (!saved) return json({ error: 'The invoice is marked paid but the receipt record could not be confirmed. Keep payment controls disabled and investigate.' }, 500);
+    if (!saved || saved.provider_id !== 'manual' || saved.provider_reference !== reference ||
+        Number(saved.amount_cents) !== amountCents || saved.currency !== 'usd' || saved.receipt_token_hash !== tokenHash) {
+      return json({ error: 'The invoice is marked paid but its receipt record failed consistency verification. Keep payment controls disabled and investigate.' }, 500);
+    }
 
     const receipt = { ...saved, token, receipt_url: '/receipt/' + token };
     await sendReceiptEmail({ DB: env.DB, env, receipt });
