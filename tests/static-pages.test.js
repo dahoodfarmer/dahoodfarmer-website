@@ -84,6 +84,6 @@ test('payment center shows only direct bank transfer pending owner setup',()=>{
   assert.match(html,/DHF will publish verified business bank-transfer instructions after confirming the receiving account and any bank fees/);
   assert.match(html,/external-payment-options/);
   assert.match(html,/dhf-payment-options\.js/);
-  assert.match(html,/Not activated/);
+  assert.match(html,/Setup pending/);
   assert.doesNotMatch(html,/<form\b/i);
 });
