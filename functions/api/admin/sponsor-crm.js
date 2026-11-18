@@ -232,6 +232,9 @@ export async function onRequestPost({ request, env }) {
 
     return json({ error: 'Unknown sponsor CRM action.' }, 400);
   } catch (error) {
+    if (/UNIQUE constraint failed: sponsor_invoices\\.partnership_id/i.test(error?.message || '')) {
+      return json({ error: 'Another open invoice was created for this partnership. Reload the CRM before trying again.' }, 409);
+    }
     console.error('Sponsor CRM write failed:', error?.message || String(error));
     return json({ error: 'Sponsor record could not be saved.' }, 500);
   }
