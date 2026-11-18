@@ -26,6 +26,10 @@ Therefore:
 - Use Square Apple Pay/card only if the owner accepts card-network processing fees and Square settlement.
 - Never label Square ACH as a direct-to-bank payment.
 
+## Chime is not a business-payment route
+
+Chime's own Help Center says it does not currently support business accounts. Its Pay Anyone feature is described as personal peer-to-peer payments for friends/family, not business transactions. Do not publish a personal Chime handle or QR as the DHF business payment destination, and do not use personal P2P transfers to collect customer invoices. If the owner later has a separate business bank that supports commercial Zelle or ACH receipts, evaluate that bank's business terms directly instead.
+
 ## Other non-Stripe candidates
 
 | Candidate | What it offers | Main trade-off |
@@ -55,3 +59,5 @@ Therefore:
 - Authorize.net Apple Pay requirements: https://support.authorize.net/knowledgebase/Knowledgearticle/?code=KA-05457
 - Braintree Apple Pay web guide: https://developer.paypal.com/braintree/docs/guides/apple-pay/client-side/javascript/v4/
 - Adyen Apple Pay web component: https://docs.adyen.com/payment-methods/apple-pay/web-component/
+- Chime business account availability: https://help.chime.com/account-security-00b00e5a/account-info-9fa82bb4/does-chime-offer-business-accounts-1595d11d
+- Chime Pay Anyone personal-use description: https://www.chime.com/blog/how-to-use-chime-pay-anyone/
