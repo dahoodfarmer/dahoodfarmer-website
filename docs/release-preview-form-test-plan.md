@@ -9,7 +9,8 @@
   `https://feature-loopy-carter-dual-id.dahoodfarmer-website.pages.dev`
 - Sign in through the site's existing Cloudflare Access gate if prompted.
 - Confirm the address bar remains on the `pages.dev` Preview host.
-- Confirm the Cloudflare Turnstile challenge is visible on both forms.
+- Confirm the Cloudflare Turnstile challenge is visible on both forms. The Preview branch alias is now on the widget's allowed-domain list, and the server-side expected hostname is aligned to that alias.
+- The Preview `TURNSTILE_SECRET_KEY` secret entry exists, but Cloudflare masks its value; a successful challenge submission is the end-to-end validity check.
 - Use only synthetic test details. Do not enter a real person's name, phone number, email, address, or event details.
 - Do not repeat submissions rapidly: each endpoint is limited to five requests per IP per 60 seconds.
 
@@ -63,6 +64,7 @@ No email provider account, paid service, or new secret should be added without t
 | Check | Result |
 |---|---|
 | Preview host and Access login | Pending |
+| Preview hostname allowlist and server check aligned | Complete |
 | Contact Turnstile renders | Pending |
 | Contact success + Preview D1 row | Pending |
 | Booking Turnstile renders | Pending |
