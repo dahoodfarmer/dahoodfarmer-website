@@ -31,7 +31,7 @@ No external business destination is configured. Payment collection and DHF check
 - Internal invoice issuance is enabled only in the isolated Preview environment behind owner-only Cloudflare Access.
 - Payment collection, checkout and receipt email remain disabled.
 - Invoice tokens are random, opaque, hash-only at rest, no-index and revocable by token rotation.
-- Invoice creation requires a signed agreement, contracted/fulfilling stage, agreed server-side amount, valid billing email and future due date.
+- Invoice creation requires a signed agreement, contracted/fulfilling stage, agreed server-side amount, valid billing email and future due date. A Preview migration adds a unique partial index so each partnership can have only one issued/pending invoice at a time; concurrent duplicate issuance is rejected safely.
 - A browser redirect, screenshot or payment promise never marks an invoice paid. External provider payments require owner verification in the provider activity before reconciliation.
 - No customer email is sent automatically.
 - No production database, secret, DNS, deployment, or payment activation is part of this work.
