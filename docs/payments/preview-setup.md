@@ -47,7 +47,7 @@ Preview has migrations 0010 through 0014 applied. Migration 0014 adds a unique p
 
 ## Completed Preview engineering checks
 
-- Website CI run #490 passed 104/104 tests on commit `b35588999c3c41200dac11e83c3578de04dd1be3`. A later run against the updated Payment Center copy exposed one stale static-page assertion that expected the previously planned processor methods. The assertion was updated to enforce the owner-approved direct-transfer-only model; the updated suite still needs a fresh CI confirmation.
+- Website CI run #507 passed 104/104 tests (104 passed, 0 failed, 0 skipped) on commit `433e77caac36240b2e39cb256d9946783521cb91`. The preceding run #495 exposed one stale static-page assertion that expected previously planned processor methods; the assertion was updated to enforce the owner-approved direct-transfer-only model, and the complete suite then passed.
 - Cloudflare Pages Preview deployment for the latest commit is successful: `https://e3d4867e.dahoodfarmer-website.pages.dev`.
 - A real Preview D1 atomic-batch failure-injection test deliberately violated the payment receipt provider constraint. The invoice, partnership, receipt and activity writes rolled back as one unit. Temporary test records were cleaned and verified absent.
 - The uploaded Carter / Columbia emblem is bundled as `/assets/dhf-carter-columbia-logo.webp` and displayed on the Payment Center, invoice, receipt and owner payment-ledger pages.
