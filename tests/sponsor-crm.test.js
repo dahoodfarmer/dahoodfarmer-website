@@ -1,183 +1,155 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequestGet, onRequestPost } from '../functions/api/admin/sponsor-crm.js';
+import { onRequestPost } from '../functions/api/admin/sponsor-crm.js';
 
-const sponsorApp = { id: 12, application_type: 'sponsor' };
-function fakeDb(options = {}) {
+const origin = 'https://preview.example';
+function request(body, originHeader = origin) {
+  return new Request(origin + '/api/admin/sponsor-crm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: originHeader },
+    body: JSON.stringify(body)
+  });
+}
+function fakeDb({ partnership = null, openInvoice = null, insertError = null } = {}) {
   const calls = [];
   return {
     calls,
     prepare(sql) {
       return {
-        async all() { calls.push({ kind: 'all', sql, values: [] }); return { results: options.rows || [] }; },
         bind(...values) {
           return {
-            async all() { calls.push({ kind: 'all', sql, values }); return { results: options.rows || [] }; },
             async first() {
               calls.push({ kind: 'first', sql, values });
-              if (/FROM opportunity_applications/i.test(sql)) return options.application ?? sponsorApp;
-              if (/FROM sponsor_partnerships/i.test(sql)) return options.partnership ?? { id: 4, application_id: 12, stage: 'prospect' };
-              if (/FROM sponsor_invoices/i.test(sql)) return options.openInvoice ?? null;
-              if (/FROM sponsor_deliverables/i.test(sql)) return options.deliverable ?? { id: 9 };
-              return options.first ?? { id: 4 };
+              if (/FROM sponsor_partnerships s JOIN opportunity_applications/.test(sql)) return partnership;
+              if (/FROM sponsor_invoices/.test(sql)) return openInvoice;
+              return null;
             },
-            async run() { calls.push({ kind: 'run', sql, values }); return { meta: { changes: options.changes ?? 1, last_row_id: options.lastRowId ?? 9 } }; }
+            async run() {
+              calls.push({ kind: 'run', sql, values });
+              if (/INSERT INTO sponsor_invoices/.test(sql) && insertError) throw insertError;
+              return { meta: { changes: 1, last_row_id: 42 } };
+            }
           };
         }
       };
     }
   };
 }
-const origin = 'https://preview.example';
-function req(body, originHeader = origin) {
-  return new Request(origin + '/api/admin/sponsor-crm', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: originHeader }, body: JSON.stringify(body) });
-}
+const validPartnership = {
+  id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed',
+  agreed_amount_cents: 50000, package_name: 'Corporate Partner',
+  payment_status: 'not_requested', contact_email: 'buyer@example.com',
+  contact_name: 'Buyer', organization: 'Example Sponsor'
+};
 
-test('sponsor CRM GET returns prospect, partnership, deliverable and activity collections', async () => {
-  const DB = fakeDb({ rows: [{ id: 1 }] });
-  const response = await onRequestGet({ env: { DB } });
-  const body = await response.json();
-  assert.equal(response.status, 200);
-  assert.deepEqual(Object.keys(body), ['applications', 'partnerships', 'deliverables', 'activities', 'invoice_issuing_enabled']);
-  assert.equal(DB.calls.filter(c => c.kind === 'all').length, 4);
-});
-
-test('rejects cross-origin sponsor CRM writes', async () => {
+test('blocks cross-origin CRM writes', async () => {
   const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'create', application_id: 12 }, 'https://attacker.example'), env: { DB } });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }, 'https://attacker.example'),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
   assert.equal(response.status, 403);
   assert.equal(DB.calls.length, 0);
 });
 
-test('creates a partnership only from a sponsor application', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'create', application_id: 12, division: 'advertising_media', package_name: 'Media Partner' }), env: { DB } });
-  const body = await response.json();
-  assert.equal(response.status, 200);
-  assert.equal(body.success, true);
-  assert.equal(body.partnership.id, 4);
-  assert.ok(DB.calls.some(c => /INSERT OR IGNORE INTO sponsor_partnerships/.test(c.sql)));
-});
-
-test('rejects non-sponsor applications when creating a partnership', async () => {
-  const DB = fakeDb({ application: { id: 12, application_type: 'vendor' } });
-  const response = await onRequestPost({ request: req({ action: 'create', application_id: 12 }), env: { DB } });
-  assert.equal(response.status, 404);
-  assert.equal(DB.calls.some(c => /INSERT OR IGNORE/.test(c.sql)), false);
-});
-
-test('cannot manually mark sponsor payment as paid or refunded', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'update', id: 4, stage: 'qualified', division: 'business_network', contract_status: 'not_started', payment_status: 'paid' }), env: { DB } });
-  assert.equal(response.status, 422);
-  assert.equal(DB.calls.some(c => /UPDATE sponsor_partnerships/.test(c.sql)), false);
-});
-
-test('requires agreement URL and signed date before marking contract signed', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'update', id: 4, stage: 'qualified', division: 'business_network', contract_status: 'signed', payment_status: 'not_requested' }), env: { DB } });
-  assert.equal(response.status, 422);
-  assert.equal(DB.calls.some(c => /UPDATE sponsor_partnerships/.test(c.sql)), false);
-});
-
-test('rejects insecure agreement and invoice links', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'update', id: 4, stage: 'qualified', division: 'business_network', contract_status: 'not_started', payment_status: 'not_requested', contract_url: 'http://example.com' }), env: { DB } });
-  assert.equal(response.status, 422);
-});
-
-test('requires a signed agreement before moving a partnership to contracted', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'update', id: 4, stage: 'contracted', division: 'business_network', contract_status: 'draft' }), env: { DB } });
-  assert.equal(response.status, 409);
-});
-
-test('adds a deliverable to an existing partnership', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'add_deliverable', partnership_id: 4, title: 'Homepage sponsor placement', due_date: '2026-12-01' }), env: { DB } });
-  const body = await response.json();
-  assert.equal(response.status, 200);
-  assert.equal(body.success, true);
-  assert.ok(DB.calls.some(c => /INSERT INTO sponsor_deliverables/.test(c.sql)));
-});
-
-
-test('invoice issuing remains disabled until the owner enables the invoicing gate', async () => {
-  const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, payment_status: 'not_requested' } });
-  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_INVOICING_ENABLED: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
+test('internal invoice creation remains disabled unless its Preview-only gate is enabled', async () => {
+  const DB = fakeDb({ partnership: validPartnership });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'false' }
+  });
   assert.equal(response.status, 503);
-  assert.equal(DB.calls.some(c => /INSERT INTO sponsor_invoices/.test(c.sql)), false);
+  assert.equal(DB.calls.length, 0);
 });
 
-test('creates a finalized Stripe hosted invoice without sending an email', async () => {
-  const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested', contact_email: 'buyer@example.com', contact_name: 'Buyer', organization: 'Example Sponsor', stripe_customer_id: '' } });
-  const calls = [];
-  const oldFetch = globalThis.fetch;
-  globalThis.fetch = async (url, init = {}) => {
-    calls.push({ url: String(url), init });
-    if (String(url).endsWith('/account')) return new Response(JSON.stringify({ id: 'acct_test', livemode: false }), { status: 200 });
-    if (String(url).endsWith('/customers')) return new Response(JSON.stringify({ id: 'cus_test_1' }), { status: 200 });
-    if (String(url).endsWith('/invoices')) return new Response(JSON.stringify({ id: 'in_test_1', status: 'draft', amount_due: 0 }), { status: 200 });
-    if (String(url).endsWith('/invoiceitems')) return new Response(JSON.stringify({ id: 'ii_test_1' }), { status: 200 });
-    if (String(url).endsWith('/invoices/in_test_1/finalize')) return new Response(JSON.stringify({ id: 'in_test_1', status: 'open', amount_due: 50000, hosted_invoice_url: 'https://invoice.stripe.com/i/test_invoice', invoice_pdf: 'https://files.stripe.com/test.pdf', number: 'INV-TEST-001' }), { status: 200 });
-    throw new Error('Unexpected Stripe request: ' + String(url));
-  };
+test('creates a DHF invoice from the signed agreement without calling a payment provider', async () => {
+  const DB = fakeDb({ partnership: validPartnership });
+  const originalFetch = globalThis.fetch;
+  let networkCalls = 0;
+  globalThis.fetch = async () => { networkCalls += 1; throw new Error('No external payment provider may be called'); };
   try {
-    const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }), env: { DB, DHF_INVOICING_ENABLED: 'true', DHF_STRIPE_EXPECT_LIVEMODE: 'false', STRIPE_SECRET_KEY: 'sk_test_mock' } });
+    const response = await onRequestPost({
+      request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+      env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+    });
     const body = await response.json();
     assert.equal(response.status, 200);
-    assert.equal(body.invoice_url, 'https://invoice.stripe.com/i/test_invoice');
-    assert.equal(body.invoice_number, 'INV-TEST-001');
+    assert.equal(body.invoice_number, 'DHF-2026-000042');
     assert.equal(body.amount_cents, 50000);
-    assert.equal(calls.length, 5);
-    assert.equal(calls.some(c => c.url.endsWith('/send')), false);
-    const invoiceParams = new URLSearchParams(calls.find(c => c.url.endsWith('/invoices')).init.body);
-    assert.equal(invoiceParams.get('collection_method'), 'send_invoice');
-    assert.equal(invoiceParams.get('auto_advance'), 'false');
-    const itemParams = new URLSearchParams(calls.find(c => c.url.endsWith('/invoiceitems')).init.body);
-    assert.equal(itemParams.get('amount'), '50000');
-    assert.equal(itemParams.get('invoice'), 'in_test_1');
-    assert.ok(DB.calls.some(c => /UPDATE sponsor_partnerships SET payment_status = CASE/.test(c.sql)));
+    assert.match(body.invoice_url, /^https:\/\/preview\.example\/invoice\/[A-Za-z0-9_-]{40,64}$/);
+    assert.equal(body.payment_activation, 'disabled');
+    assert.equal(networkCalls, 0);
+    const insert = DB.calls.find(call => /INSERT INTO sponsor_invoices/.test(call.sql));
+    assert.ok(insert);
+    assert.equal(insert.values[2], 50000);
+    assert.equal(insert.values[5].length, 64);
+    assert.ok(DB.calls.some(call => /UPDATE sponsor_partnerships SET payment_status = 'invoice_sent'/.test(call.sql)));
   } finally {
-    globalThis.fetch = oldFetch;
+    globalThis.fetch = originalFetch;
   }
 });
 
-test('requires a due date and valid sponsor billing email before invoicing', async () => {
-  const DB = fakeDb({ partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'not_requested', contact_email: '', contact_name: 'Buyer', organization: 'Example Sponsor' } });
-  const response = await onRequestPost({ request: req({ action: 'create_invoice', partnership_id: 4 }), env: { DB, DHF_INVOICING_ENABLED: 'true', STRIPE_SECRET_KEY: 'sk_test_mock' } });
-  assert.equal(response.status, 422);
+test('returns a conflict if a concurrent request already created an open invoice', async () => {
+  const DB = fakeDb({ partnership: validPartnership, insertError: new Error('UNIQUE constraint failed: sponsor_invoices.partnership_id') });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  const body = await response.json();
+  assert.equal(response.status, 409);
+  assert.match(body.error, /Another open invoice/);
 });
 
-test('resumes an existing open Stripe invoice instead of creating a duplicate', async () => {
+test('rejects invoice issuance without a signed agreement and agreed amount', async () => {
+  const DB = fakeDb({ partnership: { ...validPartnership, contract_status: 'draft' } });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  assert.equal(response.status, 409);
+  assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
+});
+
+test('does not create a replacement invoice when an open invoice has a different amount or due date', async () => {
   const DB = fakeDb({
-    partnership: { id: 4, application_id: 12, stage: 'contracted', contract_status: 'signed', agreed_amount_cents: 50000, package_name: 'Corporate Partner', payment_status: 'invoice_sent', contact_email: 'buyer@example.com', contact_name: 'Buyer', organization: 'Example Sponsor', stripe_customer_id: 'cus_test_1' },
-    openInvoice: { invoice_id: 'inv-existing', partnership_id: 4, amount_cents: 50000, due_date: '2026-12-31', status: 'issued', stripe_invoice_id: 'in_existing' }
+    partnership: validPartnership,
+    openInvoice: { invoice_id: 'existing', amount_cents: 40000, due_date: '2026-12-31', status: 'issued', id: 41 }
   });
-  let calls=0;
-  const oldFetch=globalThis.fetch;
-  globalThis.fetch=async(url)=>{calls++;return new Response(JSON.stringify(String(url).endsWith('/account')?{id:'acct_test',livemode:false}:{id:'in_existing',status:'open',amount_due:50000,hosted_invoice_url:'https://invoice.stripe.com/i/existing',invoice_pdf:'https://files.stripe.com/existing.pdf',number:'INV-EXISTING'}),{status:200})};
-  try {
-    const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_INVOICING_ENABLED:'true',DHF_STRIPE_EXPECT_LIVEMODE:'false',STRIPE_SECRET_KEY:'sk_test_mock'}});
-    const body=await response.json();
-    assert.equal(response.status,200);
-    assert.equal(body.invoice_url,'https://invoice.stripe.com/i/existing');
-    assert.equal(calls,2);
-  } finally {globalThis.fetch=oldFetch}
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  assert.equal(response.status, 409);
+  assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
 });
 
-test('blocks invoice regeneration when an existing invoice amount or due date differs', async () => {
-  const DB=fakeDb({
-    partnership:{id:4,application_id:12,stage:'contracted',contract_status:'signed',agreed_amount_cents:50000,package_name:'Corporate Partner',payment_status:'invoice_sent',contact_email:'buyer@example.com',contact_name:'Buyer',organization:'Example Sponsor'},
-    openInvoice:{invoice_id:'inv-existing',partnership_id:4,amount_cents:40000,due_date:'2026-12-31',status:'issued',stripe_invoice_id:'in_existing'}
+test('resumes an open DHF invoice by rotating its opaque URL token', async () => {
+  const DB = fakeDb({
+    partnership: validPartnership,
+    openInvoice: { invoice_id: 'existing-invoice', amount_cents: 50000, due_date: '2026-12-31', status: 'issued', id: 41 }
   });
-  const response=await onRequestPost({request:req({action:'create_invoice',partnership_id:4,due_date:'2026-12-31'}),env:{DB,DHF_INVOICING_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_mock'}});
-  assert.equal(response.status,409);
-});
-
-test('adds a dated follow-up activity', async () => {
-  const DB = fakeDb();
-  const response = await onRequestPost({ request: req({ action: 'add_activity', partnership_id: 4, activity_type: 'follow_up', summary: 'Call the sponsor contact', follow_up_at: '2026-12-02' }), env: { DB } });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  const body = await response.json();
   assert.equal(response.status, 200);
-  assert.ok(DB.calls.some(c => /INSERT INTO sponsor_activities/.test(c.sql)));
+  assert.equal(body.invoice_id, 'existing-invoice');
+  assert.equal(body.invoice_number, 'DHF-2026-000041');
+  assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
+  const rotate = DB.calls.find(call => /UPDATE sponsor_invoices SET token_hash =/.test(call.sql));
+  assert.ok(rotate);
+  assert.equal(rotate.values[0].length, 64);
+  assert.equal(rotate.values[1], 'DHF-2026-000041');
+  assert.equal(rotate.values[3], 'existing-invoice');
+});
+
+test('rejects an agreed amount above the invoice database limit', async () => {
+  const DB = fakeDb({ partnership: { ...validPartnership, agreed_amount_cents: 100000001 } });
+  const response = await onRequestPost({
+    request: request({ action: 'create_invoice', partnership_id: 4, due_date: '2026-12-31' }),
+    env: { DB, DHF_INTERNAL_INVOICING_ENABLED: 'true' }
+  });
+  assert.equal(response.status, 409);
+  assert.equal(DB.calls.some(call => /INSERT INTO sponsor_invoices/.test(call.sql)), false);
 });

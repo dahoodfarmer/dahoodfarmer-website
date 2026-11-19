@@ -29,23 +29,6 @@ function dateOrNull(value) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === s ? s : NaN;
 }
 
-async function stripeRequest(path, env, method = 'GET', params = null, idempotencyKey = '') {
-  const headers = { Authorization: 'Bearer ' + env.STRIPE_SECRET_KEY };
-  const init = { method, headers };
-  if (params) {
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    init.body = params.toString();
-  }
-  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
-  const response = await fetch('https://api.stripe.com/v1/' + path, init);
-  const result = await response.json();
-  if (!response.ok) {
-    const message = result.error?.message || 'Stripe invoice request failed.';
-    throw new Error(message);
-  }
-  return result;
-}
-
 function safeHttpsUrl(value) {
   const s = text(value, 1000);
   if (!s) return '';
@@ -58,7 +41,7 @@ export async function onRequestGet({ env }) {
       "SELECT a.id, a.name, a.email, a.organization, a.website, a.city, a.region, a.country, a.category, a.requested_package, a.event_interest, a.message, a.status, a.created_at FROM opportunity_applications a LEFT JOIN sponsor_partnerships s ON s.application_id = a.id WHERE a.application_type = 'sponsor' AND s.id IS NULL ORDER BY a.created_at DESC LIMIT 200"
     ).all();
     const partnerships = await env.DB.prepare(
-      "SELECT s.*, a.name AS contact_name, a.email AS contact_email, a.organization, a.website, a.city, a.region, a.country, a.category, a.requested_package AS inquiry_package, a.event_interest, a.status AS application_status, (SELECT i.due_date FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS invoice_due_date, (SELECT i.invoice_number FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS invoice_number, (SELECT i.invoice_pdf_url FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS invoice_pdf_url, (SELECT i.stripe_status FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS stripe_invoice_status FROM sponsor_partnerships s JOIN opportunity_applications a ON a.id = s.application_id ORDER BY s.updated_at DESC LIMIT 200"
+      "SELECT s.*, a.name AS contact_name, a.email AS contact_email, a.organization, a.website, a.city, a.region, a.country, a.category, a.requested_package AS inquiry_package, a.event_interest, a.status AS application_status, (SELECT i.due_date FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS invoice_due_date, (SELECT i.invoice_number FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS invoice_number, (SELECT i.provider_status FROM sponsor_invoices i WHERE i.partnership_id = s.id ORDER BY i.created_at DESC LIMIT 1) AS provider_invoice_status FROM sponsor_partnerships s JOIN opportunity_applications a ON a.id = s.application_id ORDER BY s.updated_at DESC LIMIT 200"
     ).all();
     const deliverables = await env.DB.prepare(
       "SELECT d.* FROM sponsor_deliverables d JOIN sponsor_partnerships s ON s.id = d.partnership_id ORDER BY CASE d.status WHEN 'completed' THEN 1 ELSE 0 END, d.due_date IS NULL, d.due_date ASC, d.id DESC LIMIT 500"
@@ -71,7 +54,9 @@ export async function onRequestGet({ env }) {
       partnerships: partnerships.results || [],
       deliverables: deliverables.results || [],
       activities: activities.results || [],
-      invoice_issuing_enabled: env.DHF_INVOICING_ENABLED === 'true' && Boolean(env.STRIPE_SECRET_KEY)
+      invoice_issuing_enabled: env.DHF_INTERNAL_INVOICING_ENABLED === 'true',
+      payment_provider: 'none',
+      payment_methods: []
     });
   } catch (error) {
     console.error('Sponsor CRM read failed:', error?.message || String(error));
@@ -107,7 +92,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === 'update') {
-      if (Object.prototype.hasOwnProperty.call(data, 'payment_status') || Object.prototype.hasOwnProperty.call(data, 'invoice_url')) return json({ error: 'Payment status and Stripe invoice links are system-managed.' }, 422);
+      if (Object.prototype.hasOwnProperty.call(data, 'payment_status') || Object.prototype.hasOwnProperty.call(data, 'invoice_url')) return json({ error: 'Payment status and provider invoice links are system-managed.' }, 422);
       const id = Number(data.id);
       if (!Number.isSafeInteger(id) || id < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
       const stage = text(data.stage, 40);
@@ -147,8 +132,7 @@ export async function onRequestPost({ request, env }) {
       const dueDate = dateOrNull(data.due_date);
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1 || !title) return json({ error: 'Partnership and deliverable title are required.' }, 422);
       if (Number.isNaN(dueDate)) return json({ error: 'Due date must use YYYY-MM-DD.' }, 422);
-      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Invoice due date cannot be in the past.' }, 422);
-      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Invoice due date cannot be in the past.' }, 422);
+      if (dueDate && dueDate < new Date().toISOString().slice(0, 10)) return json({ error: 'Deliverable due date cannot be in the past.' }, 422);
       const exists = await env.DB.prepare('SELECT id FROM sponsor_partnerships WHERE id = ?').bind(partnershipId).first();
       if (!exists) return json({ error: 'Partnership not found.' }, 404);
       const result = await env.DB.prepare(
@@ -187,8 +171,10 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === 'create_invoice') {
-      if (env.DHF_INVOICING_ENABLED !== 'true') return json({ error: 'Sponsor invoice issuing is disabled until tax treatment and test-mode Stripe settings are approved.' }, 503);
-      if (!env.STRIPE_SECRET_KEY) return json({ error: 'Stripe invoicing is not configured in this environment.' }, 503);
+      if (env.DHF_INTERNAL_INVOICING_ENABLED !== 'true') {
+        return json({ error: 'DHF internal invoice creation is disabled in this environment.' }, 503);
+      }
+      if (!env.DB) return json({ error: 'Invoice storage is unavailable.' }, 503);
       const partnershipId = Number(data.partnership_id);
       const dueDate = dateOrNull(data.due_date);
       if (!Number.isSafeInteger(partnershipId) || partnershipId < 1) return json({ error: 'Valid partnership ID is required.' }, 422);
@@ -200,111 +186,55 @@ export async function onRequestPost({ request, env }) {
       ).bind(partnershipId).first();
       if (!partnership) return json({ error: 'Partnership not found.' }, 404);
       if (partnership.payment_status === 'paid' || partnership.payment_status === 'refunded') return json({ error: 'This partnership has already been paid or refunded.' }, 409);
-      if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100) {
+      if (partnership.contract_status !== 'signed' || !['contracted','fulfilling','completed','renewal_due'].includes(partnership.stage) || !Number.isSafeInteger(Number(partnership.agreed_amount_cents)) || Number(partnership.agreed_amount_cents) < 100 || Number(partnership.agreed_amount_cents) > 100000000) {
         return json({ error: 'A signed agreement, contracted partnership stage and agreed amount are required before issuing an invoice.' }, 409);
       }
       if (!partnership.contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(partnership.contact_email)) return json({ error: 'A valid sponsor billing email is required on the application.' }, 422);
-      const openInvoice = await env.DB.prepare(
-        "SELECT * FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
-      ).bind(partnershipId).first();
-      if (openInvoice?.status === 'paid') return json({ error: 'This partnership is already paid.' }, 409);
-      let invoiceRecord = openInvoice;
-      let invoiceId = openInvoice?.invoice_id || crypto.randomUUID();
+
       const amount = Number(partnership.agreed_amount_cents);
-      if (openInvoice && (Number(openInvoice.amount_cents) !== amount || openInvoice.due_date !== dueDate)) return json({ error: 'An existing invoice has a different amount or due date. Void it in Stripe before issuing a replacement.' }, 409);
-      if (!['true','false'].includes(env.DHF_STRIPE_EXPECT_LIVEMODE)) return json({ error: 'Expected Stripe test/live mode is not configured.' }, 503);
-      let stripeAccount;
-      try { stripeAccount = await stripeRequest('account', env); }
-      catch { return json({ error: 'Stripe account mode could not be verified.' }, 503); }
-      if (stripeAccount.livemode !== (env.DHF_STRIPE_EXPECT_LIVEMODE === 'true')) return json({ error: 'Stripe key mode does not match this environment. Invoice creation blocked.' }, 409);
+      const openInvoice = await env.DB.prepare(
+        "SELECT invoice_id, amount_cents, due_date, status, id FROM sponsor_invoices WHERE partnership_id = ? AND status IN ('issued','pending') ORDER BY created_at DESC LIMIT 1"
+      ).bind(partnershipId).first();
+      if (openInvoice && (Number(openInvoice.amount_cents) !== amount || openInvoice.due_date !== dueDate)) {
+        return json({ error: 'An open DHF invoice already exists with a different amount or due date. Resolve or void it before issuing a replacement.' }, 409);
+      }
+
+      const invoiceId = openInvoice?.invoice_id || crypto.randomUUID();
+      const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
+      let binary = '';
+      for (const byte of tokenBytes) binary += String.fromCharCode(byte);
+      const token = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+      const tokenHash = await hashInvoiceToken(token);
       const description = 'Da HoodFarmer — ' + (text(partnership.package_name, 160) || 'Sponsorship partnership');
-      const dueTimestamp = Math.floor(Date.parse(dueDate + 'T23:59:59Z') / 1000);
-      if (!invoiceRecord) {
-        const tokenHash = await hashInvoiceToken(invoiceId);
-        await env.DB.prepare(
-          "INSERT INTO sponsor_invoices (invoice_id, partnership_id, amount_cents, currency, description, due_date, status, token_hash, stripe_status) VALUES (?, ?, ?, 'usd', ?, ?, 'pending', ?, 'draft')"
+      let invoiceRowId = openInvoice?.id;
+      if (!openInvoice) {
+        const inserted = await env.DB.prepare(
+          "INSERT INTO sponsor_invoices (invoice_id, partnership_id, amount_cents, currency, description, due_date, status, token_hash, provider_id, provider_status) VALUES (?, ?, ?, 'usd', ?, ?, 'issued', ?, 'unconfigured', 'not_applicable')"
         ).bind(invoiceId, partnershipId, amount, description, dueDate, tokenHash).run();
-        invoiceRecord = { invoice_id: invoiceId, status: 'pending', stripe_status: 'draft', stripe_invoice_id: null };
+        invoiceRowId = Number(inserted.meta?.last_row_id || 0);
+        if (!invoiceRowId) return json({ error: 'DHF invoice could not be created.' }, 500);
       }
+      const invoiceNumber = 'DHF-' + new Date().getUTCFullYear() + '-' + String(invoiceRowId).padStart(6, '0');
+      await env.DB.prepare(
+        "UPDATE sponsor_invoices SET token_hash = ?, invoice_number = ?, due_date = ?, status = 'issued', provider_id = 'unconfigured', provider_status = 'not_applicable', updated_at = datetime('now') WHERE invoice_id = ?"
+      ).bind(tokenHash, invoiceNumber, dueDate, invoiceId).run();
 
-      try {
-        let customerId = partnership.stripe_customer_id || '';
-        if (!customerId) {
-          const customerParams = new URLSearchParams();
-          customerParams.set('email', partnership.contact_email);
-          customerParams.set('name', text(partnership.organization || partnership.contact_name, 160));
-          customerParams.set('metadata[dhf_partnership_id]', String(partnershipId));
-          customerParams.set('metadata[dhf_application_id]', String(partnership.application_id));
-          customerParams.set('metadata[dhf_brand]', 'Da HoodFarmer');
-          const customer = await stripeRequest('customers', env, 'POST', customerParams, 'dhf-customer-' + partnershipId);
-          customerId = customer.id;
-          await env.DB.prepare("UPDATE sponsor_partnerships SET stripe_customer_id = ?, updated_at = datetime('now') WHERE id = ?")
-            .bind(customerId, partnershipId).run();
-        }
-
-        let stripeInvoice = null;
-        if (invoiceRecord.stripe_invoice_id) {
-          stripeInvoice = await stripeRequest('invoices/' + encodeURIComponent(invoiceRecord.stripe_invoice_id), env);
-        } else {
-          const invoiceParams = new URLSearchParams();
-          invoiceParams.set('customer', customerId);
-          invoiceParams.set('collection_method', 'send_invoice');
-          invoiceParams.set('due_date', String(dueTimestamp));
-          invoiceParams.set('auto_advance', 'false');
-          invoiceParams.set('pending_invoice_items_behavior', 'exclude');
-          invoiceParams.set('description', description);
-          invoiceParams.set('metadata[dhf_invoice_id]', invoiceId);
-          invoiceParams.set('metadata[dhf_partnership_id]', String(partnershipId));
-          invoiceParams.set('metadata[dhf_application_id]', String(partnership.application_id));
-          invoiceParams.set('metadata[dhf_brand]', 'Da HoodFarmer');
-          stripeInvoice = await stripeRequest('invoices', env, 'POST', invoiceParams, 'dhf-invoice-' + invoiceId);
-          await env.DB.prepare("UPDATE sponsor_invoices SET stripe_invoice_id = ?, stripe_status = ?, updated_at = datetime('now') WHERE invoice_id = ?")
-            .bind(stripeInvoice.id, stripeInvoice.status || 'draft', invoiceId).run();
-        }
-
-        if (stripeInvoice.status === 'paid') {
-          await env.DB.prepare("UPDATE sponsor_invoices SET status = 'paid', stripe_status = 'paid', hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE invoice_id = ?").bind(stripeInvoice.hosted_invoice_url || '', stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', invoiceId).run();
-          await env.DB.prepare("UPDATE sponsor_partnerships SET payment_status = 'paid', payment_reference = ?, invoice_url = ?, updated_at = datetime('now') WHERE id = ?").bind(stripeInvoice.id, stripeInvoice.hosted_invoice_url || '', partnershipId).run();
-          return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url || '', amount_cents: amount, due_date: dueDate, payment_status: 'paid' });
-        }
-        if (stripeInvoice.status === 'void' || stripeInvoice.status === 'uncollectible') return json({ error: 'The existing Stripe invoice is void or uncollectible. Review it in Stripe before issuing a replacement.' }, 409);
-        if (stripeInvoice.status !== 'draft' && Number(stripeInvoice.amount_due) !== amount) throw new Error('Existing Stripe invoice amount does not match the approved amount.');
-        if (stripeInvoice.status === 'draft') {
-          const itemParams = new URLSearchParams();
-          itemParams.set('customer', customerId);
-          itemParams.set('invoice', stripeInvoice.id);
-          itemParams.set('amount', String(amount));
-          itemParams.set('currency', 'usd');
-          itemParams.set('description', description);
-          itemParams.set('metadata[dhf_invoice_id]', invoiceId);
-          itemParams.set('metadata[dhf_partnership_id]', String(partnershipId));
-          await stripeRequest('invoiceitems', env, 'POST', itemParams, 'dhf-invoice-item-' + invoiceId);
-          stripeInvoice = await stripeRequest('invoices/' + encodeURIComponent(stripeInvoice.id) + '/finalize', env, 'POST', new URLSearchParams({ auto_advance: 'false' }), 'dhf-finalize-' + invoiceId);
-        }
-
-        if (!stripeInvoice.hosted_invoice_url) {
-          stripeInvoice = await stripeRequest('invoices/' + encodeURIComponent(stripeInvoice.id), env);
-        }
-        if (!stripeInvoice.hosted_invoice_url) throw new Error('Stripe finalized the invoice but did not return a hosted invoice URL.');
-        if (Number(stripeInvoice.amount_due) !== amount) throw new Error('Finalized Stripe invoice amount does not match the approved amount.');
-        await env.DB.prepare(
-          "UPDATE sponsor_invoices SET status = CASE WHEN status IN ('paid','void') THEN status ELSE 'issued' END, stripe_status = ?, hosted_invoice_url = ?, invoice_pdf_url = ?, invoice_number = ?, due_date = ?, updated_at = datetime('now') WHERE invoice_id = ?"
-        ).bind(stripeInvoice.status || 'open', stripeInvoice.hosted_invoice_url, stripeInvoice.invoice_pdf || '', stripeInvoice.number || '', dueDate, invoiceId).run();
-        await env.DB.prepare(
-          "UPDATE sponsor_partnerships SET payment_status = CASE WHEN payment_status IN ('paid','failed','refunded') THEN payment_status ELSE 'invoice_sent' END, invoice_url = ?, payment_reference = ?, updated_at = datetime('now') WHERE id = ?"
-        ).bind(stripeInvoice.hosted_invoice_url, stripeInvoice.id, partnershipId).run();
-        await env.DB.prepare(
-          "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
-        ).bind(partnershipId, 'Stripe invoice ' + (stripeInvoice.number || stripeInvoice.id) + ' finalized; hosted invoice link is ready for the owner to share.').run();
-        return json({ success: true, invoice_id: invoiceId, stripe_invoice_id: stripeInvoice.id, invoice_number: stripeInvoice.number || '', invoice_url: stripeInvoice.hosted_invoice_url, invoice_pdf_url: stripeInvoice.invoice_pdf || '', amount_cents: amount, due_date: dueDate });
-      } catch (error) {
-        console.error('Stripe sponsor invoice creation failed:', error?.message || String(error));
-        return json({ error: 'The invoice could not be finalized. The CRM retained the draft record; retry the invoice action or review Stripe before issuing another.' }, 502);
-      }
+      const origin = (env.PUBLIC_SITE_URL || new URL(request.url).origin).replace(/\/$/, '');
+      const invoiceUrl = origin + '/invoice/' + token;
+      await env.DB.prepare(
+        "UPDATE sponsor_partnerships SET payment_status = 'invoice_sent', payment_provider_id = 'unconfigured', invoice_url = ?, payment_reference = '', updated_at = datetime('now') WHERE id = ?"
+      ).bind(invoiceUrl, partnershipId).run();
+      await env.DB.prepare(
+        "INSERT INTO sponsor_activities (partnership_id, activity_type, summary) VALUES (?, 'payment', ?)"
+      ).bind(partnershipId, 'DHF invoice ' + invoiceNumber + ' issued for the signed-agreement amount; payment collection remains inactive.').run();
+      return json({ success: true, invoice_id: invoiceId, invoice_number: invoiceNumber, invoice_url: invoiceUrl, amount_cents: amount, due_date: dueDate, payment_status: 'issued', payment_activation: 'disabled' });
     }
 
     return json({ error: 'Unknown sponsor CRM action.' }, 400);
   } catch (error) {
+    if (/UNIQUE constraint failed: sponsor_invoices\.partnership_id/i.test(error?.message || '')) {
+      return json({ error: 'Another open invoice was created for this partnership. Reload the CRM before trying again.' }, 409);
+    }
     console.error('Sponsor CRM write failed:', error?.message || String(error));
     return json({ error: 'Sponsor record could not be saved.' }, 500);
   }

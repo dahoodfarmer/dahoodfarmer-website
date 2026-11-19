@@ -1,59 +1,48 @@
-# DHF Sponsor Invoicing — Stripe Hosted Invoice Page
+# Da HoodFarmer Payment Center — Architecture
 
-**Status:** Preview implementation; invoice issuing is disabled by default.
-**Purpose:** Collect one-time sponsor payments only after an owner-approved written agreement has been signed.
+**Status:** DHF-owned invoice foundation in Preview; payment collection remains disabled.
 
-## Owner-controlled process
+## Owner-approved payment model
 
-1. A company submits the public sponsor inquiry form.
-2. The owner reviews the inquiry in the Cloudflare Access-protected Sponsor CRM.
-3. The owner qualifies the prospect, records the package and agreed amount, and stores the signed agreement link and date.
-4. The owner sets an invoice due date and clicks **Issue / resume Stripe invoice**.
-5. The backend creates or reuses a Stripe Customer, creates a one-time send-invoice invoice and invoice item, finalizes the invoice, and stores the Stripe invoice ID and hosted invoice URL in D1.
-6. The backend does not send an invoice email automatically. The owner reviews and shares the hosted invoice URL with the contracted sponsor.
-7. The sponsor pays on Stripe's hosted invoice page. DHF does not collect or store card numbers or security codes.
-8. A signed Stripe webhook updates the invoice and sponsor CRM. A browser redirect or screenshot is never treated as proof of payment.
-9. The owner tracks deliverables, evidence, payment status and renewal dates in the Sponsor CRM.
+- Stripe is permanently excluded.
+- Square is excluded.
+- No third-party payment processor, hosted checkout, card checkout, Apple Pay, ACH debit or wallet checkout is selected or authorized.
+- The only payment route under consideration is a direct bank-to-bank transfer to a verified DHF business account.
+- The DHF Payment Center, invoice pages, QR codes, invoice numbers, payment status, receipts, reporting and reconciliation remain first-party DHF functions.
+- No bank account details or payment destination are published. No customer is instructed to send money.
+- The receiving bank may charge account, wire or other transfer fees. Confirm exact terms with the bank before publishing instructions.
 
-## Stripe integration
+## DHF-owned capabilities
 
-- Stripe Invoicing API: Customer, Invoice Item, Invoice create, and Invoice finalize operations.
-- Collection method: `send_invoice`.
-- Payment page: Stripe-hosted invoice page (`hosted_invoice_url`).
-- Automatic email sending is not invoked; the owner shares the link manually.
-- Invoice metadata includes DHF invoice, partnership and application identifiers.
-- Idempotency keys are used for customer, invoice, invoice-item and finalize requests.
-- Required webhook events: `invoice.finalized`, `invoice.paid`, `invoice.payment_failed`, `invoice.voided`, and `charge.refunded`.
-- The webhook signature is verified against the raw request body with a five-minute timestamp tolerance.
-- Webhook event IDs are retained in the main D1 database for audit and deduplication.
-- Payment status is updated only from verified Stripe webhook events, not by editing the CRM form.
+DHF owns the branded Payment Center, sponsor CRM, signed-agreement records, invoice numbering, invoice amounts, secure invoice URLs, QR destinations, payment status, receipts, reporting and reconciliation workflow. Invoice amounts are read from the server-side agreed amount on a signed agreement; they are never accepted from the browser.
 
-## Data boundaries
+The current Preview implementation issues DHF invoices independently of any payment provider. The permanent Payment Center QR opens the stable `/pay` route; invoice pages generate a separate QR for their own opaque invoice URL. Each invoice receives a random opaque URL token; only its SHA-256 hash is stored. Reissuing the same open invoice rotates its token, making the prior URL unusable. Invoice pages are private/no-index, printable and display current invoice status. No card or bank credentials are collected.
 
-- Main D1 `DB`: sponsor applications, CRM partnerships, agreements, deliverables, activities, Stripe customer/invoice IDs, hosted invoice URLs and webhook event IDs.
-- `SESSIONS`: application and admin rate limiting.
-- No separate payment ledger database is required for Stripe Invoicing.
-- Production databases, secrets, DNS and deployments remain untouched by this Preview implementation.
+## Two QR destinations
 
-## Tax and payment configuration gate
+1. **Permanent Payment Center QR:** a stable DHF-owned destination that opens the branded Payment Center.
+2. **Invoice QR:** a unique QR for each invoice, containing only its opaque DHF invoice URL.
 
-Automatic tax is not enabled in this implementation. Sponsor invoice tax treatment must be confirmed before enabling invoice creation. Stripe Tax requires appropriate tax registrations and configuration; do not assume sponsorship fees are tax-exempt or taxable without qualified accounting advice.
+A QR is a visual link, not a payment network. Do not encode personal data, bank details, invoice amounts or credentials in QR payloads. QR codes are generated locally in the browser using a vendored MIT-licensed QR library; no external QR image service receives invoice URLs.
 
-The owner must also confirm:
-- Whether sponsor fees require sales tax, VAT or GST, and where.
-- Stripe account test-mode credentials and business/payout setup.
-- Invoice branding, payment methods, due-date policy and reminder settings.
-- The webhook endpoint and exact event subscriptions.
-- Refund, credit-note and cancellation handling.
-- Customer-facing invoice terms and applicable tax language.
+## Direct bank transfer and settlement
 
-Keep `DHF_INVOICING_ENABLED=false` until these decisions and test-mode validation are complete.
+- Direct bank transfer is the only payment route under consideration. DHF will provide business bank-transfer instructions directly on the invoice only after the owner verifies the receiving business account, confirms supported incoming transfer types, settlement timing and any fees, and approves the wording.
+- A customer screenshot, remittance advice or payment promise is not proof of settlement.
+- Only the owner may manually mark an invoice paid, and only after independently verifying cleared funds in the DHF business bank account and confirming the exact invoice amount.
+- Manual reconciliation is fail-closed behind the master payment switch, manual-reconciliation switch, manual provider selection and bank-transfer method. All remain off in Preview.
+- Receipts are generated only after confirmed reconciliation. Receipt email remains disabled.
 
-## Explicitly not included
+## Security and operating rules
 
-- Live-mode charges or automatic invoice emails.
-- Recurring sponsorship subscriptions.
-- Self-service sponsor package checkout.
-- Public marketplace or ticket checkout.
-- Electronic signatures or automatic contract generation.
-- FLO Business Solutions integration or replacement of Stripe.
+- Internal invoice issuance is enabled only in the isolated Preview environment behind owner-only Cloudflare Access.
+- Payment collection, checkout, payment instructions and receipt email remain disabled.
+- Invoice tokens are random, opaque, hash-only at rest, no-index and revocable by token rotation.
+- Invoice creation requires a signed agreement, contracted/fulfilling stage, agreed server-side amount, valid billing email and future due date. A Preview migration adds a unique partial index so each partnership can have only one issued/pending invoice at a time; concurrent duplicate issuance is rejected safely.
+- A browser redirect, screenshot or payment promise never marks an invoice paid.
+- No customer email is sent automatically.
+- No production database, secret, DNS, deployment or payment activation is part of this work.
+
+## Legacy database compatibility
+
+Earlier additive migrations introduced legacy provider columns and constraints. They remain in the schema for migration compatibility only and are not an active processor integration. The former Stripe checkout and webhook API routes have been removed from this feature branch; the current application code has no active third-party processor adapter, API call, webhook or health-check route. The shop page is informational and has no checkout. Do not add provider credentials or third-party checkout code without a new explicit owner decision.

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,follow">
+<title>Secure Payment Center — Da HoodFarmer</title>
+<meta name="description" content="The official Da HoodFarmer payment center for approved invoices and business partnerships.">
+<link rel="canonical" href="https://dahoodfarmer.com/payment-center">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css">
+<style>
+.payment-wrap{max-width:920px;margin:0 auto;padding:2rem 1rem 4rem}.payment-intro{text-align:center;max-width:720px;margin:0 auto 2rem}.payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin:1.5rem 0}.payment-option{border:1px solid rgba(201,164,84,.35);border-radius:14px;padding:1.25rem;background:rgba(12,15,25,.55)}.payment-option h2{font-size:1.15rem;margin:.2rem 0 .6rem}.payment-status{display:inline-block;border:1px solid #8a7b55;border-radius:999px;padding:.2rem .65rem;font-size:.75rem;letter-spacing:.04em}.payment-notice{border-left:3px solid #b99a56;padding:1rem 1.1rem;background:rgba(185,154,86,.08);margin:1.5rem 0}.payment-steps{display:grid;gap:.7rem;padding-left:1.25rem}.payment-muted{opacity:.8;font-size:.92rem}.payment-logo{display:block;width:112px;height:auto;max-height:116px;object-fit:contain;margin:0 auto 1rem}.payment-brand{text-align:center;margin-bottom:1rem;color:#d7bd7b;letter-spacing:.12em;text-transform:uppercase}
+ .qr-panel{max-width:420px;margin:2rem auto;padding:1.4rem;border:1px solid rgba(201,164,84,.4);border-radius:14px;text-align:center;background:#fff;color:#171717}.qr-panel #payment-center-qr{display:flex;justify-content:center;min-height:220px;margin:1rem auto}.qr-panel button{background:#292332;color:#fff;border:0;border-radius:8px;padding:.7rem 1rem;font-weight:700}.qr-panel .muted{font-size:.85rem;color:#555}.external-payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}.external-payment-option{background:#fff;color:#171717;border:1px solid #ddd;border-radius:12px;padding:1rem}.external-payment-option h3{margin:.2rem 0}.external-payment-option .muted{color:#555}.external-payment-link{display:inline-block;background:#292332;color:#fff;border-radius:8px;padding:.65rem .9rem;text-decoration:none;font-weight:700}.external-payment-qr{display:flex;justify-content:center;margin:1rem auto;min-height:164px}
+</style>
+</head>
+<body>
+<div class="page-hero"><img class="payment-logo" src="/assets/dhf-carter-columbia-logo.webp" alt="Carter Columbia South Carolina emblem"><h1>★ Secure Payment Center ★</h1><p>Da HoodFarmer · Official business payments</p></div>
+<main class="payment-wrap">
+  <div class="payment-intro"><div class="payment-brand">Da HoodFarmer Business Office</div><h2>Simple, secure business payments</h2><p>Use this center for approved sponsorships, partnerships and invoices. DHF owns the invoice and QR experience. Direct bank transfer is the only payment route under consideration. No card checkout, Apple Pay, ACH debit, wallet checkout or third-party processor is offered. No payment is due simply because you submitted an inquiry.</p></div>
+  <section class="qr-panel" aria-labelledby="payment-qr-heading"><h2 id="payment-qr-heading">Permanent DHF Payment Center QR</h2><p class="muted">Scan to open this official DHF Payment Center. This QR does not collect money or start a payment.</p><div id="payment-center-qr" aria-label="QR code linking to the Da HoodFarmer Payment Center"></div><button type="button" id="download-payment-center-qr">Download QR image</button></section>
+  <section aria-labelledby="methods-heading"><h2 id="methods-heading">Payment methods</h2><div class="payment-grid">
+    <article class="payment-option"><h2>Direct Bank Transfer</h2><p>Our first intended payment route. DHF will publish verified business bank-transfer instructions after confirming the receiving account and any bank fees. Payment is recorded only after cleared funds are verified.</p><span class="payment-status">Setup pending</span></article>
+  </div></section>
+  <section aria-labelledby="external-payment-heading"><h2 id="external-payment-heading">Direct bank transfer</h2><p class="payment-muted">Direct bank-transfer instructions will be published here only after DHF verifies its business settlement account and approves the transfer procedure. DHF is not using a third-party checkout service or wallet.</p><div id="external-payment-options" class="external-payment-grid" aria-live="polite"><p class="payment-muted">Checking approved payment instructions…</p></div></section>
+  <aside class="payment-notice"><strong>Payment verification and customer protection</strong><p id="external-payment-status" class="payment-muted">A QR scan, screenshot or payment message does not confirm cleared payment. For invoices, include the invoice number and exact amount. DHF records payment only after independently verifying cleared funds in its business bank account.</p></aside>
+  <section><h2>How an approved sponsor payment will work</h2><ol class="payment-steps"><li>DHF and the sponsor agree to written partnership terms.</li><li>The owner records the signed agreement and approved amount in the private Sponsor CRM.</li><li>DHF issues a unique invoice page with its own DHF QR code.</li><li>The sponsor follows DHF's verified direct bank-transfer instructions once those instructions are published.</li><li>DHF records payment only after owner-verified bank settlement.</li></ol></section>
+  <p class="payment-muted">Questions about an existing agreement or invoice? Use the <a href="/contact">official contact page</a>. Never pay an invoice that you cannot independently verify with Da HoodFarmer.</p>
+</main><script src="/js/qrcode.min.js"></script><script>
+(function(){
+ var target=document.getElementById('payment-center-qr');
+ if(!target||typeof QRCode!=='function')return;
+ var logoUrl='/assets/dhf-carter-columbia-logo.webp';
+ var logoReady=false;
+ var logoImage=new Image();
+ logoImage.onload=function(){logoReady=true;var canvas=brandedCanvas(),img=target.querySelector('img');if(canvas&&img)img.src=canvas.toDataURL('image/png');};
+ logoImage.src=logoUrl;
+ new QRCode(target,{text:window.location.origin+'/pay',width:220,height:220,colorDark:'#171717',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+ function brandedCanvas(){
+  var canvas=target.querySelector('canvas');
+  if(!canvas)return null;
+  if(logoReady){
+   var ctx=canvas.getContext('2d'),size=Math.round(canvas.width*.23),x=(canvas.width-size)/2,y=(canvas.height-size)/2,pad=Math.round(size*.12),r=Math.round(size*.12);
+   ctx.save();ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(x-pad+r,y-pad);ctx.arcTo(x+size+pad,y-pad,x+size+pad,y+size+pad,r);ctx.arcTo(x+size+pad,y+size+pad,x-pad,y+size+pad,r);ctx.arcTo(x-pad,y+size+pad,x-pad,y-pad,r);ctx.arcTo(x-pad,y-pad,x+size+pad,y-pad,r);ctx.closePath();ctx.fill();
+   ctx.drawImage(logoImage,x,y,size,size);ctx.restore();
+  }
+  return canvas;
+ }
+ var button=document.getElementById('download-payment-center-qr');
+ button.addEventListener('click',function(){
+  var canvas=brandedCanvas(),img=target.querySelector('img');
+  var url=canvas?canvas.toDataURL('image/png'):(img?img.src:'');
+  if(!url)return;
+  var link=document.createElement('a');link.href=url;link.download='DHF-Payment-Center-Branded-QR.png';link.click();
+ });
+})();
+</script><script src="/js/dhf-payment-options.js" defer></script><script src="/script.js"></script>
+</body></html>

@@ -26,7 +26,7 @@ NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
 ACCESS_ISSUER = "https://snowy-silence-28c3.cloudflareaccess.com"
 ACCESS_AUD = "6a0c1ed1900526a1e3550094c3c71bd43ea2c0a6cdf9557f340c764cf3675909"
 
-# Keep TURNSTILE_SECRET_KEY and provider API keys configured as Cloudflare Pages secrets.
+# Keep TURNSTILE_SECRET_KEY configured as a Cloudflare Pages secret.
 # Never put private API keys or secrets in this file.
 
 # Isolate all stateful Preview bindings from Production.
@@ -47,7 +47,13 @@ ADSENSE_ID = "ca-pub-5452000990146137"
 TURNSTILE_SITE_KEY = "0x4AAAAAAF4NKcwMel-ag1kV"
 NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
 ACCESS_ISSUER = "https://snowy-silence-28c3.cloudflareaccess.com"
-ACCESS_AUD = "6a0c1ed1900526a1e3550094c3c71bd43ea2c0a6cdf9557f340c764cf3675909"
+ACCESS_AUD = "0373ea3e316a4f33dac6f3a63b05e6247282c1c85f344500f2656690b2d1d80a"
+DHF_PAYMENTS_ENABLED = "false"
+DHF_PAYMENT_PROVIDER = "none"
+DHF_PAYMENT_METHODS = ""
+DHF_MANUAL_RECONCILIATION_ENABLED = "false"
+DHF_SQUARE_PAYMENT_LINKS_ENABLED = "false"
 DHF_CHECKOUT_ENABLED = "false"
 DHF_INVOICING_ENABLED = "false"
-DHF_STRIPE_EXPECT_LIVEMODE = "false"
+DHF_INTERNAL_INVOICING_ENABLED = "true"
+DHF_RECEIPT_EMAIL_ENABLED = "false"
