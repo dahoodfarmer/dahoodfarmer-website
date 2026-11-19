@@ -48,50 +48,32 @@ export async function verifyTurnstile(token, secret, remoteip, expectedHostname)
 }
 
 
-// Send a server-side notification through Resend when configured.
-// The form remains safely stored in D1 if email delivery is unavailable.
-function escapeEmailHtml(value) {
-  return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
-    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
-  });
-}
-
-export async function sendSubmissionNotification(env, subject, fields, replyTo) {
-  const apiKey = env.RESEND_API_KEY;
-  const from = env.RESEND_FROM_EMAIL;
-  const to = env.NOTIFICATION_EMAIL;
-  if (!apiKey || !from || !to) {
-    return { sent: false, reason: 'Email notification is not configured' };
+// Send a notification through the private Cloudflare Email Service Worker.
+// The form record is saved before this is called; email failure must not discard it.
+export async function sendSubmissionNotification(env, type, fields, replyTo) {
+  if (!env.EMAIL_NOTIFIER) {
+    return { sent: false, reason: 'Private email notification service is not configured' };
   }
 
-  const rows = Object.keys(fields).map(function (key) {
-    return '<tr><th align="left" style="padding:8px;border-bottom:1px solid #ddd;">' +
-      escapeEmailHtml(key) + '</th><td style="padding:8px;border-bottom:1px solid #ddd;">' +
-      escapeEmailHtml(fields[key]) + '</td></tr>';
-  }).join('');
-
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await env.EMAIL_NOTIFIER.fetch('https://email-notifier.internal/notify', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: from,
-        to: [to],
-        reply_to: replyTo || undefined,
-        subject: subject,
-        html: '<div style="font-family:Arial,sans-serif"><h2>' + escapeEmailHtml(subject) +
-          '</h2><table style="border-collapse:collapse;width:100%">' + rows + '</table></div>',
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, fields, replyTo: replyTo || undefined }),
     });
 
-    if (!response.ok) {
-      return { sent: false, reason: 'Email provider rejected the notification (HTTP ' + response.status + ')' };
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      return { sent: false, reason: 'Email notification service returned an invalid response' };
+    }
+
+    if (!response.ok || !result.sent) {
+      return { sent: false, reason: 'Email notification service could not deliver the message' };
     }
     return { sent: true };
   } catch (error) {
-    return { sent: false, reason: 'Email provider could not be reached' };
+    return { sent: false, reason: 'Private email notification service is unavailable' };
   }
 }
