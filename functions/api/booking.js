@@ -1,6 +1,7 @@
 import { validateBooking, getClientIP, isValidPayload, checkRateLimit } from '../lib/validation.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { insertBooking } from '../lib/db.js';
+import { sendSubmissionNotification } from '../lib/turnstile.js';
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
 export async function onRequestPost({ request, env }) {
   const ip = getClientIP(request);
@@ -14,7 +15,9 @@ export async function onRequestPost({ request, env }) {
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
   try {
     await insertBooking(env.DB, { ...validation.sanitized, ip });
-    return json({ success: true, message: 'Your booking request has been received. We will contact you to confirm details.' });
+    const notice = await sendSubmissionNotification(env, 'booking', validation.sanitized, validation.sanitized.email);
+    if (!notice.sent) console.warn('Booking notification not sent:', notice.reason);
+    return json({ success: true, message: 'Your booking request has been received. This is not a confirmed booking; dates and terms must be agreed directly.' });
   } catch (err) {
     console.error('Booking D1 insert failed:', err?.stack || err?.message || String(err));
     return json({ error: 'Failed to save booking request' }, 500);
