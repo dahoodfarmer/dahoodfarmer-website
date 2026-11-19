@@ -15,7 +15,7 @@ export async function onRequestPost({ request, env }) {
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
   try {
     await insertContact(env.DB, { ...validation.sanitized, ip });
-    const notice = await sendSubmissionNotification(env, 'New website contact inquiry', validation.sanitized, validation.sanitized.email);
+    const notice = await sendSubmissionNotification(env, 'contact', validation.sanitized, validation.sanitized.email);
     if (!notice.sent) console.warn('Contact notification not sent:', notice.reason);
     return json({ success: true, message: 'Your message has been received for review. Response times vary.' });
   } catch (err) { return json({ error: 'Failed to save your message' }, 500); }
