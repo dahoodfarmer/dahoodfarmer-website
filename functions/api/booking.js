@@ -15,7 +15,7 @@ export async function onRequestPost({ request, env }) {
   if (!validation.valid) return json({ error: validation.errors.join(', ') }, 422);
   try {
     await insertBooking(env.DB, { ...validation.sanitized, ip });
-    const notice = await sendSubmissionNotification(env, 'New website booking request', validation.sanitized, validation.sanitized.email);
+    const notice = await sendSubmissionNotification(env, 'booking', validation.sanitized, validation.sanitized.email);
     if (!notice.sent) console.warn('Booking notification not sent:', notice.reason);
     return json({ success: true, message: 'Your booking request has been received. This is not a confirmed booking; dates and terms must be agreed directly.' });
   } catch (err) {
