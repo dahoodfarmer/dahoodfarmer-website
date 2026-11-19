@@ -1,0 +1,20 @@
+name = "dahoodfarmer-email-notifier"
+main = "src/index.js"
+compatibility_date = "2026-11-19"
+workers_dev = false
+
+# This sender must be onboarded in Cloudflare Email Service.
+# The only permitted destination is the owner's already-verified inbox.
+[[send_email]]
+name = "EMAIL"
+allowed_destination_addresses = ["hoodfarmer202@gmail.com"]
+allowed_sender_addresses = ["website@notify.dahoodfarmer.com"]
+
+[env.preview]
+name = "dahoodfarmer-email-notifier-preview"
+workers_dev = false
+
+[[env.preview.send_email]]
+name = "EMAIL"
+allowed_destination_addresses = ["hoodfarmer202@gmail.com"]
+allowed_sender_addresses = ["website@notify.dahoodfarmer.com"]
