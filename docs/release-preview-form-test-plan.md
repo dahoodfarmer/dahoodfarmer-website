@@ -48,6 +48,7 @@
 
 - On each form, attempt submission with a required field blank. Expected: browser validation blocks submission and no row is written.
 - Confirm that the Turnstile challenge must be completed before a submission is accepted.
+- Confirm that server-side Turnstile verification rejects both a mismatched hostname and a successful provider response that omits the hostname when `EXPECTED_HOSTNAME` is configured.
 - Confirm that a failed/expired challenge displays a clear error and does not create a D1 row.
 - Confirm that invalid email or unsupported booking type is rejected by the server (HTTP 422) when tested with a valid challenge token.
 - Confirm that repeated requests are rate-limited (HTTP 429) after the configured threshold; do not deliberately generate a burst during the owner walkthrough.
