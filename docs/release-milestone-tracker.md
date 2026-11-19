@@ -36,7 +36,7 @@ Do not publish the PDF as a public download until the owner approves it and the 
 
 ## Milestone 2 — Email notifications without a paid provider plan
 
-**Status: Cloudflare-native code and restricted bindings staged on PR #19; sender-domain onboarding and Preview email test pending.**
+**Status: Cloudflare-native Worker deployed to Preview with public workers.dev access disabled; sender-domain onboarding and actual email test pending.**
 
 Verified account facts:
 - The notification recipient already configured for the site is the owner's Gmail address.
@@ -57,7 +57,8 @@ Cost and access notes:
 - Cloudflare documents sends to verified destination addresses as free on Workers Free or Paid plans. Sending to arbitrary, unverified recipients requires Workers Paid.
 - The sender domain must be onboarded for Email Sending. Cloudflare may require SPF, DKIM, DMARC, and bounce-related DNS records.
 - The connected Cloudflare API session can read the verified destination and Email Routing status, but Email Sending API calls return an authorization error. Sending-domain onboarding and account sending limits could not be verified from this session.
-- No Worker has been deployed and no email has been sent yet. No DNS records, paid plan, external provider account, API token, or Production binding has been applied.
+- The Preview Worker `dahoodfarmer-email-notifier-preview` is deployed in the Cloudflare account. Its `workers.dev` subdomain and preview URLs are disabled, and its send binding is restricted to the verified owner inbox. The Pages Preview Service binding now resolves and the latest confirmed Preview deployment succeeds.
+- No email has been sent yet because the sender domain is not confirmed as onboarded. No DNS records, paid plan, external provider account, API token, or Production binding has been applied.
 
 Owner-side checkpoint:
 - In Cloudflare, open **Compute & AI → Email Service → Email Sending** and inspect whether the account offers onboarding on the current Free plan.
@@ -107,16 +108,16 @@ After both tests:
 
 ## Milestone 4 — Owner visual inspection
 
-**Status: Preview deployment is available; desktop and phone review pending.**
+**Status: Latest Preview deployment succeeds; desktop and phone review pending.**
 
 Preview URL:
 `https://feature-loopy-carter-dual-id.dahoodfarmer-website.pages.dev`
 
-Latest confirmed Preview deployment before the most recent documentation/copy edits:
-- Commit: `9de32651bf8930fd6d9e0b32364a7dd0d258dee9`
-- Deployment: `244d4728-9442-4a2e-a73d-2848e226f170`
-- Result: Preview deploy succeeded.
-- New branch commits trigger a new Preview deployment; verify its final commit before relying on this address for review.
+Latest confirmed Preview deployment:
+- Commit: `cf76828cc04a34365ca2085e268748e74a3469d8`
+- Deployment: `3cfe9ee8-6534-42a2-b420-785108904c2e`
+- Result: Preview deploy succeeded; the branch alias below points to this deployment.
+- GitHub Vercel status for this commit: success.
 
 Desktop pass:
 1. Open the Preview URL in a desktop browser and sign in through Cloudflare Access.
