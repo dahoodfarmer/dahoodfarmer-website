@@ -114,9 +114,10 @@ Preview URL:
 `https://feature-loopy-carter-dual-id.dahoodfarmer-website.pages.dev`
 
 Latest confirmed Preview deployment:
-- Commit: `cf76828cc04a34365ca2085e268748e74a3469d8`
-- Deployment: `3cfe9ee8-6534-42a2-b420-785108904c2e`
-- Result: Preview deploy succeeded; the branch alias below points to this deployment.
+- Commit: `b38c795ed98eb3de31f3584c97ec5e4c752b9fab`
+- Deployment: `4920a560-00e4-4c79-99f3-7224022986a8`
+- URL: `https://4920a560.dahoodfarmer-website.pages.dev`
+- Result: Preview build and deploy succeeded; the branch alias below points to the latest Preview deployment.
 - GitHub Vercel status for this commit: success.
 
 Desktop pass:
@@ -170,3 +171,14 @@ Before release:
 - Email notification behavior is accurately reported and any required free Cloudflare setup is verified.
 
 PR #19 must remain **OPEN, DRAFT, and UNMERGED** until the owner explicitly says to merge and deploy. A separate clear approval is required for Production release. No Production changes are included in this tracker update.
+
+
+## Remote audit checkpoint — November 19, 2026
+
+- PR #19 remains open, draft, and unmerged. Its latest head is `b38c795ed98eb3de31f3584c97ec5e4c752b9fab`; the Preview deployment above matches that exact commit.
+- The Production deployment remains on commit `1d5238a8833ce0ea65a24213b57ed97245a498b7`, deployed November 9, 2026. No Production deployment or configuration change was made during this audit.
+- Cloudflare currently lists the Preview email Worker `dahoodfarmer-email-notifier-preview`; the Production Worker `dahoodfarmer-email-notifier` is not present in the account's Worker Script list. The Pages Production environment response also does not show the `EMAIL_NOTIFIER` service binding. Treat Production email as unavailable until separately provisioned and verified.
+- The configured sender is `website@notify.dahoodfarmer.com`. The DNS zone currently returns no records for `notify.dahoodfarmer.com`; its TXT records show root-domain SPF/DKIM and Google verification only, with no `_dmarc` TXT record returned. Sender-domain onboarding and authentication remain incomplete. Do not change DNS or create a Production Worker without separate owner approval.
+- The privacy policy on this branch now states that no payment processor or payment collection is active. The stale Stripe activation statement was removed to match the approved payment direction.
+- Preview remains protected by Cloudflare Access. Owner-authenticated desktop/mobile review and synthetic Contact/Booking end-to-end tests remain outstanding.
+- No Production files, bindings, secrets, DNS, databases, payments, or deployments were changed.
