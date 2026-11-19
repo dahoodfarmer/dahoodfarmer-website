@@ -36,36 +36,35 @@ Do not publish the PDF as a public download until the owner approves it and the 
 
 ## Milestone 2 — Email notifications without a paid provider plan
 
-**Status: Free Cloudflare-native route identified; sending setup and Preview test pending.**
+**Status: Cloudflare-native code and restricted bindings staged on PR #19; sender-domain onboarding and Preview email test pending.**
 
 Verified account facts:
 - The notification recipient already configured for the site is the owner's Gmail address.
 - Cloudflare lists that Gmail address as a verified Email Routing destination.
 - Email Routing for `dahoodfarmer.com` is active and reports `ready`.
-- The current form code uses Resend, but the required Resend key and sender variables are not configured. The code must not imply that email was sent when it was not.
-- The Pages Functions binding reference documents a subset of bindings and does not list a native `send_email` binding.
+- The former form code used Resend without the required API key or sender variables. That integration has been replaced in the feature branch.
+- Pages Functions do not expose a native `send_email` binding in the documented supported subset.
 
-Recommended in-house design:
-1. Use Cloudflare Email Service, not Resend or another third-party subscription.
-2. Keep the single verified Gmail address as the only allowed notification destination.
-3. Use a dedicated sending subdomain such as `notify.dahoodfarmer.com` to isolate outbound mail authentication from the root domain's existing Email Routing setup.
-4. Add a small Cloudflare Worker with a `send_email` binding restricted to the verified destination and approved sender address.
-5. Call that Worker privately from the Pages Functions through a Service binding.
-6. Keep notification delivery non-blocking: save the Contact/Booking record first; email failure must never discard a valid submission.
-7. Test only in Preview. Add the Production binding only as part of a separately approved release.
+Implementation now staged in the feature branch:
+1. Added `workers/email-notifier/` with a private Cloudflare Worker and separate Preview/Production environments.
+2. Restricted its `send_email` binding to the verified owner inbox and the dedicated sender `website@notify.dahoodfarmer.com`.
+3. Added a Pages Service binding. Preview targets `dahoodfarmer-email-notifier-preview`; the eventual Production target is `dahoodfarmer-email-notifier`.
+4. Replaced the Resend HTTP integration in the Contact and Booking handlers with the private Worker call.
+5. D1 records are saved before email is attempted. Email failure does not discard a valid submission.
+6. The Worker has no public `workers.dev` endpoint or route, accepts only Contact and Booking notifications, escapes HTML, limits field lengths, and does not log submitted content or IP addresses.
 
 Cost and access notes:
 - Cloudflare documents sends to verified destination addresses as free on Workers Free or Paid plans. Sending to arbitrary, unverified recipients requires Workers Paid.
 - The sender domain must be onboarded for Email Sending. Cloudflare may require SPF, DKIM, DMARC, and bounce-related DNS records.
 - The connected Cloudflare API session can read the verified destination and Email Routing status, but Email Sending API calls return an authorization error. Sending-domain onboarding and account sending limits could not be verified from this session.
-- No DNS records, paid plan, external provider account, API token, or Production binding has been added.
+- No Worker has been deployed and no email has been sent yet. No DNS records, paid plan, external provider account, API token, or Production binding has been applied.
 
 Owner-side checkpoint:
 - In Cloudflare, open **Compute & AI → Email Service → Email Sending** and inspect whether the account offers onboarding on the current Free plan.
-- If offered, choose a dedicated subdomain rather than changing the root mail-routing setup.
-- Before saving DNS changes, compare the proposed records with the current DNS records and share a screenshot of the proposed changes for review. Do not delete or overwrite existing MX, SPF, or DKIM records.
-- If Cloudflare requires Workers Paid or any paid upgrade, stop. Do not upgrade; report the gate and retain the existing D1 form storage.
-
+- If offered, choose the dedicated sender subdomain `notify.dahoodfarmer.com` rather than changing the root mail-routing setup.
+- Review the proposed records before saving. Do not overwrite existing root-domain MX, SPF, or DKIM records. If Cloudflare requires a paid plan, stop; do not upgrade.
+- Once onboarding is complete, deploy only the Preview Worker using the command in `workers/email-notifier/README.md`, then test one synthetic Contact and one synthetic Booking submission.
+- Do not deploy the Production Worker or activate the Production binding until the owner separately approves the final release.
 ## Milestone 3 — Contact and Booking forms
 
 **Status: Code review and test plan updated; owner end-to-end submissions pending.**
