@@ -7,8 +7,9 @@
 
 - Open the latest successful Preview deployment through the branch alias:
   `https://feature-loopy-carter-dual-id.dahoodfarmer-website.pages.dev`
-- Sign in through the site's existing Cloudflare Access gate if prompted.
+- Sign in through the site's existing Cloudflare Access gate if prompted. The owner-only Preview Access application covers the Preview host, `/admin*`, and `/api/admin*`.
 - Confirm the address bar remains on the `pages.dev` Preview host.
+- After each test submission, use the Preview-only `/admin/` dashboard to confirm the saved record. Do not use the Production admin dashboard for Preview test evidence.
 - Confirm the Cloudflare Turnstile challenge is visible on both forms. The Preview branch alias is now on the widget's allowed-domain list, and the server-side expected hostname is aligned to that alias.
 - The Preview `TURNSTILE_SECRET_KEY` secret entry exists, but Cloudflare masks its value; a successful challenge submission is the end-to-end validity check.
 - Use only synthetic test details. Do not enter a real person's name, phone number, email, address, or event details.
