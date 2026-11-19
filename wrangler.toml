@@ -49,3 +49,13 @@ NOTIFICATION_EMAIL = "hoodfarmer202@gmail.com"
 ACCESS_ISSUER = "https://snowy-silence-28c3.cloudflareaccess.com"
 ACCESS_AUD = "6a0c1ed1900526a1e3550094c3c71bd43ea2c0a6cdf9557f340c764cf3675909"
 EXPECTED_HOSTNAME = "feature-loopy-carter-dual-id.dahoodfarmer-website.pages.dev"
+
+# Private in-account Worker for email notifications. The Preview and production
+# targets are separate; the Worker has no public workers.dev endpoint.
+[[services]]
+binding = "EMAIL_NOTIFIER"
+service = "dahoodfarmer-email-notifier"
+
+[[env.preview.services]]
+binding = "EMAIL_NOTIFIER"
+service = "dahoodfarmer-email-notifier-preview"
