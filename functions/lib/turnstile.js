@@ -40,7 +40,7 @@ export async function verifyTurnstile(token, secret, remoteip, expectedHostname)
     return { success: false, error: 'Security verification failed. Please refresh the page and try again.' };
   }
 
-  if (expectedHostname && data.hostname && data.hostname !== expectedHostname) {
+  if (expectedHostname && data.hostname !== expectedHostname) {
     return { success: false, error: 'Captcha token hostname mismatch' };
   }
 
