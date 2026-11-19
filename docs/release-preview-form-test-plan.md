@@ -57,17 +57,21 @@
 
 ## Email notification status
 
-The notification recipient is already configured as the owner's Gmail address, and Cloudflare confirms that address is a **verified Email Routing destination**. The `dahoodfarmer.com` Email Routing service is also active and reports `ready`. This gives us a Cloudflare-native route without a third-party monthly email-provider subscription.
+The owner's Gmail address is already configured as the notification recipient and is a verified Cloudflare Email Routing destination. The `dahoodfarmer.com` Email Routing service is active and reports `ready`.
 
-Important implementation constraints:
+Implementation staged on PR #19:
+- Added a private Worker under `workers/email-notifier/` with a native Cloudflare `send_email` binding restricted to the verified owner inbox and the dedicated sender `website@notify.dahoodfarmer.com`.
+- Added a Pages Service binding. Preview targets `dahoodfarmer-email-notifier-preview`; the Production target is staged in source but is not deployed or active.
+- Replaced the Resend API integration with an internal Service binding call. Contact and Booking records are saved to D1 before notification is attempted, and notification failure does not discard a valid submission.
+- The Worker has no public `workers.dev` endpoint or route. It accepts only Contact and Booking notification types, escapes HTML, limits field lengths, and does not log submitted content or IP addresses.
 
-- Cloudflare's current documentation says sending to a verified destination address is free on Workers Free or Paid plans; sending to arbitrary, unverified recipients requires Workers Paid.
-- Pages Functions support only a documented subset of bindings, and the current Pages binding reference does not list a native `send_email` binding. The clean in-house design is therefore a small Cloudflare Worker with a `send_email` binding restricted to the one verified owner destination, called privately from Pages through a Service binding.
-- The sender domain must be onboarded for Cloudflare Email Sending. That onboarding may require additional SPF/DKIM/DMARC/bounce DNS records. No such records have been added by this work.
-- The connected Cloudflare API session can read the verified destination and Email Routing status, but its Email Sending API calls return an authorization error. Sending-domain onboarding and limits therefore remain unverified from this session.
-- Until the private Worker is configured and a Preview notification is received, successful form submission confirms only the D1 save—not email delivery.
+Important constraints:
+- Cloudflare documents sending to a verified destination address as free on Workers Free or Paid plans; sending to arbitrary, unverified recipients requires Workers Paid.
+- The sender domain must be onboarded for Cloudflare Email Sending. This may require SPF/DKIM/DMARC/bounce DNS records. No such records have been added by this work.
+- The connected Cloudflare API session can read the verified destination and Email Routing status, but Email Sending API calls return an authorization error. Sender-domain onboarding and account sending limits remain unverified from this session.
+- No Worker has been deployed and no email has been sent yet. Until the sender domain is onboarded and the Preview Worker is deployed and tested, successful form submission confirms only the D1 save—not email delivery.
 
-No paid plan, third-party provider account, DNS change, or Production binding has been added. The Preview implementation and end-to-end email test remain pending.
+No paid plan, third-party provider account, DNS change, or Production binding has been applied.
 ## Evidence to record
 
 | Check | Result |
