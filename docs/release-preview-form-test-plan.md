@@ -69,7 +69,8 @@ Important constraints:
 - Cloudflare documents sending to a verified destination address as free on Workers Free or Paid plans; sending to arbitrary, unverified recipients requires Workers Paid.
 - The sender domain must be onboarded for Cloudflare Email Sending. This may require SPF/DKIM/DMARC/bounce DNS records. No such records have been added by this work.
 - The connected Cloudflare API session can read the verified destination and Email Routing status, but Email Sending API calls return an authorization error. Sender-domain onboarding and account sending limits remain unverified from this session.
-- No Worker has been deployed and no email has been sent yet. Until the sender domain is onboarded and the Preview Worker is deployed and tested, successful form submission confirms only the D1 save—not email delivery.
+- The Preview Worker `dahoodfarmer-email-notifier-preview` is deployed. Its `workers.dev` subdomain and preview URLs are disabled, and the send binding is restricted to the verified owner inbox. The Pages Preview deployment now succeeds with the private Service binding.
+- No email has been sent yet because the sender domain is not confirmed as onboarded. Until the sender is ready and an actual Preview notification is received, successful form submission confirms only the D1 save—not email delivery.
 
 No paid plan, third-party provider account, DNS change, or Production binding has been applied.
 ## Evidence to record
