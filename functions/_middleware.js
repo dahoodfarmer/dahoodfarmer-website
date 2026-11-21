@@ -67,7 +67,7 @@ export async function onRequest(context) {
     const tsKey = env.TURNSTILE_SITE_KEY || '';
     const ga4Id = env.GA4_ID || '';
     const adId = env.ADSENSE_ID || '';
-    const adsEnabled = env.ADSENSE_ENABLED === 'true';
+    const adsEnabled = env.ADSENSE_ENABLED === 'true' && env.GOOGLE_CMP_CONFIGURED === 'true';
 
     // Build head injections — all values safely encoded.
     // Consent Mode v2 defaults to denied before the Google tag can send measurements.
