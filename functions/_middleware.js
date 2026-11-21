@@ -67,17 +67,22 @@ export async function onRequest(context) {
     const tsKey = env.TURNSTILE_SITE_KEY || '';
     const ga4Id = env.GA4_ID || '';
     const adId = env.ADSENSE_ID || '';
+    const adsEnabled = env.ADSENSE_ENABLED === 'true';
 
-    // Build head injections — all values safely encoded
+    // Build head injections — all values safely encoded.
+    // Consent Mode v2 defaults to denied before the Google tag can send measurements.
+    // A configured CMP must update these signals after the visitor's choice.
     let inj = '';
     if (tsKey) {
       inj += '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>';
     }
     if (ga4Id) {
+      inj += '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("consent","default",{"ad_storage":"denied","analytics_storage":"denied","ad_user_data":"denied","ad_personalization":"denied","wait_for_update":500})</script>';
       inj += '<script async src="https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ga4Id) + '"></script>';
-      inj += '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config",' + safeJsValue(ga4Id) + ')</script>';
+      inj += '<script>gtag("js",new Date());gtag("config",' + safeJsValue(ga4Id) + ')</script>';
     }
-    if (adId) {
+    // AdSense is explicitly opt-in; publisher ID alone must not enable ad requests.
+    if (adsEnabled && adId) {
       inj += '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(adId) + '" crossorigin="anonymous"></script>';
     }
 
