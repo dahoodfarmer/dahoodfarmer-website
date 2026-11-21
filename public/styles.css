@@ -41,3 +41,39 @@
 
 .hero-location{color:var(--silver);font-size:.95rem;letter-spacing:.12em;text-transform:uppercase;margin-top:-1.25rem;margin-bottom:2rem;padding:0 .5rem}
 @media(max-width:768px){.hero-location{font-size:.75rem;letter-spacing:.08em;line-height:1.6;margin-top:-1rem}}
+
+
+/* Visitor-selectable brand skins — Royal Ranch remains the default. */
+:root[data-theme="western-heritage"]{
+  --purple:#5B3928;--purple-light:#80553B;--purple-dark:#2B1B14;
+  --black:#211A16;--gold:#C18A4A;--gold-light:#E2B978;--silver:#E4D5C2;
+  --red:#8E3B2F;--gray:#3A2B22;--gray-light:#594233;--text:#F3E8D9;--text-dim:#C6B39F;
+}
+:root[data-theme="agtech-future"]{
+  --purple:#243C35;--purple-light:#315C4D;--purple-dark:#101E1A;
+  --black:#080F0D;--gold:#A7B8B1;--gold-light:#D5E2DC;--silver:#C8D2CE;
+  --red:#B05C76;--gray:#18231F;--gray-light:#26352F;--text:#E5F0EA;--text-dim:#A6B8AF;
+}
+:root[data-theme="entertainment"]{
+  --purple:#4B176A;--purple-light:#70269A;--purple-dark:#170820;
+  --black:#08060A;--gold:#E7B83F;--gold-light:#FFE17A;--silver:#D6C8E2;
+  --red:#E3314B;--gray:#211629;--gray-light:#382341;--text:#F7F0FA;--text-dim:#C4B5CE;
+}
+:root[data-theme="executive"]{
+  --purple:#33343A;--purple-light:#555963;--purple-dark:#101114;
+  --black:#090A0C;--gold:#B99B61;--gold-light:#D8C18E;--silver:#D6D7DA;
+  --red:#9B4147;--gray:#202226;--gray-light:#34373D;--text:#F0F0EE;--text-dim:#B7B8BA;
+}
+.theme-control{display:flex;align-items:center;gap:.45rem;flex-shrink:0;color:var(--text-dim);font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.theme-control select{max-width:10.5rem;padding:.5rem .65rem;border:1px solid rgba(212,175,55,.45);border-radius:6px;background:var(--gray);color:var(--text);font:inherit;letter-spacing:normal;text-transform:none}
+.theme-control select:focus-visible{outline:3px solid var(--gold-light);outline-offset:2px}
+@media(max-width:768px){
+  .site-header{gap:.65rem;padding:.65rem .9rem}
+  .brand-name{font-size:.95rem}
+  .brand-crown{font-size:1.35rem}
+  .theme-control label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .theme-control select{max-width:8.5rem;font-size:.72rem;padding:.45rem .4rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
