@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farm Fence Cost Estimator: Posts, Wire and Materials | Da HoodFarmer</title>
+<meta name="description" content="Estimate basic farm fence materials using fence length, post spacing, post price and your wire or rail material cost. Free planning calculator.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.calc{background:var(--gray);border:1px solid rgba(212,175,55,.25);border-radius:12px;padding:1.5rem;margin:2rem 0}.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem}.calc label{display:block;color:var(--gold);font-size:.85rem;margin-bottom:.35rem}.calc input{width:100%;padding:.8rem;background:#111;color:var(--text);border:1px solid #66552a;border-radius:6px;font:inherit}.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin-top:1.25rem}.result{background:#171717;border-radius:8px;padding:1rem}.result strong{display:block;color:var(--gold);font-size:1.25rem}.result span{font-size:.8rem;color:var(--text-dim)}.note{font-size:.85rem;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div class="page-hero"><h1>Farm Fence Cost Estimator</h1><p>A first-pass materials budget—not a construction quote.</p></div>
+<main class="page-content">
+<p>Fence costs depend on the purpose of the fence, terrain, corners, gates, livestock pressure, material type and local prices. This estimator gives you a starting point using the measurements and prices you enter.</p>
+<section class="calc" aria-label="Farm fence cost estimator">
+<h2 style="margin-top:0">Enter your project details</h2>
+<div class="calc-grid">
+<div><label for="length">Fence length (feet)</label><input id="length" type="number" min="1" max="1000000" step="1" value="500"></div>
+<div><label for="spacing">Post spacing (feet)</label><input id="spacing" type="number" min="1" max="100" step="1" value="8"></div>
+<div><label for="postPrice">Price per post ($)</label><input id="postPrice" type="number" min="0" step="0.01" value="8"></div>
+<div><label for="material">Wire / rail material cost per foot ($)</label><input id="material" type="number" min="0" step="0.01" value="0.75"></div>
+<div><label for="gates">Gate and hardware allowance ($)</label><input id="gates" type="number" min="0" step="0.01" value="100"></div>
+<div><label for="waste">Extra material allowance (%)</label><input id="waste" type="number" min="0" max="100" step="1" value="10"></div>
+</div>
+<div class="results" aria-live="polite">
+<div class="result"><strong id="posts">0</strong><span>Estimated line posts</span></div>
+<div class="result"><strong id="postCost">$0.00</strong><span>Post cost</span></div>
+<div class="result"><strong id="wireCost">$0.00</strong><span>Wire / rail allowance</span></div>
+<div class="result"><strong id="total">$0.00</strong><span>Estimated materials total</span></div>
+</div>
+<p class="note">The post count is a simple spacing estimate and does not separately design corners, braces, ends or gate assemblies. Confirm layout and structural requirements before buying materials.</p>
+</section>
+<h2>Before purchasing fence materials</h2>
+<ul>
+<li>Identify what the fence must contain or exclude; livestock, pets and wildlife needs are different.</li>
+<li>Walk the line and account for slopes, drainage, trees, property boundaries and access points.</li>
+<li>Count corners, ends, braces and gates separately. These often require different posts and hardware.</li>
+<li>Check local rules, easements and property lines before construction.</li>
+<li>Get written quotes from suppliers and qualified installers where needed.</li>
+</ul>
+<h2>Important limitation</h2>
+<p>This tool is a budgeting aid only. It does not specify a safe fence design, post depth, wire gauge, energizer, bracing method or livestock containment standard. Those depend on the site, soil, animal species and fence type.</p>
+<p><a href="/resources" class="text-gold">← Back to the Resource Center</a></p>
+</main>
+<script>
+(function(){
+ const ids=['length','spacing','postPrice','material','gates','waste'];
+ const money=n=>Number.isFinite(n)?n.toLocaleString('en-US',{style:'currency',currency:'USD'}):'—';
+ function update(){
+  const v=Object.fromEntries(ids.map(id=>[id,Number(document.getElementById(id).value)]));
+  const valid=ids.every(id=>Number.isFinite(v[id])&&v[id]>=0)&&v.length>0&&v.spacing>0&&v.waste<=100;
+  if(!valid){['posts','postCost','wireCost','total'].forEach(id=>document.getElementById(id).textContent='Check inputs');return;}
+  const posts=Math.ceil(v.length/v.spacing)+1;
+  const postCost=posts*v.postPrice;
+  const wireCost=v.length*v.material;
+  const subtotal=postCost+wireCost;
+  const total=subtotal*(1+v.waste/100)+v.gates;
+  document.getElementById('posts').textContent=posts.toLocaleString('en-US');
+  document.getElementById('postCost').textContent=money(postCost);
+  document.getElementById('wireCost').textContent=money(wireCost);
+  document.getElementById('total').textContent=money(total);
+ }
+ let tracked=false;
+ ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  update();
+  const values=ids.map(key=>Number(document.getElementById(key).value));
+  const valid=values.every(Number.isFinite)&&values[0]>0&&values[1]>0&&values[5]<=100;
+  if(valid&&!tracked&&typeof window.gtag==='function'){window.gtag('event','calculator_use',{calculator_name:'farm_fence_estimator'});tracked=true;}
+ }));
+ update();
+})();
+</script>
+<script src="/script.js"></script>
+</body>
+</html>
